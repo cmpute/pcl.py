@@ -2,8 +2,10 @@
 Implementation of following files:
     pcl/common/include/pcl/point_cloud.h
     pcl/common/include/pcl/PCLPointField.h
+    pcl/common/include/pcl/point_traits.h
 
 Following files are abandoned:
+    pcl/common/src/pcl_base.cpp
     pcl/common/include/pcl/PCLPointCloud2.h
 '''
 from __future__ import absolute_import
@@ -65,7 +67,7 @@ class PointCloud:
     Elements in the ndarray can be accessed by rows and columns (organized point cloud)
         or by indices with [] indexer.
     Fields can also be accessed and edited by field names with [] indexer
-    If you want to access raw data of a point, use array property
+    If you want to access raw data of a point, use 'array' property
     '''
     def __init__(self, points=None, fields=None, indices=None, width=0, height=0, copy=True):
         '''
@@ -75,8 +77,10 @@ class PointCloud:
             fields : list of tuples or numpy.dtype
                 Fields that determine the property of each column of the point data
                 The fields can be initialized in following format:
-                - PCL tuples (name, size, type, count): e.g. ('normal', 4, 'U', 3), type and size can be swapped
-                - PCL tuples (name, size, type): e.g. ('intensity', 1, 'F'), count is by default set to 1
+                - PCL tuples (name, size, type, count): e.g. ('normal', 4, 'U', 3),
+                    type and size can be swapped
+                - PCL tuples (name, size, type): e.g. ('intensity', 1, 'F'),
+                    count is by default set to 1
                 - tuples/list (name, descriptor) e.g. ('normal': '3u4')
                 - numpy.dtype: e.g. dtype(('normal', '<u4', (3,)))
                 - name list: ('normal', 'intensity'), type of the fields will be guessed from points
@@ -92,14 +96,13 @@ class PointCloud:
                 Determine if the data from points are copied
         '''
 
-        self._test = 0
         if isinstance(points, type(self)):
-            self.__points = np.array(points.__points, copy=copy)
-            self.__fields = list(points.__fields) if copy else points.__fields
-            self.__width = points.__width
-            self.__height = points.__height
-            self.__sensor_origin = np.array(points.__sensor_origin, copy=copy)
-            self.__sensor_orientation = Quaternion(points.__sensor_orientation, copy=copy)
+            self.__points = np.array(points.data, copy=copy)
+            self.__fields = list(points.fields) if copy else points.fields
+            self.__width = points.width
+            self.__height = points.height
+            self.__sensor_origin = np.array(points.sensor_origin, copy=copy)
+            self.__sensor_orientation = Quaternion(points.sensor_orientation, copy=copy)
 
         else:
             self.__fields, predict = _cast_fields_to_tuples(fields)
@@ -157,8 +160,8 @@ class PointCloud:
         copypc.append(pointcloud)
         return copypc
 
-    # support conversion to ndarray
     def __array__(self):
+        # support conversion to ndarray
         return self.__points
 
     def __getitem__(self, indices):
@@ -229,8 +232,12 @@ class PointCloud:
     def __iter__(self):
         return iter(self.__points)
 
-    # Pickle support.
+    def __contains__(self, item):
+        # for the field names, use 'names' property for instead.
+        return item in self.__points
+
     def __reduce__(self):
+        # Pickle support.
         return type(self), (self.data,)
 
     def disorganize(self):
@@ -287,9 +294,17 @@ class PointCloud:
     def data(self):
         '''
         Get the ndarray storing the points data.
-        This function conserves the dtype (data type) of the array
+        This property accessor conserves the dtype (data type) of the array
         '''
         return self.__points
+
+    @data.setter
+    def data(self, value):
+        array = np.array(value, dtype=self.__points.dtype, copy=False) # throw if not compatible
+        oldlen = len(self)
+        self.__points = array
+        if len(self) != oldlen:
+            self.disorganize()
 
     @property
     def width(self):
@@ -364,12 +379,20 @@ class PointCloud:
         '''
         return self.__sensor_origin
 
+    @sensor_origin.setter
+    def sensor_origin(self, value):
+        self.__sensor_origin = value
+
     @property
     def sensor_orientation(self):
         '''
         Sensor acquisition pose (rotation).
         '''
         return self.__sensor_orientation
+
+    @sensor_orientation.setter
+    def sensor_orientation(self, value):
+        self.__sensor_orientation = value
 
     @property
     def fields(self):
@@ -415,6 +438,8 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
         fields, predict = _cast_fields_to_tuples(fields)
         if predict:
             raise TypeError('Specifying fields of null cloud with only names')
+        if len(set([name for name, _ in fields]).intersection(set(self.names))) > 0:
+            raise TypeError("Fields with given names already exist.")
 
         nfields = self.__fields + fields
         ndata = np.empty(self.__points.shape, dtype=nfields)
@@ -464,6 +489,8 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
         fields, predict = _cast_fields_to_tuples(fields)
         if predict:
             raise TypeError('Specifying fields of null cloud with only names')
+        if len(set([name for name, _ in fields]).intersection(set(self.names))) > 0:
+            raise TypeError("Fields with given names already exist.")
 
         #Support multiple insert at the same time
         nfields = list(self.__fields)
@@ -513,6 +540,13 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
         self.__fields = nfields
 
     def pop_fields(self, names):
+        '''
+        Remove fields from the pointcloud and return the values respectively
+
+        # Returns
+            values: numpy.array
+                data of deleted fields, stored in a record array
+        '''
         points = np.array(self[names])
         del self[names]
         return points
@@ -543,3 +577,4 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
         return np.array(data.view(dtype).reshape(data.shape + (-1,)), copy=copy)
 
 #TODO: add support for child fields access. e.g. rgba.a, can be accessed by ['a'] if no violation
+#TODO: provide options for determine whether allocate space when initialized with null point cloud

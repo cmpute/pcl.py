@@ -1,6 +1,10 @@
-import pytest
+'''
+Tests of pcl.pointcloud
+'''
+
 import os
 import sys
+import pytest
 sys.path.append(os.path.dirname(__file__) + '/' + os.path.pardir)
 import pcl
 
@@ -34,7 +38,8 @@ def test_build_cloud():
     cloud = pcl.PointCloud(width=2, height=2, fields=[('x', 'i1'), ('y', 'f2'), ('z', 'f2')])
     cloud = pcl.PointCloud(data, width=2, height=2, fields=('x', 'y', 'z'))
     cloud = pcl.PointCloud(data, width=2, height=2, fields=[('x', 'i1'), ('y', 'f2'), ('z', 'f2')])
-    cloud = pcl.PointCloud(data, width=2, height=2, fields=[('x', 1, 'I'), ('y', 'f', 2), ('z', 2, 'F')])
+    cloud = pcl.PointCloud(data, width=2, height=2,
+                           fields=[('x', 1, 'I'), ('y', 'f', 2), ('z', 2, 'F')])
     cloud = pcl.PointCloud(cloud, cloud.data.dtype)
     assert cloud.fields == [('x', 'i1'), ('y', 'f2'), ('z', 'f2')]
 
@@ -71,6 +76,9 @@ def test_cloud_field_operations():
     '''
     cloud = test_build_cloud()
 
+    with pytest.raises(TypeError):
+        cloud.append_fields([('x', 'i2')], 4)
+        cloud.insert_fields([('x', 'i1')], [3])
     assert cloud.to_ndarray(['y', 'z']).tolist() == [[2, 3], [5, 6], [8, 9], [11, 12]]
     cloud.append_fields([('w', 'i2')], 4)
     assert cloud.names == ['x', 'y', 'z', 'w']
@@ -82,13 +90,17 @@ def test_cloud_field_operations():
     del cloud['w']
     del cloud['a', 'b']
     assert cloud.names == ['x', 'y', 'z', 't']
-    cloud.insert_fields([('r', 'i1'), ('s', 'i2'), ('u', 'f8')], (3, 3, 4), {'r':[0, 0, 0, 0], 's':[1, 1, 1, 1]})
+    cloud.insert_fields([('r', 'i1'), ('s', 'i2'), ('u', 'f8')], (3, 3, 4), \
+                        {'r':[0, 0, 0, 0], 's':[1, 1, 1, 1]})
     assert cloud.names == ['x', 'y', 'z', 'r', 's', 't', 'u']
     del cloud['x', 'y', 'z', 'u']
     cloud.insert_fields([('k', 'f8')], [3], 6)
-    cloud.insert_fields([('a', 'i2'), ('b', 'i4')], [4, 4], [[1,2,3,4], [5,6,7,8]])
+    cloud.insert_fields([('a', 'i2'), ('b', 'i4')], [4, 4], \
+                        [[1, 2, 3, 4], [5, 6, 7, 8]])
     del cloud['a', 'b']
-    cloud.insert_fields([('a', 'i2'), ('b', 'i4')], [4, 4], pcl.np.array([(1,5), (2,6), (3,7), (4,8)], dtype=[('a', 'i2'), ('b', 'i4')]))
+    cloud.insert_fields([('a', 'i2'), ('b', 'i4')], [4, 4], \
+                        pcl.np.array([(1, 5), (2, 6), (3, 7), (4, 8)], \
+                                     dtype=[('a', 'i2'), ('b', 'i4')]))
     assert cloud.names == ['r', 's', 't', 'k', 'a', 'b']
 
 
