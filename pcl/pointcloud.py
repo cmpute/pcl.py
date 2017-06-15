@@ -127,12 +127,12 @@ class PointCloud:
             height = abs(height)
             self.__width = width
             self.__height = height
-            self.__sensor_origin = np.zeros(4)
+            self.__sensor_origin = np.zeros(4, dtype='i1')
             self.__sensor_orientation = Quaternion.identity()
 
             # adjust points with width and height automatically
             if width is 0:
-                if len(self.__points) > 0:
+                if len(self.__points) > 0: 
                     width = len(self.__points)
                     height = 1
                 elif height > 0:
@@ -160,7 +160,7 @@ class PointCloud:
         copypc.append(pointcloud)
         return copypc
 
-    def __array__(self):
+    def __array__(self, *_):
         # support conversion to ndarray
         return self.__points
 
