@@ -5,6 +5,7 @@ Tests of pcl.pointcloud
 import os
 import sys
 import pytest
+import numpy as np
 sys.path.append(os.path.dirname(__file__) + '/' + os.path.pardir)
 import pcl
 
@@ -99,9 +100,14 @@ def test_cloud_field_operations():
                         [[1, 2, 3, 4], [5, 6, 7, 8]])
     del cloud['a', 'b']
     cloud.insert_fields([('a', 'i2'), ('b', 'i4')], [4, 4], \
-                        pcl.np.array([(1, 5), (2, 6), (3, 7), (4, 8)], \
+                        np.array([(1, 5), (2, 6), (3, 7), (4, 8)], \
                                      dtype=[('a', 'i2'), ('b', 'i4')]))
     assert cloud.names == ['r', 's', 't', 'k', 'a', 'b']
+
+    corddata = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+    cloud = pcl.PointCloud(corddata, ['x', 'y', 'z'])
+    assert cloud.xyz.dtype == np.dtype(int)
+    assert cloud.xyz.tolist() == corddata
 
 
 if __name__ == '__main__':

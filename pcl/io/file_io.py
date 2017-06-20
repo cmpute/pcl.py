@@ -301,7 +301,6 @@ class PCDReader(_FileReader):
         cloud = PointCloud(**params)
 
         if 'viewpoint' in header:
-            # TODO: Need check the conversion
             cloud.sensor_orientation = Quaternion(header['viewpoint'][3:])
             cloud.sensor_origin = np.array(header['viewpoint'][:3])
 

@@ -65,6 +65,13 @@ def test_pcd_writer():
     buf.close()
     assert (compare.data == cloud.data).all()
 
+    #global function test
+    buf = BytesIO()
+    pio.savepcd(buf, cloud)
+    compare = pio.loadpcd(buf)
+    buf.close()
+    assert (compare.data == cloud.data).all()
+
 if __name__ == '__main__':
     pytest.main([__file__, '-s'])
 # test_pcd_writer()

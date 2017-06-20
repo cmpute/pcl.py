@@ -1,12 +1,20 @@
 '''
 Implementation of following files:
+    pcl/common/include/pcl/impl/point_types.hpp
     pcl/common/include/pcl/point_cloud.h
     pcl/common/include/pcl/PCLPointField.h
     pcl/common/include/pcl/point_traits.h
+    pcl/common/include/pcl/point_types.h
+    pcl/common/include/pcl/register_point_struct.h
+    pcl/common/include/pcl/point_traits.h
 
 Following files are abandoned:
-    pcl/common/src/pcl_base.cpp
+    pcl/common/include/pcl/impl/instantiate.hpp
+    pcl/common/include/pcl/impl/pcl_base.hpp
+    pcl/common/include/pcl/point_types_conversion.h
     pcl/common/include/pcl/PCLPointCloud2.h
+    pcl/common/include/pcl/pcl_base.h
+    pcl/common/src/pcl_base.cpp
 '''
 from __future__ import absolute_import
 
@@ -102,7 +110,7 @@ class PointCloud:
             self.__width = points.width
             self.__height = points.height
             self.__sensor_origin = np.array(points.sensor_origin, copy=copy)
-            self.__sensor_orientation = Quaternion(points.sensor_orientation, copy=copy)
+            self.__sensor_orientation = Quaternion(points.sensor_orientation)
 
         else:
             self.__fields, predict = _cast_fields_to_tuples(fields)
@@ -132,7 +140,7 @@ class PointCloud:
 
             # adjust points with width and height automatically
             if width is 0:
-                if len(self.__points) > 0: 
+                if len(self.__points) > 0:
                     width = len(self.__points)
                     height = 1
                 elif height > 0:
@@ -360,7 +368,7 @@ class PointCloud:
         '''
         try:
             return not np.isnan(self.__points.tolist()).any()
-        except:
+        except TypeError: # non-number data type
             return False
 
     @property
@@ -576,5 +584,37 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
                 dtype = types[0]
         return np.array(data.view(dtype).reshape(data.shape + (-1,)), copy=copy)
 
-#TODO: add support for child fields access. e.g. rgba.a, can be accessed by ['a'] if no violation
-#TODO: provide options for determine whether allocate space when initialized with null point cloud
+    @property
+    def xyz(self):
+        '''
+        Get coordinate array of the point cloud, data type will be infered from data
+        '''
+        return self.to_ndarray(['x', 'y', 'z'])
+
+
+    @property
+    def rgb(self):
+        '''
+        Get the color field of the pointcloud, the property returns unpacked rgb values
+            (float rgb -> uint r,g,b)
+        '''
+        # struct definition from PCL
+        struct = np.dtype([('b', 'i1'), ('g', 'i1'), ('r', 'i1'), ('a', 'i1')])
+        return self.data['rgb'].view(struct)[['r', 'g', 'b']]
+
+    @property
+    def rgba(self):
+        '''
+        Get the color field of the pointcloud, the property returns unpacked rgba values
+            (float rgb -> uint r,g,b,a)
+        '''
+        # struct definition from PCL
+        struct = np.dtype([('b', 'i1'), ('g', 'i1'), ('r', 'i1'), ('a', 'i1')])
+        return self.data['rgba'].view(struct)
+
+    @property
+    def normal(self):
+        '''
+        Get normal vectors of the point cloud, data type will be infered from data
+        '''
+        return self.to_ndarray(['normal_x', 'normal_y', 'normal_z'])
