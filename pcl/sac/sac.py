@@ -1,11 +1,16 @@
 '''
 Implementation of following files:
     pcl/sample_consensus/include/pcl/sample_consensus/sac.h
+	pcl/sample_consensus/src/sac.cpp
+
+Following files are abandoned:
+    pcl/sample_consensus/include/pcl/sample_consensus/method_types.h
 '''
 
 import abc
 import logging
 import math
+from sys import float_info
 import numpy as np
 from numpy.random import RandomState
 
@@ -18,7 +23,8 @@ class SampleConsensus(metaclass=abc.ABCMeta):
     def __init__(self, model,
                  random=False,
                  probability=.99,
-                 threshold=float('inf'), max_iterations=1000):
+                 threshold=float('inf'),
+                 max_iterations=1000):
         self._sac_model = model
         self.probability = probability
         self.distance_threshold = threshold
@@ -89,7 +95,7 @@ class SampleConsensus(metaclass=abc.ABCMeta):
         '''
         if self._sac_model is None:
             raise ValueError('null model!')
-        logger = logging.getLogger('pcl.sac.SampleConsensus.refineModel')
+        logger = logging.getLogger('pcl.sac.SampleConsensus.refine_model')
 
         inlier_distance_threshold_sqr = self.distance_threshold * self.distance_threshold
         error_threshold = self.distance_threshold
@@ -193,7 +199,71 @@ class RandomSampleConsensus(SampleConsensus):
     Applications to Image Analysis and Automated Cartography",
     Martin A. Fischler and Robert C. Bolles, Comm. Of the ACM 24: 381–395, June 1981.
     '''
-    pass
+    def __init__(self, model, threshold=float('inf')):
+        super().__init__(model, threshold=threshold)
+        self.max_iterations = 10000
+
+    def compute_model(self):
+        '''
+        Compute the actual model and find the inliers
+        '''
+        logger = logging.getLogger('pcl.sac.RandomSampleConsensus.compute_model')
+        if self.distance_threshold == float('inf'):
+            raise ValueError('no threshold set')
+
+        iterations = 0
+        n_best_inliers_count = float('inf')
+        k = 1
+
+        log_probability = math.log(1 - self.probability)
+        one_over_indices = 1 / len(self._sac_model.indices)
+
+        skipped_count = 0
+        # supress infinite loops by just allowing 10 x maximum allowed
+        # iterations for invalid model parameters!
+        max_skip = self.max_iterations * 10
+
+        while iterations < k and skipped_count < max_skip:
+            selection = self._sac_model.get_samples()
+            if not selection:
+                raise ValueError('No samples could be selected!')
+
+            success, model_coefficients = self._sac_model.compute_model_coefficients(selection)
+            if not success:
+                skipped_count += 1
+                continue
+
+            n_inliers_count = self._sac_model.count_within_distance(model_coefficients,
+                                                                    self.distance_threshold)
+
+            if n_inliers_count > n_best_inliers_count:
+                # Save the current model/inlier/coefficients selection as being the best so far
+                n_best_inliers_count = n_inliers_count
+                self._model = selection
+                self._model_coefficients = model_coefficients
+
+                # Compute the k parameter (k=log(z)/log(1-w^n))
+                w = n_best_inliers_count * one_over_indices
+                p_no_outliers = 1 - w**len(selection)
+                p_no_outliers = max(p_no_outliers, float_info.epsilon)
+                p_no_outliers = min(p_no_outliers, 1 - float_info.epsilon)
+                k = log_probability / math.log(p_no_outliers)
+
+            iterations += 1
+            logger.debug('Trial %d out of %f: %d inliers (best is: %d so far).',
+                         iterations, k, n_best_inliers_count, n_best_inliers_count)
+
+            if iterations > self.max_iterations:
+                logger.debug('RANSAC reached the maximum number of trials.')
+
+        logger.debug('Model: %lu size, %d inliers.', len(self._model), n_best_inliers_count)
+
+        if not self._model:
+            self._inliers = []
+            return False
+
+        self._inliers = self._sac_model.select_within_distance(model_coefficients, self.threshold)
+        return True
 
 class RandomizedRandomSampleConsensus(SampleConsensus):
     '''
@@ -204,7 +274,7 @@ class RandomizedRandomSampleConsensus(SampleConsensus):
     RRANSAC is useful in situations where most of the data samples belong to the model,
     and a fast outlier rejection algorithm is needed.
     '''
-    pass
+    pass # TODO: Not implemented
 
 class MEstimatorSampleConsensus(SampleConsensus):
     '''
@@ -213,7 +283,7 @@ class MEstimatorSampleConsensus(SampleConsensus):
     to estimating image geometry", P.H.S. Torr and A. Zisserman,
     Computer Vision and Image Understanding, vol 78, 2000.
     '''
-    pass
+    pass # TODO: Not implemented
 
 class RandomizedEstimatorSampleConsensus(SampleConsensus):
     '''
@@ -224,7 +294,7 @@ class RandomizedEstimatorSampleConsensus(SampleConsensus):
     RMSAC is useful in situations where most of the data samples belong to the model,
     and a fast outlier rejection algorithm is needed.
     '''
-    pass
+    pass # TODO: Not implemented
 
 class ProgressiveSampleConsensus(SampleConsensus):
     '''
@@ -232,7 +302,7 @@ class ProgressiveSampleConsensus(SampleConsensus):
     algorithm, as described in: "Matching with PROSAC – Progressive Sample Consensus",
     Chum, O. and Matas, J.G., CVPR, I: 220-226 2005.
     '''
-    pass
+    pass # TODO: Not implemented
 
 class LeastMedianSquares(SampleConsensus):
     '''
@@ -243,7 +313,7 @@ class LeastMedianSquares(SampleConsensus):
     (http://homepages.inf.ed.ac.uk/rbf/CVonline/LOCAL_COPIES/FUSIELLO4/tutorial.html#x1-520007)
     for more details.
     '''
-    pass
+    pass # TODO: Not implemented
 
 class MaximumLikelihoodSampleConsensus(SampleConsensus):
     '''
@@ -255,7 +325,7 @@ class MaximumLikelihoodSampleConsensus(SampleConsensus):
     MLESAC is useful in situations where most of the data samples belong to the model,
     and a fast outlier rejection algorithm is needed.
     '''
-    pass
+    pass # TODO: Not implemented
 
 
 # alias

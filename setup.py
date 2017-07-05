@@ -31,6 +31,7 @@ setup(name='PyPCL',
       install_requires=['numpy', 'numpy-quaternion'],
       extras_require={
           'compress': ['lzf'],
+          'search': ['nmslib'],
           'test': ['pytest'],
       },
       packages=find_packages()) # 'pcl'

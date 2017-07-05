@@ -9,12 +9,10 @@ Implementation of following files:
     pcl/common/include/pcl/point_traits.h
 
 Following files are abandoned:
+    pcl/common/include/pcl/impl/cloud_iterator.hpp
     pcl/common/include/pcl/impl/instantiate.hpp
-    pcl/common/include/pcl/impl/pcl_base.hpp
     pcl/common/include/pcl/point_types_conversion.h
     pcl/common/include/pcl/PCLPointCloud2.h
-    pcl/common/include/pcl/pcl_base.h
-    pcl/common/src/pcl_base.cpp
 '''
 from __future__ import absolute_import
 
