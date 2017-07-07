@@ -33,8 +33,8 @@ class Search(_CloudBase, metaclass=abc.ABCMeta):
     level dimensional search, please refer to the libpcl_kdtree module.
     '''
 
-    def __init__(self, sort_results=False):
-        super().__init__()
+    def __init__(self, cloud=None, indices=None, sort_results=False):
+        super().__init__(cloud, indices)
         self._sort_results = sort_results
 
     @property
@@ -102,8 +102,8 @@ class BruteForceSearch(Search):
     '''
     Implementation of a simple brute force search algorithm.
     '''
-    def __init__(self, sort_results=False):
-        super().__init__(sort_results)
+    def __init__(self, cloud=None, indices=None, sort_results=False):
+        super().__init__(cloud, indices, sort_results)
 
     def nearestk_search(self, point, k):
         '''
@@ -125,32 +125,26 @@ class BruteForceSearch(Search):
         if k < 1:
             return [], []
 
-        points = self._input.xyz
-        if self._indices is not None:
-            points = points[self._indices]
+        # nan values won't break the method
+        indices = np.array(self._indices, copy=False)
+        points = self._input.xyz[indices]
 
-        points -= point
-        points = np.sum(points * points, axis=1)
-        if len(points) <= k:
-            if self._indices is not None:
-                k_indices = self._indices
-            else:
-                k_indices = np.arange(len(points))
-            k_sqr_distances = points
+        dist = points - point
+        dist = np.sum(dist * dist, axis=1)
+        if len(dist) <= k:
+            k_indices = indices
+            k_distances = dist
         else:
-            parts = points.argpartition(k)[:k]
-            if self._indices is not None:
-                k_indices = self._indices[parts]
-            else:
-                k_indices = parts
-            k_sqr_distances = points[parts]
+            parts = dist.argpartition(k)[:k]
+            k_indices = indices[parts]
+            k_distances = dist[parts]
 
         if self._sort_results:
-            seq = k_sqr_distances.argsort()
+            seq = k_distances.argsort()
             k_indices = k_indices[seq]
-            k_sqr_distances = k_sqr_distances[seq]
+            k_distances = k_distances[seq]
 
-        return k_indices, k_sqr_distances
+        return k_indices, np.sqrt(k_distances)
 
     def radius_search(self, point, radius, max_nn=0):
         '''
@@ -173,24 +167,19 @@ class BruteForceSearch(Search):
         k_sqr_distances : list of float
             The resultant squared distances to the neighboring points
         '''
+        # nan values won't break the method
+        indices = np.array(self._indices, copy=False)
+        points = self._input.xyz[indices]
 
-        points = self._input.xyz
-        if self._indices is not None:
-            points = points[self._indices]
-
-        points -= point
-        points = np.sum(points * points, axis=1)
-        predicate = points < radius * radius
-
-        if self._indices is not None:
-            k_indices = self._indices[predicate]
-        else:
-            k_indices = np.arange(len(points))[predicate]
-        k_sqr_distances = points[predicate]
+        dist = points - point
+        dist = np.sum(dist * dist, axis=1)
+        predicate = dist < radius * radius
+        k_indices = indices[predicate]
+        k_distances = dist[predicate]
 
         if self._sort_results:
-            seq = k_sqr_distances.argsort()
+            seq = k_distances.argsort()
             k_indices = k_indices[seq]
-            k_sqr_distances = k_sqr_distances[seq]
+            k_distances = k_distances[seq]
 
-        return k_indices, k_sqr_distances
+        return k_indices, np.sqrt(k_distances)

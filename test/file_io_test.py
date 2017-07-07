@@ -10,25 +10,27 @@ sys.path.append(os.path.dirname(__file__) + '/' + os.path.pardir)
 import pcl
 import pcl.io as pio
 
+TEST_ROOT = os.path.dirname(__file__) + '/' # 'test/'
+
 def test_pcd_reader():
     '''
     Test PCDReader
     '''
     reader = pio.PCDReader()
-    meta = reader.read_header('test/data/cturtle.pcd')
+    meta = reader.read_header(TEST_ROOT + 'data/cturtle.pcd')
     assert meta['data_type'] == 'binary_compressed'
     assert reader.check_header(meta)
 
     # ascii
-    pcd, _ = reader.read('test/data/curve2d.pcd')
+    pcd, _ = reader.read(TEST_ROOT + 'data/curve2d.pcd')
     assert len(pcd) == 51
     assert pcd.names == ['x', 'y', 'z']
     # binary
-    pcd, _ = reader.read('test/data/curve2d_binary.pcd')
+    pcd, _ = reader.read(TEST_ROOT + 'data/curve2d_binary.pcd')
     assert len(pcd) == 110
     assert pcd.names == ['x', 'y', 'z']
     # binary_compressed
-    pcd, _ = reader.read('test/data/brisk_image.pcd')
+    pcd, _ = reader.read(TEST_ROOT + 'data/brisk_image.pcd')
     assert len(pcd) == 327680
     assert pcd.names == ['rgba']
 

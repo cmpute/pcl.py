@@ -12,9 +12,9 @@ Following files are abandoned:
 import abc
 import logging
 import numpy as np
-from numpy.linalg import norm
+from numpy.linalg import norm, eig
 from numpy.random import RandomState
-from ..common import _CloudBase
+from ..common import _CloudBase, compute_mean_and_covariance_matrix
 from ..pointcloud import PointCloud
 
 class SampleConsensusModel(_CloudBase, metaclass=abc.ABCMeta):
@@ -24,9 +24,9 @@ class SampleConsensusModel(_CloudBase, metaclass=abc.ABCMeta):
     '''
     def __init__(self, cloud, indices=None, random=False):
         super().__init__(cloud, indices=None)
-        self._shuffled_indices = indices
         self._radius_limits = (-float('inf'), float('inf')) # use tuple to represent interval
-        self.samples_max_dist = 0 # XXX: Whether it should be a private member
+        # XXX: Whether it should be a private member
+        self.samples_max_dist = 0 # samples_radius_
         self._samples_radius_search = None
         self._error_sqr_dists = []
         # The maximum number of samples to try until we get a good one
@@ -71,42 +71,12 @@ class SampleConsensusModel(_CloudBase, metaclass=abc.ABCMeta):
         Set the maximum distance allowed when drawing random samples
         '''
         try:
-            _, _ = value
+            a, b = value
+            a = float(a)
+            b = float(b)
         except:
             raise ValueError('the radius limits should be a tuple of (min_radius, max_radius)')
-        self._radius_limits = value
-
-    @property
-    def input_cloud(self):
-        '''
-        Get a reference to the input point cloud dataset.
-        '''
-        return self._input
-
-    @input_cloud.setter
-    def input_cloud(self, value):
-        '''
-        Provide a reference to the input dataset
-        '''
-        self._input = value
-        if self._indices is not None and len(self._indices) == 0:
-            self._indices = [i for i in range(len(value))]
-        self._shuffled_indices = self._indices
-
-    @property
-    def indices(self):
-        '''
-        Get a reference to the vector of indices used.
-        '''
-        return self._indices
-
-    @indices.setter
-    def indices(self, value):
-        '''
-        Provide a reference to the vector of indices that represents the input data.
-        '''
-        self._indices = list(value)
-        self._shuffled_indices = self._indices
+        self._radius_limits = (a, b)
 
     def get_samples(self):
         '''
@@ -290,7 +260,7 @@ class SampleConsensusModel(_CloudBase, metaclass=abc.ABCMeta):
         sample : list of int
             sample the set of indices of target_ to analyze
         '''
-        pass # TODO: Not Implemented
+        return self._rng.choice(self._indices, self.sample_size)
 
     def _draw_index_sample_radius(self):
         '''
@@ -301,7 +271,13 @@ class SampleConsensusModel(_CloudBase, metaclass=abc.ABCMeta):
         sample : list of int
             sample the set of indices of target_ to analyze
         '''
-        pass # TODO: Not Implemented
+        randfirst = self._input[self._indices[self._rng.randint(self._indices)]]
+        indices, _ = self._samples_radius_search.radius_search(randfirst, self.samples_max_dist)
+        if len(indices) < self.sample_size - 1:
+            # radius search failed, make an invalid model
+            return np.tile(randfirst, (self.sample_size, 1))
+        else:
+            return self._rng.choice(indices, self.sample_size)
 
     def _is_model_valid(self, model_coefficients):
         '''
@@ -322,7 +298,7 @@ class SampleConsensusModel(_CloudBase, metaclass=abc.ABCMeta):
 
         # Parameters
         samples : list of int
-            The resultant index samples
+            The indices of query samples
         '''
         pass
 
@@ -347,11 +323,11 @@ class SampleConsensusModelPlane(SampleConsensusModel):
 
         # Parameters
         samples : list of int
-            The resultant index samples
+            The indices of query samples
         '''
         if len(samples) < 3:
             return False
-        cloud = PointCloud(samples, copy=False).xyz
+        cloud = self._input.xyz[samples]
         dy1dy2 = (cloud[1] - cloud[0]) / (cloud[2] - cloud[0])
         # check colinearity of the three points
         return dy1dy2[0] != dy1dy2[1] or dy1dy2[1] != dy1dy2[2]
@@ -375,7 +351,7 @@ class SampleConsensusModelPlane(SampleConsensusModel):
         if not self._is_sample_good(samples):
             return False, None
 
-        cloud = PointCloud(samples, copy=False).xyz
+        cloud = self._input.xyz[samples]
         p1p0 = cloud[1] - cloud[0]
         p2p0 = cloud[2] - cloud[0]
 
@@ -401,10 +377,165 @@ class SampleConsensusModelPlane(SampleConsensusModel):
             raise ValueError('Invalid number of model coefficients given.')
 
         points = self._input.xyz[self._indices]
-        points = np.append(points, np.ones(len(points)), axis=1)
-        return np.abs(np.dot(model_coefficients, points))
+        # points = np.append(points, np.ones(len(points)), axis=1)
+        return np.abs(np.dot(points, model_coefficients[:3]) + model_coefficients[3])
 
-    # TODO: Haven't implemented completely
+    def select_within_distance(self, model_coefficients, threshold):
+        '''
+        Select all the points which respect the given model coefficients as inliers.
+
+        # Parameters
+        model_coefficients : coefficients array
+            The coefficients of a model that we need to compute distances to
+        threshold : float
+            A maximum admissible distance threshold for determining the inliers from the outliers
+
+        # Returns
+        inliers : list of int
+            The resultant model inliers
+        '''
+        distance = self.get_distance_to_model(model_coefficients)
+        predicate = distance < threshold
+        self._error_sqr_dists = distance[predicate]
+        return np.array(self._indices, copy=False)[predicate]
+
+    def count_within_distance(self, model_coefficients, threshold):
+        '''
+        Count all the points which respect the given model coefficients as inliers.
+
+        # Parameters
+        model_coefficients : coefficients array
+            The coefficients of a model that we need to compute distances to
+        threshold : float
+            A maximum admissible distance threshold for determining the inliers from the outliers
+
+        # Returns
+        count : int
+            The resultant number of inliers
+        '''
+        distance = self.get_distance_to_model(model_coefficients)
+        return np.sum(distance < threshold)
+
+    def optimize_model_coefficients(self, inliers, model_coefficients):
+        '''
+        Recompute the model coefficients using the given inlier set and return them to the user.
+
+        These are the coefficients of the model after refinement
+        (e.g., after SVD)
+
+        # Parameters
+        inliers : list of int
+            The data inliers supporting the model
+        model_coefficients : coefficients array
+            The initial guess for the model coefficients
+
+        # Returns
+        optimized_coefficients : coefficients array
+            The resultant recomputed coefficients after non-linear optimization
+        '''
+        logger = logging.getLogger('pcl.sac.SampleConsensusModel.optimize_model_coefficients')
+        if len(model_coefficients) != self.model_size:
+            logger.error('Invalid number of model coefficients given (%lu).',
+                         len(model_coefficients))
+            return model_coefficients
+        if len(inliers) <= self.sample_size:
+            logger.error('Not enough inliers found to optimize model coefficients (%lu)!',
+                         len(model_coefficients))
+            return model_coefficients
+
+        ###### Followings are implemetation of original PCL using PCA ######
+
+        # covariance_matrix, xyz_centroid = compute_mean_and_covariance_matrix(self._input, inliers)
+        # eigen_value, eigen_vector = eig(covariance_matrix)
+        # smallest = np.argmin(eigen_value)
+        # eigen_value = eigen_value[smallest]
+        # eigen_vector = eigen_vector[:, smallest]
+
+        # optimized_coefficients = eigen_vector.tolist()
+        # optimized_coefficients.append(-np.dot(optimized_coefficients + [0], xyz_centroid))
+
+        # Use Least-Squares to fit the plane through all the given sample points
+        # and find out its coefficients
+
+        cloud = self._input.xyz
+        if inliers is not None:
+            cloud = cloud[inliers]
+
+        constant = -np.ones(len(cloud))
+        optimized_coefficients, *_ = np.linalg.lstsq(cloud, constant)
+        optimized_coefficients = optimized_coefficients.tolist()
+        optimized_coefficients.append(-np.dot(optimized_coefficients, cloud[0]))
+
+        if not self._is_model_valid(optimized_coefficients):
+            logger.warning('Optimized coefficients invalid, returning original one')
+            return model_coefficients
+
+        return optimized_coefficients
+
+    def project_points(self, inliers, model_coefficients, copy_data_fields=True):
+        '''
+        Create a new point cloud with inliers projected onto the model.
+
+        # Parameters
+        inliers : list of int
+            The data inliers that we want to project on the model
+        model_coefficients : coefficients array
+            The coefficients of a model
+        copy_data_fields : bool
+            set to true if we need to copy the other data fields
+
+        # Returns
+        projected_points : PointCloud
+            The resultant projected points
+        '''
+        if len(model_coefficients) != self.model_size:
+            logger = logging.getLogger('pcl.sac.SampleConsensusModel.optimize_model_coefficients')
+            logger.error('Invalid number of model coefficients given (%lu).',
+                         len(model_coefficients))
+            return None
+
+        model_coefficients = np.array(model_coefficients, copy=False)
+        model_coefficients = model_coefficients / norm(model_coefficients[:3])
+        normvec = model_coefficients[:3]
+
+        points = self._input.xyz[inliers]
+        distance_to_plane = np.dot(points, normvec) + model_coefficients[3]
+        project_points = points - normvec * distance_to_plane[:, np.newaxis]
+
+        if copy_data_fields:
+            cloud = PointCloud(self._input[inliers], fields=self._input.fields, copy=True)
+            cloud['x'] = project_points[:, 0]
+            cloud['y'] = project_points[:, 1]
+            cloud['z'] = project_points[:, 2]
+        else:
+            cloud = PointCloud(project_points, fields=['x', 'y', 'z'], copy=False)
+
+        return cloud
+
+    def do_sample_verify_model(self, indices, model_coefficients, threshold):
+        '''
+        Verify whether a subset of indices verifies a given set of model coefficients.
+
+        # Parameters
+        indices : list of int
+            The data indices that need to be tested against the model
+        model_coefficients : coefficients array
+            The plane model coefficients
+        threshold : float
+            A maximum admissible distance threshold for determining the inliers from the outliers
+
+        # Returns
+        result : bool
+        '''
+        if len(model_coefficients) != self.model_size:
+            logger = logging.getLogger('pcl.sac.SampleConsensusModel.optimize_model_coefficients')
+            logger.error('Invalid number of model coefficients given (%lu).',
+                         len(model_coefficients))
+            return False
+
+        points = self._input.xyz[indices]
+        distances = np.abs(np.dot(points, model_coefficients[:3]) + model_coefficients[3])
+        return not (distances > threshold).any()
 
 # alias
 SACMODEL_PLANE = SampleConsensusModelPlane

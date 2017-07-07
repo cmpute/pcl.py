@@ -113,13 +113,32 @@ class PointCloud:
         else:
             self.__fields, predict = _cast_fields_to_tuples(fields)
             if points is not None:
-                points = [tuple(point) for point in points]
-                if predict:
-                    self.__points = np.rec.fromrecords(points, names=self.__fields)
+                # if converting is not essential
+                direct = False
+                try:
+                    dtype = np.dtype(self.__fields)
+                    if dtype == points.dtype:
+                        self.__points = points
+                        self.__fields = fields
+                        direct = True
+                except:
+                    pass
+
+                if not fields and isinstance(points, np.recarray):
+                    self.__points = np.array(points, copy=copy)
                     self.__fields = [(name, _numpy_to_txt(self.__points.dtype[name]))
-                                     for name in self.__fields]
-                else:
-                    self.__points = np.array(points, dtype=self.__fields, copy=copy)
+                                     for name in self.__points.dtype.names]
+                    direct = True
+
+                if not direct:
+                    # converting to tuple and then to ndarray
+                    points = [tuple(point) for point in points]
+                    if predict:
+                        self.__points = np.rec.fromrecords(points, names=self.__fields)
+                        self.__fields = [(name, _numpy_to_txt(self.__points.dtype[name]))
+                                         for name in self.__fields]
+                    else:
+                        self.__points = np.array(points, dtype=self.__fields, copy=copy)
             else:
                 if predict:
                     raise TypeError('Specifying fields of null cloud with only names')
@@ -407,7 +426,7 @@ class PointCloud:
         The format of fields is a list of tuples (name, descriptor)
             where the descriptor is nearly the same as numpy
         '''
-        return self.__fields
+        return list(self.__fields)
 
     @property
     def names(self):

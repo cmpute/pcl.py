@@ -47,7 +47,7 @@ class SampleConsensus(metaclass=abc.ABCMeta):
     @property
     def model(self):
         '''
-        Return the best model found so far.
+        Return indices of the points that build the best model found so far.
         '''
         return self._model
 
@@ -103,8 +103,8 @@ class SampleConsensus(metaclass=abc.ABCMeta):
         refine_iterations = 0
         inlier_changed, oscillating = False, False
         inliers_sizes = []
-        new_inliers, prev_inliers = [], []
-        new_model_coefficients = None
+        new_inliers = prev_inliers = self._inliers
+        new_model_coefficients = self._model_coefficients
         while True:
             # Optimize the model coefficients
             new_model_coefficients = self._sac_model\
@@ -113,9 +113,8 @@ class SampleConsensus(metaclass=abc.ABCMeta):
             inliers_sizes.append(len(prev_inliers))
 
             # Select the new inliers based on the optimized coefficients and new threshold
-            self._sac_model.select_within_distance(new_model_coefficients,
-                                                   error_threshold,
-                                                   new_inliers)
+            new_inliers = self._sac_model.select_within_distance(new_model_coefficients,
+                                                                 error_threshold)
             logger.debug('Number of inliers found (before/after): %lu/%lu, ' +
                          'with an error threshold of %g.',
                          len(prev_inliers), len(new_inliers), error_threshold)
@@ -135,7 +134,7 @@ class SampleConsensus(metaclass=abc.ABCMeta):
             inlier_changed = False
             prev_inliers, new_inliers = new_inliers, prev_inliers
             # If the number of inliers changed, then we are still optimizing
-            if len(new_inliers) > len(prev_inliers):
+            if len(new_inliers) != len(prev_inliers):
                 # Check if the number of inliers is oscillating in between two values
                 if len(inliers_sizes) >= 4:
                     if inliers_sizes[-1] == inliers_sizes[-3] and \
@@ -186,12 +185,6 @@ class SampleConsensus(metaclass=abc.ABCMeta):
         sample = self._rng.random_sample(nr_samples) * len(indices)
         return np.array(indices, copy=False)[sample.astype(int)]
 
-    def _rnd(self):
-        '''
-        Generate random number
-        '''
-        return self._rng.rand()
-
 class RandomSampleConsensus(SampleConsensus):
     '''
     RandomSampleConsensus represents an implementation of the RANSAC (RAndom SAmple Consensus)
@@ -212,7 +205,7 @@ class RandomSampleConsensus(SampleConsensus):
             raise ValueError('no threshold set')
 
         iterations = 0
-        n_best_inliers_count = float('inf')
+        n_best_inliers_count = 0
         k = 1
 
         log_probability = math.log(1 - self.probability)
@@ -225,7 +218,7 @@ class RandomSampleConsensus(SampleConsensus):
 
         while iterations < k and skipped_count < max_skip:
             selection = self._sac_model.get_samples()
-            if not selection:
+            if selection is None or len(selection) == 0:
                 raise ValueError('No samples could be selected!')
 
             success, model_coefficients = self._sac_model.compute_model_coefficients(selection)
@@ -258,11 +251,12 @@ class RandomSampleConsensus(SampleConsensus):
 
         logger.debug('Model: %lu size, %d inliers.', len(self._model), n_best_inliers_count)
 
-        if not self._model:
+        if self._model is None or len(self._model) == 0:
             self._inliers = []
             return False
 
-        self._inliers = self._sac_model.select_within_distance(model_coefficients, self.threshold)
+        self._inliers = self._sac_model.select_within_distance(model_coefficients,
+                                                               self.distance_threshold)
         return True
 
 class RandomizedRandomSampleConsensus(SampleConsensus):
