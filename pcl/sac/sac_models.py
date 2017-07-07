@@ -12,9 +12,9 @@ Following files are abandoned:
 import abc
 import logging
 import numpy as np
-from numpy.linalg import norm, eig
+from numpy.linalg import norm, lstsq
 from numpy.random import RandomState
-from ..common import _CloudBase, compute_mean_and_covariance_matrix
+from ..common import _CloudBase
 from ..pointcloud import PointCloud
 
 class SampleConsensusModel(_CloudBase, metaclass=abc.ABCMeta):
@@ -71,12 +71,12 @@ class SampleConsensusModel(_CloudBase, metaclass=abc.ABCMeta):
         Set the maximum distance allowed when drawing random samples
         '''
         try:
-            a, b = value
-            a = float(a)
-            b = float(b)
+            min_radius, max_radius = value
+            min_radius = float(min_radius)
+            max_radius = float(max_radius)
         except:
             raise ValueError('the radius limits should be a tuple of (min_radius, max_radius)')
-        self._radius_limits = (a, b)
+        self._radius_limits = (min_radius, max_radius)
 
     def get_samples(self):
         '''
@@ -462,7 +462,7 @@ class SampleConsensusModelPlane(SampleConsensusModel):
             cloud = cloud[inliers]
 
         constant = -np.ones(len(cloud))
-        optimized_coefficients, *_ = np.linalg.lstsq(cloud, constant)
+        optimized_coefficients, *_ = lstsq(cloud, constant)
         optimized_coefficients = optimized_coefficients.tolist()
         optimized_coefficients.append(-np.dot(optimized_coefficients, cloud[0]))
 

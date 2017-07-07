@@ -10,7 +10,7 @@ from __future__ import absolute_import
 
 import abc
 import re
-import warnings
+import logging
 import numpy as np
 from ..pointcloud import _cast_fields_to_tuples, PointCloud
 from ..quaternion import Quaternion
@@ -109,7 +109,8 @@ class PCDReader(_FileReader):
                 continue
             match = re.match(r'(\w+)\s+([\w\s\.]+)', line)
             if not match:
-                warnings.warn("warning: can't understand line: %s" % line)
+                logging.getLogger('pcl.io.PCDReader')\
+                       .warning("warning: can't understand line: %s", line)
                 continue
             key, value = match.group(1).lower(), match.group(2)
             if key == 'columns':
@@ -138,6 +139,7 @@ class PCDReader(_FileReader):
             valid : bool
                 True if no warning is sent out and no error is raised
         '''
+        logger = logging.getLogger('pcl.io.PCDReader.check_header')
         valid = True
 
         required = ('version', 'fields', 'size', 'width', 'height', 'points',
@@ -149,7 +151,7 @@ class PCDReader(_FileReader):
                 if key in essential:
                     raise TypeError(message)
                 else:
-                    warnings.warn(message)
+                    logger.warning(message)
                 valid = False
 
         if not len(header['fields']) == len(header['type']) == \
@@ -166,8 +168,8 @@ class PCDReader(_FileReader):
 
             for key in ('height', 'width', 'points'):
                 if not header[key] > 0:
-                    warnings.warn('%s must be positive number' % key.upper() +
-                                  'field value will be replaced by default value')
+                    logger.warning('%s must be positive number' % key.upper() +
+                                   'field value will be replaced by default value')
                     valid = False
 
             if header['width'] * header['height'] != header['points']:
@@ -463,8 +465,9 @@ DATA {data}
             uncompressed_size = len(uncompressed)
             buf = lzf.compress(uncompressed)
             if buf is None:
-                warnings.warn("compression didn't shrink the file during processing, \
-                               which may cause data loss")
+                logging.getLogger('pcl.io.PCDReader.write_binary_compressed')\
+                    .warning("compression didn't shrink the file during processing, \
+which may cause data loss")
                 buf = uncompressed
                 compressed_size = uncompressed_size
             else:
