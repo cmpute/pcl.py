@@ -30,7 +30,7 @@ def _check_file(file, offset=0, ext=None, fileopt='r'):
     fid.seek(offset, 0)
     return fid, own
 
-class _FileReader(metaclass=abc.ABCMeta):
+class FileReader(metaclass=abc.ABCMeta):
     '''
     Point Cloud Data (FILE) file format reader interface.
     Any (FILE) format file reader should implement its virtual methodes.
@@ -77,7 +77,7 @@ class _FileReader(metaclass=abc.ABCMeta):
         '''
         pass
 
-class _FileWriter(metaclass=abc.ABCMeta):
+class FileWriter(metaclass=abc.ABCMeta):
     '''
     Point Cloud Data (FILE) file format writer.
     Any (FILE) format file reader should implement its virtual methodes
@@ -97,7 +97,7 @@ class _FileWriter(metaclass=abc.ABCMeta):
         '''
         pass
 
-class PCDReader(_FileReader):
+class PCDReader(FileReader):
     '''
     Point Cloud Data (PCD) file format reader.
     '''
@@ -309,7 +309,7 @@ class PCDReader(_FileReader):
         ver = header['version'] if 'version' in header else .7
         return cloud, ver
 
-class PCDWriter(_FileWriter):
+class PCDWriter(FileWriter):
     '''
     Point Cloud Data (PCD) file format writer.
     '''

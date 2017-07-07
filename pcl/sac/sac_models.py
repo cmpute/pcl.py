@@ -538,4 +538,5 @@ class SampleConsensusModelPlane(SampleConsensusModel):
         return not (distances > threshold).any()
 
 # alias
-SACMODEL_PLANE = SampleConsensusModelPlane
+SACModel_Plane = SampleConsensusModelPlane
+SampleConsensusModel.register(SACModel_Plane)

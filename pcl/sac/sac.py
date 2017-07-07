@@ -330,3 +330,10 @@ RMSAC = RandomizedEstimatorSampleConsensus
 PROSAC = ProgressiveSampleConsensus
 LMedS = LeastMedianSquares
 MLESAC = MaximumLikelihoodSampleConsensus
+SampleConsensus.register(RANSAC)
+SampleConsensus.register(RRANSAC)
+SampleConsensus.register(MSAC)
+SampleConsensus.register(RMSAC)
+SampleConsensus.register(PROSAC)
+SampleConsensus.register(LMedS)
+SampleConsensus.register(MLESAC)
