@@ -464,7 +464,7 @@ class SampleConsensusModelPlane(SampleConsensusModel):
         constant = -np.ones(len(cloud))
         optimized_coefficients, *_ = lstsq(cloud, constant)
         optimized_coefficients = optimized_coefficients.tolist()
-        optimized_coefficients.append(-np.dot(optimized_coefficients, cloud[0]))
+        optimized_coefficients.append(1)
 
         if not self._is_model_valid(optimized_coefficients):
             logger.warning('Optimized coefficients invalid, returning original one')
