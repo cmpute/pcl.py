@@ -6,19 +6,19 @@ matrix:
           env: NUMPY=1.10
         - python: 3.5
           env: NUMPY=1.11 RUN_COVERAGE=yes
-        - os: osx
-          python: 3.6
-          env: NUMPY=1.12 BUILD_DOC=yes
         - python: 3.6
           env: NUMPY=1.13
+      # - os: osx
+      #   python: 3.6
+      #   env: NUMPY=1.12 BUILD_DOC=yes
 
 branches:
     only:
         - master
-        # - travis
+      # - travis
 
 before_install:
-    #### Install Miniconda ####
+  #### Install Miniconda ####
     - unamestr=`uname`
     - if [[ "$unamestr" == 'Linux' ]]; then
         wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -38,20 +38,25 @@ before_install:
 install:
     - conda create -q -y -n travis python=$TRAVIS_PYTHON_VERSION numpy=$NUMPY pytest
     - source activate travis
-    - pip install python-lzf numpy-quaternion
-    # install lzf
-    # - rm -rf ~/lzf
-    # - mkdir ~/lzf
-    # - pushd ~/lzf
-    # - wget https://github.com/teepark/python-lzf/archive/master.zip
-    # - unzip ./master.zip
-    # - pushd python-lzf-master
-    # - sudo python setup.py install -q
-    # - popd
-    # - popd
+    - pip install python-lzf
+  # - pip install https://github.com/moble/quaternion/archive/master.zip
+    - CI=false pip install numpy-quaternion
+  # - pip install coveralls pytest-cov pytest-warnings==0.2.0
+  # - pip install -r requirements.txt
+  # install lzf
+  # - rm -rf ~/lzf
+  # - mkdir ~/lzf
+  # - pushd ~/lzf
+  # - wget https://github.com/teepark/python-lzf/archive/master.zip
+  # - unzip ./master.zip
+  # - pushd python-lzf-master
+  # - sudo python setup.py install -q
+  # - popd
+  # - popd
 
 script:
     - py.test test/
 
 # after_success:
-    # coverage test here
+  # coverage test here
+  # - coveralls
