@@ -183,3 +183,5 @@ class BruteForceSearch(Search):
             k_distances = k_distances[seq]
 
         return k_indices, np.sqrt(k_distances)
+
+DefaultSearch = BruteForceSearch
