@@ -16,6 +16,7 @@ Following files are abandoned:
 '''
 from __future__ import absolute_import
 
+import re
 # from copy import copy as cp
 import numpy as np
 from .quaternion import Quaternion
@@ -40,7 +41,6 @@ def _numpy_to_txt(dtype):
 
 def _cast_fields_to_tuples(dtype):
     # Cast point fields into specific tuples that can be used by point cloud
-    import re
     ftuples = []
     predict = False
 
@@ -65,15 +65,26 @@ def _cast_fields_to_tuples(dtype):
 
     return ftuples, predict
 
+def _safe_len(array):
+    # avoid errors when coded like len(np.array(1))
+    if array.ndim == 0:
+        # occurs when only one point
+        assert array.size == 1
+        return array.size
+    else:
+        return len(array)
+
 class PointCloud:
     '''
     PointCloud represents the base class in PCL for storing collections of 3D points.
 
     # Operations
     Elements in the ndarray can be accessed by rows and columns (organized point cloud)
-        or by indices with [] indexer.
-    Fields can also be accessed and edited by field names with [] indexer
-    If you want to access raw data of a point, use 'array' property
+    or by indices with [] indexer.
+    Fields can also be accessed and edited by field names with [] indexer.
+    The indexer returns a **PointCloud object** with the querying data.
+
+    If you want to access raw data of a point, use 'data' property
     '''
     def __init__(self, points=None, fields=None, indices=None, width=0, height=0, copy=True):
         '''
@@ -102,29 +113,32 @@ class PointCloud:
                 Determine if the data from points are copied
         '''
 
-        if isinstance(points, type(self)):
+        if isinstance(points, type(self)): # copy initialization
             self.__points = np.array(points.data, copy=copy)
             self.__fields = list(points.fields) if copy else points.fields
             self.__width = points.width
             self.__height = points.height
             self.__sensor_origin = np.array(points.sensor_origin, copy=copy)
             self.__sensor_orientation = Quaternion(points.sensor_orientation)
-
         else:
             self.__fields, predict = _cast_fields_to_tuples(fields)
-            if points is not None:
-                # if converting is not essential
-                direct = False
-                try:
+            if points is not None and len(fields) == 1:
+                self.__points = np.array(points, fields=self.__fields, copy=copy)
+                if self.__points.ndim > 1:
+                    raise ValueError("the input points is not an one-dimensional array")
+            elif points is not None:
+                direct = False # whether converting is not essential
+                try: # judging whether its the same type
                     dtype = np.dtype(self.__fields)
                     if dtype == points.dtype:
-                        self.__points = points
+                        self.__points = np.array(points, copy=copy)
                         self.__fields = fields
                         direct = True
                 except:
                     pass
 
-                if not fields and isinstance(points, np.recarray):
+                # dtype directly from ndarray, only multi-fields array is allowed
+                if not fields and isinstance(points, np.ndarray) and len(points.dtype) > 0:
                     self.__points = np.array(points, copy=copy)
                     self.__fields = [(name, _numpy_to_txt(self.__points.dtype[name]))
                                      for name in self.__points.dtype.names]
@@ -132,7 +146,10 @@ class PointCloud:
 
                 if not direct:
                     # converting to tuple and then to ndarray
-                    points = [tuple(point) for point in points]
+                    try:
+                        points = [tuple(point) for point in points]
+                    except TypeError:
+                        pass # single value
                     if predict:
                         self.__points = np.rec.fromrecords(points, names=self.__fields)
                         self.__fields = [(name, _numpy_to_txt(self.__points.dtype[name]))
@@ -141,7 +158,7 @@ class PointCloud:
                         self.__points = np.array(points, dtype=self.__fields, copy=copy)
             else:
                 if predict:
-                    raise TypeError('Specifying fields of null cloud with only names')
+                    raise TypeError('specifying fields of null cloud with only names')
                 if len(self.__fields) > 0:
                     self.__points = np.array([], dtype=self.__fields) # Turn None into null array
                 else:
@@ -152,13 +169,13 @@ class PointCloud:
             height = abs(height)
             self.__width = width
             self.__height = height
-            self.__sensor_origin = np.zeros(4, dtype='i1')
+            self.__sensor_origin = np.zeros(4, dtype=np.int8)
             self.__sensor_orientation = Quaternion.identity()
 
             # adjust points with width and height automatically
             if width is 0:
-                if len(self.__points) > 0:
-                    width = len(self.__points)
+                if _safe_len(self.__points) > 0:
+                    width = _safe_len(self.__points)
                     height = 1
                 elif height > 0:
                     width = height
@@ -166,11 +183,11 @@ class PointCloud:
             if width > 0:
                 if height is 0:
                     height = 1
-                if not width*height == len(self.__points) and len(self.__points) != 0:
-                    raise ValueError("The input width and height doesn't match the count of points")
+                if not width*height == _safe_len(self.__points) and _safe_len(self.__points) != 0:
+                    raise ValueError("the input width and height doesn't match the count of points")
                 self.__width = width
                 self.__height = height
-                if len(self.__points) == 0:
+                if _safe_len(self.__points) == 0:
                     if len(self.__fields) > 0:
                         self.__points = np.empty(width * height, dtype=self.__fields)
                     else:
@@ -190,30 +207,43 @@ class PointCloud:
         return self.__points
 
     def __getitem__(self, indices):
-        if not isinstance(indices, tuple):
-            return self.__points[indices]
-        elif all([isinstance(field, str) for field in indices]):
-            return self.__points[list(indices)]
-        elif len(indices) is 2:
+        if not isinstance(indices, tuple) and not isinstance(indices, list):
+            # indexing by index or field
+            newdata = self.__points[indices]
+            if isinstance(indices, str):
+                newfields = [dict(self.__fields)[indices]]
+            else:
+                newfields = self.__fields
+        elif all([isinstance(field, str) for field in indices]): # indexing by fields
+            newdata = self.__points[list(indices)]
+            fdict = dict(self.__fields)
+            newfields = [fdict[field] for field in indices]
+        elif len(indices) is 2: # indexing by row and col
             if not self.is_organized:
-                raise IndexError('Only organized point cloud support access by row and column')
-            lin = np.arange(len(self.__points)).reshape(self.width, self.height)
-            return self.__points[lin[indices]]
+                raise IndexError('only organized point cloud support access by row and column')
+            lin = np.arange(_safe_len(self.__points)).reshape(self.width, self.height)
+            newdata = self.__points[lin[indices]]
+            newfields = self.__fields
         else:
-            raise IndexError('Too many indices')
+            raise IndexError('too many indices')
+
+        cloud = PointCloud(newdata, fields=newfields, copy=False)
+        cloud.sensor_orientation = self.__sensor_orientation
+        cloud.sensor_origin = self.__sensor_orientation
+        return cloud
 
     def __setitem__(self, indices, value):
-        if not isinstance(indices, tuple):
+        if not isinstance(indices, tuple): # indexing by index or field or multiple fields
             self.__points[indices] = value
         elif all([isinstance(field, str) for field in indices]):
             self.__points[list(indices)] = value
         elif len(indices) is 2:
             if not self.is_organized:
-                raise IndexError('Only organized point cloud support access by row and column')
-            lin = np.arange(len(self.__points)).reshape(self.width, self.height)
+                raise IndexError('only organized point cloud support access by row and column')
+            lin = np.arange(_safe_len(self.__points)).reshape(self.width, self.height)
             self.__points[lin[indices]] = value
         else:
-            raise IndexError('Too many indices')
+            raise IndexError('too many indices')
 
     def __delitem__(self, indices):
         if isinstance(indices, str):
@@ -242,17 +272,17 @@ class PointCloud:
         elif len(indices) is 2:
             # delete in two dimension (organized point cloud)
             if not self.is_organized:
-                raise IndexError('Only organized point cloud support access by row and column')
-            lin = np.arange(len(self.__points)).reshape(self.width, self.height)
+                raise IndexError('only organized point cloud support access by row and column')
+            lin = np.arange(_safe_len(self.__points)).reshape(self.width, self.height)
             self.__points = np.delete(self.__points, lin[indices].flatten(), axis=0)
         else:
-            raise IndexError('Too many indices')
+            raise IndexError('too many indices')
 
     def __repr__(self):
-        return "<PointCloud of %d points>" % len(self.__points)
+        return "<PointCloud of %d points>" % _safe_len(self.__points)
 
     def __len__(self):
-        return len(self.__points)
+        return _safe_len(self.__points)
 
     def __iter__(self):
         return iter(self.__points)
@@ -264,6 +294,14 @@ class PointCloud:
     def __reduce__(self):
         # Pickle support.
         return type(self), (self.data,)
+
+    def __eq__(self, target):
+        result = target.data == self.data
+        result &= target.sensor_orientation == self.sensor_orientation
+        result &= target.sensor_origin == self.sensor_origin
+        result &= target.width == self.width
+        result &= target.height == self.height
+        return result
 
     def disorganize(self):
         '''
@@ -436,7 +474,7 @@ class PointCloud:
         return [name for name, _ in self.__fields]
 
     def __str__(self):
-        return ('''points[]: %d
+        return ('''PointCloud with %d points
 width: %d, height: %d
 fields: {0}
 is_dense: {1}
@@ -453,7 +491,9 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
                 The new fields. Format of the fields are the same as init function
             data: number or dict or list or numpy array
                 The data correspond to the fields.
-                If an array is input, the first dimension of the array should match the fields
+                If single number is inputted, then the field will be filled with the number.
+                If an array is inputted, the first dimension of the array should match the fields.
+
                 Examples:
                 - {'field1': [1, 5], 'field2': [3, 5]}
                 - [[1, 5], [3, 5]]
@@ -497,14 +537,18 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
             fields: list of tuples or numpy.dtype
                 The new fields. Format of the fields are the same as init function
             offsets: dict or sequence of int
-                The offset where fields are insert into
-                The offset is defined with field list rather than data bits
+                The offset where fields are inserted into.
+                The offset is defined with field list rather than data bits.
+
                 Examples:
                 - {'field1': 2, 'field2': 3}
                 - [2, 3]
+
             data: number or dict or sequence or numpy array
                 The data correspond to the fields.
-                If an ndarray is input, the first dimension of the array should match the fields
+                If single number is inputted, then the field will be filled with the number.
+                If an array is inputted, the first dimension of the array should match the fields.
+
                 Examples:
                 - {'field1': [1, 5], 'field2': [3, 5]}
                 - [[1, 5], [3, 5]]

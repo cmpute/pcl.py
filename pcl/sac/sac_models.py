@@ -503,7 +503,7 @@ class SampleConsensusModelPlane(SampleConsensusModel):
         project_points = points - normvec * distance_to_plane[:, np.newaxis]
 
         if copy_data_fields:
-            cloud = PointCloud(self._input[inliers], fields=self._input.fields, copy=True)
+            cloud = PointCloud(self._input[inliers], copy=True)
             cloud['x'] = project_points[:, 0]
             cloud['y'] = project_points[:, 1]
             cloud['z'] = project_points[:, 2]

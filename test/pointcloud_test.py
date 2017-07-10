@@ -49,6 +49,7 @@ def test_build_cloud():
 def test_cloud_operations():
     '''
     Test operations on the point cloud
+    # TODO: cloud with single data and single field may corrupt
     '''
     cloud = test_build_cloud()
     # for point in cloud:
@@ -57,19 +58,21 @@ def test_cloud_operations():
     assert cloud.names == ['x', 'y', 'z']
     assert cloud.width == 2 and cloud.height == 2
     assert cloud.data.tolist() == [(1, 2., 3.), (4, 5., 6.), (7, 8., 9.), (10, 11., 12.)]
-    assert cloud[2].tolist() == (7, 8., 9.)
-    assert cloud[:2].tolist() == [(1, 2., 3.), (4, 5., 6.)]
-    assert cloud['x'].tolist() == [1, 4, 7, 10]
-    assert cloud[['x', 'y']].tolist() == [(1, 2.), (4, 5.), (7, 8.), (10, 11.)]
-    assert cloud['x', 'y'].tolist() == [(1, 2.), (4, 5.), (7, 8.), (10, 11.)]
+    assert cloud[2].data.tolist() == (7, 8., 9.)
+    assert cloud[:2].data.tolist() == [(1, 2., 3.), (4, 5., 6.)]
+    assert cloud['x'].data.tolist() == [1, 4, 7, 10]
+    assert cloud[['x', 'y']].data.tolist() == [(1, 2.), (4, 5.), (7, 8.), (10, 11.)]
+    assert cloud['x', 'y'].data.tolist() == [(1, 2.), (4, 5.), (7, 8.), (10, 11.)]
     assert cloud[1, 0] == cloud[2] and cloud[0, 1] == cloud[1]
-    assert cloud[:2, :2].tolist() == [[(1, 2., 3.), (4, 5., 6.)], [(7, 8., 9.), (10, 11., 12.)]]
+    assert cloud[:2, :2].data.tolist() == [[(1, 2., 3.), (4, 5., 6.)], [(7, 8., 9.), (10, 11., 12.)]]
     del cloud[[1, 3]]
     cloud.insert([1, 2], [(2, 3., 3.), (4, 6, 6)])
     cloud.append([(0, 0, 0)])
     assert cloud.pop().tolist() == (0, 0., 0.)
     cloud += [(10, 9., 8.), (8, 9., 10.)]
     assert len(cloud) == 6
+    del cloud[:5]
+    assert len(cloud) == 1
 
 def test_cloud_field_operations():
     '''
@@ -83,7 +86,7 @@ def test_cloud_field_operations():
     assert cloud.to_ndarray(['y', 'z']).tolist() == [[2, 3], [5, 6], [8, 9], [11, 12]]
     cloud.append_fields([('w', 'i2')], 4)
     assert cloud.names == ['x', 'y', 'z', 'w']
-    assert cloud['w'].tolist() == [4, 4, 4, 4]
+    assert cloud['w'].data.tolist() == [4, 4, 4, 4]
     cloud.append_fields([('a', 'f2'), ('b', 'f2')], {'a':[1, 2, 3, 4], 'b':[5, 6, 7, 8]})
     assert cloud.names == ['x', 'y', 'z', 'w', 'a', 'b']
     cloud.insert_fields([('t', 'i1')], [3])
@@ -109,6 +112,23 @@ def test_cloud_field_operations():
     assert cloud.xyz.dtype == np.dtype(int)
     assert cloud.xyz.tolist() == corddata
 
+    # single field test
+    cloud = test_build_cloud()
+    del cloud['y', 'z']
+    cloud.insert_fields([('r', 'i1'), ('s', 'i2')], (0, 1), {'r':[0, 0, 0, 0], 's':[1, 1, 1, 1]})
+    assert cloud.data.dtype.names == ('r', 'x', 's')
+    del cloud['r', 's']
+    cloud.append_fields([('w', 'i2')], 4)
+    assert cloud.data.dtype.names == ('x', 'w')
+    assert cloud['w'].data.tolist() == [4, 4, 4, 4]
+    del cloud[:3]
+    with pytest.raises(TypeError):
+        cloud.append_fields([('w', 'i2')], 4)
+        cloud.insert_fields([('w', 'i2')], 4)
+    cloud.append_fields([('r', 'i2')], 4)
+    del cloud['w', 'r']
+    cloud += cloud
+    assert cloud['x'].data.tolist() == [10, 10]
 
 if __name__ == '__main__':
     pytest.main([__file__, '-s'])

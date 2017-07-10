@@ -121,7 +121,7 @@ def compute_mean_and_covariance_matrix(cloud, indices=None, bias=False):
     '''
     # Filter invalid points
     if indices is not None:
-        cloud = PointCloud(cloud[indices], copy=False)
+        cloud = cloud[indices]
     cloud = cloud[~np.isnan(np.sum(cloud.xyz, axis=1))]
 
     # a bit faster than np.cov if compute centroid and covariance at the same time
