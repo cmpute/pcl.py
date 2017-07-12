@@ -48,7 +48,7 @@ def _cast_fields_to_tuples(dtype):
         pass
     elif isinstance(dtype, np.dtype):
         ftuples = [(name, _numpy_to_txt(dtype[name])) for name in dtype.names]
-    elif isinstance(dtype, list) or isinstance(dtype, tuple):
+    elif isinstance(dtype, (list, tuple)):
         for field in dtype:
             if isinstance(field, str):
                 ftuples.append(field)
@@ -86,7 +86,8 @@ class PointCloud:
 
     If you want to access raw data of a point, use 'data' property
     '''
-    def __init__(self, points=None, fields=None, indices=None, width=0, height=0, copy=True):
+    def __init__(self, points=None, fields=None, indices=None, width=0, height=0, copy=True,
+                 origin=None, orientation=None):
         '''
         # Parameters
             points : PointCloud or seqence that can be turned into numpy.ndarray
@@ -111,6 +112,10 @@ class PointCloud:
                 The cloud height
             copy : bool
                 Determine if the data from points are copied
+            origin : ndarray
+                The origin of the sensor
+            orientation : quaternion
+                The orientation of the sensor
         '''
 
         if isinstance(points, type(self)): # copy initialization
@@ -164,13 +169,8 @@ class PointCloud:
                 else:
                     self.__points = np.array([])
 
-
-            width = abs(width)
-            height = abs(height)
-            self.__width = width
-            self.__height = height
-            self.__sensor_origin = np.zeros(4, dtype=np.int8)
-            self.__sensor_orientation = Quaternion.identity()
+            self.__width = abs(width)
+            self.__height = abs(height)
 
             # adjust points with width and height automatically
             if width is 0:
@@ -192,6 +192,10 @@ class PointCloud:
                         self.__points = np.empty(width * height, dtype=self.__fields)
                     else:
                         self.__points = np.empty(width * height)
+
+            self.__sensor_origin = np.zeros(4, dtype=np.int8) if origin is None else origin
+            self.__sensor_orientation = Quaternion.identity() if orientation is None \
+                                                              else orientation
 
         # apply indices filter
         if indices is not None:
@@ -229,7 +233,7 @@ class PointCloud:
 
         cloud = PointCloud(newdata, fields=newfields, copy=False)
         cloud.sensor_orientation = self.__sensor_orientation
-        cloud.sensor_origin = self.__sensor_orientation
+        cloud.sensor_origin = self.__sensor_origin
         return cloud
 
     def __setitem__(self, indices, value):
@@ -293,15 +297,20 @@ class PointCloud:
 
     def __reduce__(self):
         # Pickle support.
-        return type(self), (self.data,)
+        return type(self), (self.__points, self.__fields, None, self.__width, self.__height,
+                            False, self.__sensor_origin, self.__sensor_orientation)
 
     def __eq__(self, target):
         result = target.data == self.data
         result &= target.sensor_orientation == self.sensor_orientation
-        result &= target.sensor_origin == self.sensor_origin
+        result &= (target.sensor_origin == self.sensor_origin).all()
         result &= target.width == self.width
         result &= target.height == self.height
-        return result
+
+        if isinstance(result, bool):
+            return result
+        else: # numpy boolean array
+            return result.all()
 
     def disorganize(self):
         '''
@@ -518,7 +527,7 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
             for name, _ in fields:
                 if name in data.dtype.names:
                     ndata[name] = data[name]
-        elif isinstance(data, list) or isinstance(data, tuple) \
+        elif isinstance(data, (list, tuple)) \
             or (isinstance(data, np.ndarray) and data.dtype.names is None):
             for idx, (name, _) in enumerate(fields):
                 ndata[name] = data[idx]
@@ -564,7 +573,7 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
         #Support multiple insert at the same time
         nfields = list(self.__fields)
         nfields.append('TRAILOR')
-        if isinstance(offsets, list) or isinstance(offsets, tuple):
+        if isinstance(offsets, (list, tuple)):
             for idx, offset in enumerate(offsets):
                 if isinstance(nfields[offset], list):
                     nfields[offset][-1:-1] = [fields[idx]]
@@ -597,7 +606,7 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
             for name, _ in fields:
                 if name in data.dtype.names:
                     ndata[name] = data[name]
-        elif isinstance(data, list) or isinstance(data, tuple) \
+        elif isinstance(data, (list, tuple)) \
             or (isinstance(data, np.ndarray) and data.dtype.names is None):
             for idx, (name, _) in enumerate(fields):
                 ndata[name] = data[idx]
@@ -642,22 +651,41 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
             fdict = dict(self.__fields)
             types = [fdict[name] for name in names]
             if types.count(types[0]) == len(types):
-                dtype = types[0]
-        return np.array(data.view(dtype).reshape(data.shape + (-1,)), copy=copy)
+                dtype = types[0] # homogeneous type
+
+        if data.ndim == 0:
+            return np.array(data.tolist(), dtype=dtype, copy=copy) # single point (tuple or scalar)
+        else:
+            return np.array(data.view(dtype).reshape(data.shape + (-1,)), copy=copy)
 
     @property
     def xyz(self):
         '''
         Get coordinate array of the point cloud, data type will be infered from data
+
+        # Notes
+        In PCL, xyz coordinate is stored in data[4] and the last field is filled with 1
         '''
         return self.to_ndarray(['x', 'y', 'z'])
 
+    @property
+    def normal(self):
+        '''
+        Get normal vectors of the point cloud, data type will be infered from data
+
+        # Notes
+        In PCL, normals are stored in data_n[4] and the last field is filled with 0
+        '''
+        return self.to_ndarray(['normal_x', 'normal_y', 'normal_z'])
 
     @property
     def rgb(self):
         '''
         Get the color field of the pointcloud, the property returns unpacked rgb values
             (float rgb -> uint r,g,b)
+
+        # Notes
+        In PCL, rgb is stored as rgba with a=255
         '''
         # struct definition from PCL
         struct = np.dtype([('b', 'i1'), ('g', 'i1'), ('r', 'i1'), ('a', 'i1')])
@@ -672,10 +700,3 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
         # struct definition from PCL
         struct = np.dtype([('b', 'i1'), ('g', 'i1'), ('r', 'i1'), ('a', 'i1')])
         return self.data['rgba'].view(struct)
-
-    @property
-    def normal(self):
-        '''
-        Get normal vectors of the point cloud, data type will be infered from data
-        '''
-        return self.to_ndarray(['normal_x', 'normal_y', 'normal_z'])

@@ -6,6 +6,7 @@ Implementation of following files:
 '''
 
 import math
+from collections import deque
 import numpy as np
 from ..common import _CloudBase
 from ..search import DefaultSearch
@@ -20,7 +21,7 @@ class RegionGrowing(_CloudBase):
 
     In addition to residual test, the possibility to test curvature is added.
     '''
-    def __init__(self, cloud=None, indices=None):
+    def __init__(self, cloud=None, indices=None, normals=None):
         super().__init__(cloud, indices)
         self.min_cluster_size = 1
         self.max_cluster_size = float('inf')
@@ -32,13 +33,34 @@ class RegionGrowing(_CloudBase):
         self.curvature_threshold = 0.05
         self.number_of_neighbours = 30 # neighbour_number_
         self.search_method = None
-        self.input_normals = None
+        self._normals = None
         self._point_neighours = []
         self._point_labels = []
         self._normal_flag = True
         self._num_pts_in_segment = []
         self._clusters = []
         self._number_of_segments = 0
+
+        self.input_normals = normals # input check
+
+    @property
+    def input_normals(self):
+        '''
+        Gets the normals.
+        '''
+        return self._normals
+
+    @input_normals.setter
+    def input_normals(self, value):
+        '''
+        Sets the normals.
+
+        They are needed for the algorithm, so if no normals will be set,
+        the algorithm would not be able to segment the points.
+        '''
+        if not ('normal_x' in value.names and 'curvature' in value.names):
+            raise ValueError('invalid input normals cloud')
+        self._normals = value
 
     @property
     def residual_test_flag(self):
@@ -88,7 +110,7 @@ class RegionGrowing(_CloudBase):
         if self._input is None:
             return False
 
-        if self.input_normals is None or len(self._input) != len(self.input_normals):
+        if self._normals is None or len(self._input) != len(self._normals):
             return False
 
         if self._residual_flag:
@@ -121,7 +143,31 @@ class RegionGrowing(_CloudBase):
         *Segmentation of point clouds using smoothness constraint*
         by T. Rabbania, F. A. van den Heuvelb, G. Vosselmanc.
         '''
-        pass # TODO: Not Implemented
+        num_of_pts = len(self._indices)
+        self._point_labels = [-1] * len(self._input)
+        point_residual = []
+
+        if self._normal_flag:
+            point_residual = np.argsort(self._normals['curvature'])
+        else:
+            point_residual = range(len(self._indices))
+        seed_counter = 0
+        seed = point_residual[seed_counter]
+
+        segmented_pts_num = 0
+        number_of_segments = 0
+        while segmented_pts_num < num_of_pts:
+            pts_in_segment = self._grow_region(seed, number_of_segments)
+            segmented_pts_num += pts_in_segment
+            self._num_pts_in_segment.append(pts_in_segment)
+            number_of_segments += 1
+
+            for i_seed in range(seed_counter + 1, num_of_pts):
+                index = point_residual[i_seed]
+                if self._point_labels[index] == -1:
+                    seed = index
+                    seed_counter = i_seed
+                    break
 
     def _grow_region(self, initial_seed, segment_number):
         '''
@@ -132,8 +178,42 @@ class RegionGrowing(_CloudBase):
             Index of the point that will serve as the seed point
         segment_number : int
             Indicates which number this segment will have
+
+        # Return
+        count : int
+            The number of points in the segment
         '''
-        pass # TODO: Not Implemented
+        seeds = deque()
+        seeds.append(initial_seed)
+        self._point_labels[initial_seed] = segment_number
+
+        num_pts_in_segment = 1
+
+        while len(seeds) > 0:
+            curr_seed = seeds.popleft()
+
+            i_nghbr = 0
+            while i_nghbr < self.number_of_neighbours and \
+                  i_nghbr < len(self._point_neighours[curr_seed]):
+                index = self._point_neighours[curr_seed][i_nghbr]
+                if self._point_labels[index] != -1:
+                    i_nghbr += 1
+                    continue
+
+                belong_to_segment, is_a_seed = self._validate_point(initial_seed, curr_seed, index)
+                if not belong_to_segment:
+                    i_nghbr += 1
+                    continue
+
+                self._point_labels[index] = segment_number
+                num_pts_in_segment += 1
+
+                if is_a_seed:
+                    seeds.append(index)
+
+                i_nghbr += 1
+
+        return num_pts_in_segment
 
     def _validate_point(self, initial_seed, point, nghbr):
         '''
@@ -154,7 +234,30 @@ class RegionGrowing(_CloudBase):
         is_a_seed : bool
             This value is set to true if the point with index 'nghbr' can serve as the seed
         '''
-        pass # TODO: Not Implemented
+        is_a_seed = True
+        cosine_threshold = math.cos(self.smoothness_threshold)
+        initial_point = self._input[point].xyz
+        initial_normal = self._normals[point].normal
+        initial_seed_normal = self._normals[initial_seed].normal
+
+        # check the angle between normals
+        nghbr_normal = self._normals[nghbr].normal
+        if self.smooth_mode_flag:
+            if np.abs(np.dot(nghbr_normal.dot(initial_normal))) > cosine_threshold:
+                return False, is_a_seed
+        else:
+            if np.abs(np.dot(nghbr_normal.dot(initial_seed_normal))) > cosine_threshold:
+                return False, is_a_seed
+
+        if self._curvature_flag and self._normals[nghbr]['curvature'] > self.curvature_threshold:
+            is_a_seed = False
+
+        nghbr_point = self._input[nghbr].xyz
+        residual = np.abs(initial_normal.dot(initial_point - nghbr_point))
+        if self._residual_flag and residual > self.residual_threshold:
+            is_a_seed = False
+
+        return True, is_a_seed
 
     def _assemble_regions(self):
         '''

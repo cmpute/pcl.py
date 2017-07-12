@@ -4,8 +4,10 @@ Tests of pcl.pointcloud
 
 import os
 import sys
+import pickle
 import pytest
 import numpy as np
+from io import BytesIO
 sys.path.append(os.path.dirname(__file__) + '/' + os.path.pardir)
 import pcl
 
@@ -23,7 +25,9 @@ def test_build_cloud():
     data = [[1, 2., 3.], [4, 5., 6.]]
     cloud = pcl.PointCloud(data, ('x', 'y', 'z'))
     cloud = pcl.PointCloud(data, [('x', 'i1'), ('y', 'f2'), ('z', 'f2')])
+    assert cloud.fields == [('x', 'i1'), ('y', 'f2'), ('z', 'f2')]
     cloud = pcl.PointCloud(data, [('x', 1, 'I'), ('y', 'f', 2), ('z', 2, 'F')])
+    assert cloud.fields == [('x', 'i1'), ('y', 'f2'), ('z', 'f2')]
     cloud = pcl.PointCloud(data, cloud.data.dtype)
     assert cloud.fields == [('x', 'i1'), ('y', 'f2'), ('z', 'f2')]
 
@@ -31,19 +35,25 @@ def test_build_cloud():
     # pity that numpy do not support inferring tuple types
     # cloud = pcl.PointCloud(data, ('x', 'yz'))
     cloud = pcl.PointCloud(data, [('x', 'i1'), ('yz', '2f2')])
+    assert cloud.fields == [('x', 'i1'), ('yz', '2f2')]
     cloud = pcl.PointCloud(data, [('x', 1, 'I'), ('yz', 'f', 2, 2)])
+    assert cloud.fields == [('x', 'i1'), ('yz', '2f2')]
     cloud = pcl.PointCloud(data, cloud.data.dtype)
     assert cloud.fields == [('x', 'i1'), ('yz', '2f2')]
 
     data = [[1, 2., 3.], [4, 5., 6.], [7, 8., 9.], [10, 11., 12.]]
     cloud = pcl.PointCloud(width=2, height=2, fields=[('x', 'i1'), ('y', 'f2'), ('z', 'f2')])
+    assert cloud.fields == [('x', 'i1'), ('y', 'f2'), ('z', 'f2')]
     cloud = pcl.PointCloud(data, width=2, height=2, fields=('x', 'y', 'z'))
     cloud = pcl.PointCloud(data, width=2, height=2, fields=[('x', 'i1'), ('y', 'f2'), ('z', 'f2')])
+    assert cloud.fields == [('x', 'i1'), ('y', 'f2'), ('z', 'f2')]
     cloud = pcl.PointCloud(data, width=2, height=2,
                            fields=[('x', 1, 'I'), ('y', 'f', 2), ('z', 2, 'F')])
+    assert cloud.fields == [('x', 'i1'), ('y', 'f2'), ('z', 'f2')]
     cloud = pcl.PointCloud(cloud, cloud.data.dtype)
     assert cloud.fields == [('x', 'i1'), ('y', 'f2'), ('z', 'f2')]
 
+    cloud.sensor_origin[:] = [1, 2, 3, 4]
     return cloud
 
 def test_cloud_operations():
@@ -52,9 +62,18 @@ def test_cloud_operations():
     # TODO: cloud with single data and single field may corrupt
     '''
     cloud = test_build_cloud()
-    # for point in cloud:
-    #     print(point)
+    assert cloud == pcl.PointCloud(cloud)
+    assert cloud + cloud == pcl.PointCloud(cloud+ cloud)
 
+    # pickle support test
+    src = BytesIO()
+    pick = pickle.Pickler(src)
+    pick.dump(cloud)
+    src.seek(0)
+    pick = pickle.Unpickler(src)
+    assert cloud == pick.load()
+
+    # customized operators test
     assert cloud.names == ['x', 'y', 'z']
     assert cloud.width == 2 and cloud.height == 2
     assert cloud.data.tolist() == [(1, 2., 3.), (4, 5., 6.), (7, 8., 9.), (10, 11., 12.)]
@@ -132,4 +151,4 @@ def test_cloud_field_operations():
 
 if __name__ == '__main__':
     pytest.main([__file__, '-s'])
-# test_cloud_field_operations()
+# test_cloud_operations()

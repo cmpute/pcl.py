@@ -15,3 +15,6 @@ Nevertheless, this library focused on simplicity, readability and accessibility,
 - Tested on Windows 10, Python 3.5, Anaconda 4.1.1 (Temporarily)
 
 ------------------------
+
+## Notes
+The library is under heavy construction, thus do not use it in productive codes. However, playing with it is totally welcome now, and it will be great to receive you issue, suggestion and pull requests!~

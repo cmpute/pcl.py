@@ -102,3 +102,6 @@ ENV/
 
 # reference repositories
 ref/
+
+# vscode settings
+.vscode/

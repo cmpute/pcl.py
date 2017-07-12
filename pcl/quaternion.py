@@ -38,3 +38,9 @@ class Quaternion:
 
     def __str__(self):
         return str(self.__quat)
+
+    def __eq__(self, target):
+        return self.__quat == target.__quat
+
+    def __reduce__(self):
+        return type(self), (quaternion.as_float_array(self.__quat),)
