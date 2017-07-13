@@ -58,7 +58,7 @@ class RegionGrowing(_CloudBase):
         They are needed for the algorithm, so if no normals will be set,
         the algorithm would not be able to segment the points.
         '''
-        if not ('normal_x' in value.names and 'curvature' in value.names):
+        if not value or not ('normal_x' in value.names and 'curvature' in value.names):
             raise ValueError('invalid input normals cloud')
         self._normals = value
 
@@ -264,7 +264,14 @@ class RegionGrowing(_CloudBase):
         This function simply assembles the regions from list of point labels.
         Each cluster is an array of point indices.
         '''
-        pass # TODO: Not Implemented
+        number_of_segments = len(self._num_pts_in_segment)
+        number_of_points = len(self._input)
+        self._clusters = [[]] * number_of_segments
+        for i_point in range(number_of_points):
+            segment_index = self._point_labels[i_point]
+            if segment_index is not -1:
+                self._clusters[segment_index].append(i_point)
+        self._number_of_segments = number_of_segments
 
     def extract(self):
         '''
@@ -275,7 +282,32 @@ class RegionGrowing(_CloudBase):
         clusters : list of indices (list of list of int)
             clusters that were obtained. Each cluster is an array of point indices.
         '''
-        pass # TODO: Not Implemented
+        self._clusters = []
+        self._point_neighours = []
+        self._point_labels = []
+        self._num_pts_in_segment = []
+        self._number_of_segments = 0
+
+        if not self._init_compute():
+            self._deinit_compute()
+            return None
+
+        if not self._prepare_for_segmentation():
+            self._deinit_compute()
+            return None
+
+        self._find_point_neighbours()
+        self._apply_smooth_region_growing_algorithm()
+        self._assemble_regions()
+
+        cluster = []
+        for cluster_iter in self._clusters:
+            if self.min_cluster_size <= len(cluster_iter) and \
+               len(cluster_iter) <= self.max_cluster_size:
+                cluster.append(cluster_iter)
+
+        # Converting to list of PointIndices, ignored here in python
+        self._deinit_compute()
 
     def get_segment_from_point(self, index):
         '''

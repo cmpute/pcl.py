@@ -49,7 +49,7 @@ class MeshProcessing(metaclass=abc.ABCMeta):
         '''
         return self._input_mesh
 
-    @property.setter
+    @input_mesh.setter
     def input_mesh(self, value):
         '''
         Set the input mesh that we want to process
@@ -70,5 +70,19 @@ class MeshProcessing(metaclass=abc.ABCMeta):
     def _perform_processing(self):
         '''
         Abstract surface processing method.
+        '''
+        pass
+
+    def _init_compute(self):
+        '''
+        Initialize computation. Must be called before processing starts.
+        '''
+        if self.input_mesh is None:
+            return False
+        return True
+
+    def _deinit_compute(self):
+        '''
+        UnInitialize computation. Must be called after processing ends
         '''
         pass

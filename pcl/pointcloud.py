@@ -232,8 +232,7 @@ class PointCloud:
             raise IndexError('too many indices')
 
         cloud = PointCloud(newdata, fields=newfields, copy=False)
-        cloud.sensor_orientation = self.__sensor_orientation
-        cloud.sensor_origin = self.__sensor_origin
+        self.copy_metadata(cloud)
         return cloud
 
     def __setitem__(self, indices, value):
@@ -465,6 +464,17 @@ class PointCloud:
     @sensor_orientation.setter
     def sensor_orientation(self, value):
         self.__sensor_orientation = value
+
+    def copy_metadata(self, target):
+        '''
+        Copy metadata of the cloud into target
+
+        Currently, the metadata of the PointCloud is
+        - sensor_origin
+        - sensor_orientation
+        '''
+        target.sensor_origin = self.__sensor_origin
+        target.sensor_orientation = self.__sensor_orientation
 
     @property
     def fields(self):

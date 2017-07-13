@@ -75,6 +75,20 @@ class _CloudBase(metaclass=abc.ABCMeta):
         elif self.__fake_indices and len(self._indices) != self.input_cloud:
             self._indices = range(len(self._input))
 
+    def _init_compute(self):
+        '''
+        Initialize computation. Must be called before processing starts.
+        '''
+        if self._input is None:
+            return False
+        return True
+
+    def _deinit_compute(self):
+        '''
+        UnInitialize computation. Must be called after processing ends
+        '''
+        pass
+
 ######################
 ##### Centroids ######
 ######################

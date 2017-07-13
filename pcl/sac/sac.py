@@ -1,6 +1,8 @@
 '''
 Implementation of following files:
+    pcl/sample_consensus/include/pcl/sample_consensus/impl/ransac.hpp
     pcl/sample_consensus/include/pcl/sample_consensus/sac.h
+    pcl/sample_consensus/include/pcl/sample_consensus/ransac.h
 	pcl/sample_consensus/src/sac.cpp
 
 Following files are abandoned:

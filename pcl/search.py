@@ -185,3 +185,4 @@ class BruteForceSearch(Search):
         return k_indices, np.sqrt(k_distances)
 
 DefaultSearch = BruteForceSearch
+DefaultOrganizedSearch = BruteForceSearch
