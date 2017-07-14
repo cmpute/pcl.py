@@ -111,8 +111,8 @@ class BruteForceSearch(Search):
 
         # Parameters
         point : point or int
-            The given query point. If it is a integer, then query point is the one in the cloud
-            with the parameter as index
+            The given query point. If it is a integer, then query point is the one in the input
+            cloud with the parameter as index
         k : int
             The number of neighbors to search for
 
@@ -124,6 +124,8 @@ class BruteForceSearch(Search):
         '''
         if k < 1:
             return [], []
+        if isinstance(point, int):
+            point = self._input[point].xyz
 
         # nan values won't break the method
         indices = np.array(self._indices, copy=False)
@@ -152,8 +154,8 @@ class BruteForceSearch(Search):
 
         # Parameters
         point : point or int
-            The given query point. If it is a integer, then query point is the one in the cloud
-            with the parameter as index
+            The given query point. If it is a integer, then query point is the one in the input
+            cloud with the parameter as index
         radius : float
             The radius of the sphere bounding all of p_q's neighbors
         max_nn : int
@@ -167,6 +169,9 @@ class BruteForceSearch(Search):
         k_sqr_distances : list of float
             The resultant squared distances to the neighboring points
         '''
+        if isinstance(point, int):
+            point = self._input[point].xyz
+
         # nan values won't break the method
         indices = np.array(self._indices, copy=False)
         points = self._input.xyz[indices]

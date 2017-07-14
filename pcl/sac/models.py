@@ -446,21 +446,18 @@ class SampleConsensusModelPlane(SampleConsensusModel):
         ###### Followings are implemetation of original PCL using PCA ######
 
         # covariance_matrix, xyz_centroid = compute_mean_and_covariance_matrix(self._input, inliers)
-        # eigen_value, eigen_vector = eig(covariance_matrix)
+        # eigen_value, eigen_vector = np.linalg.eigh(covariance_matrix)
         # smallest = np.argmin(eigen_value)
-        # eigen_value = eigen_value[smallest]
-        # eigen_vector = eigen_vector[:, smallest]
-
-        # optimized_coefficients = eigen_vector.tolist()
+        #
+        # optimized_coefficients = eigen_vector[:, smallest].tolist()
         # optimized_coefficients.append(-np.dot(optimized_coefficients + [0], xyz_centroid))
-
-        # Use Least-Squares to fit the plane through all the given sample points
-        # and find out its coefficients
 
         cloud = self._input.xyz
         if inliers is not None:
             cloud = cloud[inliers]
 
+        # Use Least-Squares to fit the plane through all the given sample points
+        # and find out its coefficients
         constant = -np.ones(len(cloud))
         optimized_coefficients, *_ = lstsq(cloud, constant)
         optimized_coefficients = optimized_coefficients.tolist()

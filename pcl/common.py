@@ -113,7 +113,7 @@ def compute_covariance_matrix(cloud, centroid):
     '''
     pass
 
-def compute_mean_and_covariance_matrix(cloud, indices=None, bias=False):
+def compute_mean_and_covariance_matrix(cloud, indices=None, bias=True):
     '''
     Compute the normalized 3x3 covariance matrix and the centroid of a given set of points
     in a single loop.
@@ -125,7 +125,7 @@ def compute_mean_and_covariance_matrix(cloud, indices=None, bias=False):
         Subset of points given by their indices
     bias : bool
         If False, the covariance is un-biased (normalized by n-1)
-        If true, the covariance is biased (normalized by n)
+        If True, the covariance is biased (normalized by n)
 
     # Returns
     covariance_matrix : 3x3 matrix
@@ -136,19 +136,23 @@ def compute_mean_and_covariance_matrix(cloud, indices=None, bias=False):
     # Filter invalid points
     if indices is not None:
         cloud = cloud[indices]
-    cloud = cloud[~np.isnan(np.sum(cloud.xyz, axis=1))]
+    cloud = cloud[~np.isnan(np.sum(cloud.xyz, axis=1))].data
 
     # a bit faster than np.cov if compute centroid and covariance at the same time
+    # testing shows this method is faster at ratio about 30%, however precision has lost a bit
     accu = dict()
-    accu['xx'] = np.mean(cloud['x'] * cloud['x'])
-    accu['xy'] = np.mean(cloud['x'] * cloud['y'])
-    accu['xz'] = np.mean(cloud['x'] * cloud['z'])
-    accu['yy'] = np.mean(cloud['y'] * cloud['y'])
-    accu['yz'] = np.mean(cloud['y'] * cloud['z'])
-    accu['zz'] = np.mean(cloud['z'] * cloud['z'])
-    accu['x'] = np.mean(cloud['x'])
-    accu['y'] = np.mean(cloud['y'])
-    accu['z'] = np.mean(cloud['z'])
+    cloudx = cloud['x']
+    cloudy = cloud['y']
+    cloudz = cloud['z']
+    accu['xx'] = np.mean(cloudx * cloudx)
+    accu['xy'] = np.mean(cloudx * cloudy)
+    accu['xz'] = np.mean(cloudx * cloudz)
+    accu['yy'] = np.mean(cloudy * cloudy)
+    accu['yz'] = np.mean(cloudy * cloudz)
+    accu['zz'] = np.mean(cloudz * cloudz)
+    accu['x'] = np.mean(cloudx)
+    accu['y'] = np.mean(cloudy)
+    accu['z'] = np.mean(cloudz)
     centroid = [accu['x'], accu['y'], accu['z'], 1] # homogeneous form
 
     if not bias:

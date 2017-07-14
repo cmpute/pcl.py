@@ -395,7 +395,7 @@ class PointCloud:
         value = int(value)
         if value < 0 or value > len(self):
             raise ValueError('Invalid input width')
-        if len(self) % len != 0:
+        if len(self) % value != 0:
             raise ValueError('Size of the pointcloud cannot be divided by width')
         self.__width = value
         self.__height = len(self)/value
@@ -417,7 +417,7 @@ class PointCloud:
         value = int(value)
         if value < 0 or value > len(self):
             raise ValueError('Invalid input height')
-        if len(self) % len != 0:
+        if len(self) % value != 0:
             raise ValueError('Size of the pointcloud cannot be divided by height')
         self.__height = value
         self.__width = len(self)/value
@@ -512,6 +512,7 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
                 The data correspond to the fields.
                 If single number is inputted, then the field will be filled with the number.
                 If an array is inputted, the first dimension of the array should match the fields.
+                If nothing is inputted, the data of new fields remains what they were in memory.
 
                 Examples:
                 - {'field1': [1, 5], 'field2': [3, 5]}
@@ -521,9 +522,13 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
         '''
         fields, predict = _cast_fields_to_tuples(fields)
         if predict:
-            raise TypeError('Specifying fields of null cloud with only names')
+            if isinstance(data, dict):
+                tdata = np.rec.fromarrays([tile[0] for tile in data.values()], names=data.keys())
+            else:
+                tdata = np.rec.fromarrays([tile[0] for tile in data], names=fields)
+            fields = [(name, _numpy_to_txt(tdata.dtype[name])) for name in data.keys()]
         if len(set([name for name, _ in fields]).intersection(set(self.names))) > 0:
-            raise TypeError("Fields with given names already exist.")
+            raise TypeError("fields with given names already exist.")
 
         nfields = self.__fields + fields
         ndata = np.empty(self.__points.shape, dtype=nfields)
@@ -567,6 +572,7 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
                 The data correspond to the fields.
                 If single number is inputted, then the field will be filled with the number.
                 If an array is inputted, the first dimension of the array should match the fields.
+                If nothing is inputted, the data of new fields remains what they were in memory.
 
                 Examples:
                 - {'field1': [1, 5], 'field2': [3, 5]}
@@ -576,7 +582,11 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
         '''
         fields, predict = _cast_fields_to_tuples(fields)
         if predict:
-            raise TypeError('Specifying fields of null cloud with only names')
+            if isinstance(data, dict):
+                tdata = np.rec.fromarrays([tile[0] for tile in data.values()], names=data.keys())
+            else:
+                tdata = np.rec.fromarrays([tile[0] for tile in data], names=fields)
+            fields = [(name, _numpy_to_txt(tdata.dtype[name])) for name in data.keys()]
         if len(set([name for name, _ in fields]).intersection(set(self.names))) > 0:
             raise TypeError("Fields with given names already exist.")
 

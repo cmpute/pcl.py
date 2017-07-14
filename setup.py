@@ -31,7 +31,7 @@ setup(name='PyPCL',
       license='BSD-3-Clause',
       install_requires=['numpy', 'numpy-quaternion'],
       extras_require={
-          'compress': ['lzf'],
+          'compress': ['python-lzf'],
           'search': ['nmslib'],
           'test': ['pytest'],
       },

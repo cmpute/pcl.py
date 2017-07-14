@@ -67,25 +67,27 @@ class Feature(_CloudBase, metaclass=abc.ABCMeta):
         # Returns
         output : PointCloud
             The resultant point cloud model dataset containing the estimated features
+            Metadata should be already copied
         '''
         if not self._init_compute():
             return None
 
-        output = PointCloud()
-        output.copy_metadata(self._input)
-        self._compute_feature(output)
+        output = self._compute_feature()
         if len(self._indices) == len(self._input):
             output.width = self._input.width
             # output.height = self._input.height
 
         self._deinit_compute()
+        return output
 
     def _search_for_neighbours(self, index, parameter):
         '''
         Search for k-nearest neighbors using the spatial locator from
         search_method, and the given surface from search_surface.
         '''
-        return self._search_method_surface(self._input, index, parameter)
+        # XXX There's bug in PCL, PCL uses input cloud to search, however according to usage of
+        # search surface, the input surface cloud should be the one to be searched
+        return self._search_method_surface(index, parameter)
 
     @abc.abstractmethod
     def _compute_feature(self, cloud):
@@ -123,11 +125,11 @@ class Feature(_CloudBase, metaclass=abc.ABCMeta):
                 raise ValueError('both radius (%f) and K (%d) defined!' %
                                  (self.search_radius, self.search_k))
             else:
-                self.search_parameter = self.search_radius
+                self._search_parameter = self.search_radius
                 self._search_method_surface = self.search_method.radius_search
         else:
             if self.search_k != 0:
-                self.search_parameter = self.search_k
+                self._search_parameter = self.search_k
                 self._search_method_surface = self.search_method.nearestk_search
             else:
                 raise ValueError('neither radius nor K defined!')
