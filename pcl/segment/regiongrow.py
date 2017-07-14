@@ -361,7 +361,8 @@ class RegionGrowing(_CloudBase):
         if len(self._clusters) == 0:
             return None
 
-        colors = randint(0, 256, size=(len(self._clusters), 3), dtype='u1')
+        colors = randint(0, 256, size=(len(self._clusters), 3))
+        colors = colors.astype('u1') # dtype='u1' in randint() not supported by numpy 1.10
         colordata = np.tile(np.array(255<<24, dtype='<u4'), len(self._clusters))
         colordata |= colors[:, 0] << 16 | colors[:, 1] << 8 | colors[:, 2]
         colordata.dtype = 'f4'
@@ -388,7 +389,8 @@ class RegionGrowing(_CloudBase):
         if len(self._clusters) == 0:
             return None
 
-        colors = randint(0, 256, size=(len(self._clusters), 3), dtype='u1')
+        colors = randint(0, 256, size=(len(self._clusters), 3))
+        colors = colors.astype('u1') 
         colordata = np.tile(np.array(255<<24, dtype='<u4'), len(self._clusters))
         colordata |= colors[:, 0] << 16 | colors[:, 1] << 8 | colors[:, 2]
 

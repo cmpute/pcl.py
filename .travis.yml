@@ -32,13 +32,13 @@ before_install:
     - export PATH=$HOME/miniconda3/bin:$PATH
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
-    if [ "$RUN_COVERAGE" == "yes" ]; then pip install coverage pytest-cov -q; fi
     # Useful for debugging any issues with conda
     - conda info -a
-
-install:
     - conda create -q -n travis python=$TRAVIS_PYTHON_VERSION numpy=$NUMPY pytest
     - source activate travis
+    - if [ "$RUN_COVERAGE" == "yes" ]; then pip install coveralls pytest-cov -q; fi
+
+install:
     - pip install python-lzf
   # - pip install https://github.com/moble/quaternion/archive/master.zip
     - CI=false pip install numpy-quaternion
@@ -56,7 +56,11 @@ install:
     - pip install .
 
 script:
-    - if [ "$RUN_COVERAGE" == "yes" ]; then py.test test/ --cov; else py.test test/; fi
+    - if [ "$RUN_COVERAGE" == "yes" ]; then
+        py.test test/ --cov;
+      else
+        py.test test/ -W ignore;
+      fi
 
 # after_success:
   # coverage test here

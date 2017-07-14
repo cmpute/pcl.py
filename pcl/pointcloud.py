@@ -264,7 +264,8 @@ class PointCloud:
             if not self.is_organized:
                 raise IndexError('only organized point cloud support access by row and column')
             lin = np.arange(_safe_len(self.__points)).reshape(self.width, self.height)
-            self.__points[lin[indices]] = np.array(value, dtype=self.__fields, copy=False).ravel()
+            lin = lin[indices].ravel()
+            self.__points[lin] = np.array(value, dtype=self.__fields, copy=False).ravel()
         else:
             raise IndexError('too many indices')
 
