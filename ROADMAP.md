@@ -2,6 +2,7 @@
 
 ## Original Implementations
 - add coverage and pip install test in travis
+- add docs generating and tidy up documentation
 - optimize point cloud operations with the help of [numpy.lib.recfunctions](https://github.com/numpy/numpy/blob/master/numpy/lib/recfunctions.py) codes
 - implement search interfaces (prior: nmslib, scikit, octree; alter: pyflann3, falconn)
 - io from .ply file

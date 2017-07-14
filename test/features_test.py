@@ -18,7 +18,7 @@ def test_normal():
     nestimate = pf.NormalEstimation(cloud)
     nestimate.search_k = 5
     normalcloud = nestimate.compute()
-    print(normalcloud.data)
+    assert len(normalcloud) == len(cloud)
 
 if __name__ == '__main__':
     pytest.main([__file__, '-s'])

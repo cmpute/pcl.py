@@ -8,6 +8,8 @@ Implementation of following files:
 import math
 from collections import deque
 import numpy as np
+from numpy.random import randint
+from ..pointcloud import PointCloud
 from ..common import _CloudBase
 from ..search import DefaultSearch
 
@@ -34,7 +36,7 @@ class RegionGrowing(_CloudBase):
         self.number_of_neighbours = 30 # neighbour_number_
         self.search_method = None
         self._normals = None
-        self._point_neighours = []
+        self._point_neighours = dict() # dict as 2d array
         self._point_labels = []
         self._normal_flag = True
         self._num_pts_in_segment = []
@@ -58,7 +60,7 @@ class RegionGrowing(_CloudBase):
         They are needed for the algorithm, so if no normals will be set,
         the algorithm would not be able to segment the points.
         '''
-        if not value or not ('normal_x' in value.names and 'curvature' in value.names):
+        if value is not None and not ('normal_x' in value.names and 'curvature' in value.names):
             raise ValueError('invalid input normals cloud')
         self._normals = value
 
@@ -107,19 +109,16 @@ class RegionGrowing(_CloudBase):
         This method simply checks if it is possible to execute the segmentation algorithm with
         the current settings. If it is possible then it returns true.
         '''
-        if self._input is None:
-            return False
-
         if self._normals is None or len(self._input) != len(self._normals):
-            return False
+            raise ValueError('invalid input normals cloud')
 
         if self._residual_flag:
             if self.residual_threshold <= 0:
-                return False
+                raise ValueError('residual threshold is not set')
         # no need to check curvature test
 
         if self.number_of_neighbours <= 0:
-            return False
+            raise ValueError('number of neighbours is not set')
 
         if self.search_method is None:
             self.search_method = DefaultSearch(self._input, self._indices)
@@ -133,6 +132,7 @@ class RegionGrowing(_CloudBase):
         This method finds KNN for each point and saves them to the array
         because the algorithm needs to find KNN a few times.
         '''
+        self._point_neighours = dict()
         for i_point, point_index in enumerate(self._indices):
             neighbours, _ = self.search_method.nearestk_search(i_point, self.number_of_neighbours)
             self._point_neighours[point_index] = neighbours
@@ -243,13 +243,14 @@ class RegionGrowing(_CloudBase):
         # check the angle between normals
         nghbr_normal = self._normals[nghbr].normal
         if self.smooth_mode_flag:
-            if np.abs(np.dot(nghbr_normal.dot(initial_normal))) > cosine_threshold:
+            if np.abs(np.dot(nghbr_normal, initial_normal)) > cosine_threshold:
                 return False, is_a_seed
         else:
-            if np.abs(np.dot(nghbr_normal.dot(initial_seed_normal))) > cosine_threshold:
+            if np.abs(np.dot(nghbr_normal, initial_seed_normal)) > cosine_threshold:
                 return False, is_a_seed
 
-        if self._curvature_flag and self._normals[nghbr]['curvature'] > self.curvature_threshold:
+        if self._curvature_flag and \
+           self._normals[nghbr].to_ndarray('curvature') > self.curvature_threshold:
             is_a_seed = False
 
         nghbr_point = self._input[nghbr].xyz
@@ -283,7 +284,7 @@ class RegionGrowing(_CloudBase):
             clusters that were obtained. Each cluster is an array of point indices.
         '''
         self._clusters = []
-        self._point_neighours = []
+        self._point_neighours = dict()
         self._point_labels = []
         self._num_pts_in_segment = []
         self._number_of_segments = 0
@@ -308,6 +309,7 @@ class RegionGrowing(_CloudBase):
 
         # Converting to list of PointIndices, ignored here in python
         self._deinit_compute()
+        return cluster
 
     def get_segment_from_point(self, index):
         '''
@@ -322,24 +324,80 @@ class RegionGrowing(_CloudBase):
         cluster : indices (list of int)
             cluster to which the point belongs.
         '''
-        pass # TODO: Not Implemented
+        if not self._init_compute():
+            self._deinit_compute()
+            return None
+
+        if index in self._indices:
+            if len(self._clusters) == 0:
+                self._point_neighours = dict()
+                self._point_labels = []
+                self._num_pts_in_segment = []
+                self._number_of_segments = 0
+
+                if not self._prepare_for_segmentation:
+                    self._deinit_compute()
+                    return None
+
+                self._find_point_neighbours()
+                self._apply_smooth_region_growing_algorithm()
+                self._assemble_regions()
+
+            for cluster in self._clusters:
+                if index in cluster:
+                    return cluster
+
+        return None
 
     def get_colored_cloud(self):
         '''
         If the cloud was successfully segmented, then function
-        returns colored cloud. Otherwise it returns an empty pointer.
+        returns colored cloud (with only rgb fields). Otherwise it returns None.
+
         Points that belong to the same segment have the same color.
         But this function doesn't guarantee that different segments will have different color(it
         all depends on RNG). Points that were not listed in the indices array will have red color.
         '''
-        pass # TODO: Not Implemented
+        if len(self._clusters) == 0:
+            return None
+
+        colors = randint(0, 256, size=(len(self._clusters), 3), dtype='u1')
+        colordata = np.tile(np.array(255<<24, dtype='<u4'), len(self._clusters))
+        colordata |= colors[:, 0] << 16 | colors[:, 1] << 8 | colors[:, 2]
+        colordata.dtype = 'f4'
+
+        colored_cloud = PointCloud(width=self._input.width, height=self._input.height,
+                                   fields=[('rgb', 'f4')])
+        self._input.copy_metadata(colored_cloud)
+
+        for coloridx, cluster in enumerate(self._clusters):
+            for index in cluster:
+                colored_cloud[index] = colordata[coloridx]
+
+        return colored_cloud
 
     def get_colored_cloud_rgba(self):
         '''
         If the cloud was successfully segmented, then function
-        returns colored cloud. Otherwise it returns an empty pointer.
+        returns colored cloud (with only rgba fields). Otherwise it returns None.
+
         Points that belong to the same segment have the same color.
         But this function doesn't guarantee that different segments will have different color(it
         all depends on RNG). Points that were not listed in the indices array will have red color.
         '''
-        pass # TODO: Not Implemented
+        if len(self._clusters) == 0:
+            return None
+
+        colors = randint(0, 256, size=(len(self._clusters), 3), dtype='u1')
+        colordata = np.tile(np.array(255<<24, dtype='<u4'), len(self._clusters))
+        colordata |= colors[:, 0] << 16 | colors[:, 1] << 8 | colors[:, 2]
+
+        colored_cloud = PointCloud(width=self._input.width, height=self._input.height,
+                                   fields=[('rgba', 'u4')])
+        self._input.copy_metadata(colored_cloud)
+
+        for coloridx, cluster in enumerate(self._clusters):
+            for index in cluster:
+                colored_cloud[index] = colordata[coloridx]
+
+        return colored_cloud

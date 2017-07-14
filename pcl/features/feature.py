@@ -167,7 +167,7 @@ class FeatureFromNormals(Feature, metaclass=abc.ABCMeta):
 
         By convention, L2 norm of each normal should be 1.
         '''
-        if not value or not ('normal_x' in value.names and 'curvature' in value.names):
+        if value is not None and not ('normal_x' in value.names and 'curvature' in value.names):
             raise ValueError('invalid input normals cloud')
         self._normals = value
 
@@ -208,7 +208,7 @@ class FeatureFromLabels(Feature, metaclass=abc.ABCMeta):
         In case of search surface is set to be different from the input cloud,
         labels should correspond to the search surface, not the input cloud!
         '''
-        if not value or 'label' not in value.names:
+        if value is not None and 'label' not in value.names:
             raise ValueError('invalid input label cloud')
         self._labels = value
 

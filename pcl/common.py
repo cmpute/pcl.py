@@ -80,7 +80,7 @@ class _CloudBase(metaclass=abc.ABCMeta):
         Initialize computation. Must be called before processing starts.
         '''
         if self._input is None:
-            return False
+            raise ValueError('null input point cloud')
         return True
 
     def _deinit_compute(self):
@@ -133,10 +133,11 @@ def compute_mean_and_covariance_matrix(cloud, indices=None, bias=True):
     centroid : Point
         The centroid of the set of points in the cloud
     '''
-    # Filter invalid points
     if indices is not None:
         cloud = cloud[indices]
-    cloud = cloud[~np.isnan(np.sum(cloud.xyz, axis=1))].data
+    # Filter invalid points
+    # cloud = cloud[~np.isnan(np.sum(cloud.xyz, axis=1))].data
+    cloud = cloud.data
 
     # a bit faster than np.cov if compute centroid and covariance at the same time
     # testing shows this method is faster at ratio about 30%, however precision has lost a bit
@@ -144,26 +145,26 @@ def compute_mean_and_covariance_matrix(cloud, indices=None, bias=True):
     cloudx = cloud['x']
     cloudy = cloud['y']
     cloudz = cloud['z']
-    accu['xx'] = np.mean(cloudx * cloudx)
-    accu['xy'] = np.mean(cloudx * cloudy)
-    accu['xz'] = np.mean(cloudx * cloudz)
-    accu['yy'] = np.mean(cloudy * cloudy)
-    accu['yz'] = np.mean(cloudy * cloudz)
-    accu['zz'] = np.mean(cloudz * cloudz)
-    accu['x'] = np.mean(cloudx)
-    accu['y'] = np.mean(cloudy)
-    accu['z'] = np.mean(cloudz)
-    centroid = [accu['x'], accu['y'], accu['z'], 1] # homogeneous form
+    coef_xx = np.mean(cloudx * cloudx)
+    coef_xy = np.mean(cloudx * cloudy)
+    coef_xz = np.mean(cloudx * cloudz)
+    coef_yy = np.mean(cloudy * cloudy)
+    coef_yz = np.mean(cloudy * cloudz)
+    coef_zz = np.mean(cloudz * cloudz)
+    coef_x = np.mean(cloudx)
+    coef_y = np.mean(cloudy)
+    coef_z = np.mean(cloudz)
+    centroid = [coef_x, coef_y, coef_z, 1] # homogeneous form
 
     if not bias:
         for key in accu:
             accu[key] *= len(cloud)/(len(cloud) - 1)
     cov = np.zeros((3, 3))
-    cov[0, 0] = accu['xx'] - accu['x']**2
-    cov[1, 1] = accu['yy'] - accu['y']**2
-    cov[2, 2] = accu['zz'] - accu['z']**2
-    cov[0, 1] = cov[1, 0] = accu['xy'] - accu['x']*accu['y']
-    cov[0, 2] = cov[2, 0] = accu['xz'] - accu['x']*accu['z']
-    cov[1, 2] = cov[2, 1] = accu['yz'] - accu['y']*accu['z']
+    cov[0, 0] = coef_xx - coef_x**2
+    cov[1, 1] = coef_yy - coef_y**2
+    cov[2, 2] = coef_zz - coef_z**2
+    cov[0, 1] = cov[1, 0] = coef_xy - coef_x*coef_y
+    cov[0, 2] = cov[2, 0] = coef_xz - coef_x*coef_z
+    cov[1, 2] = cov[2, 1] = coef_yz - coef_y*coef_z
 
     return cov, centroid

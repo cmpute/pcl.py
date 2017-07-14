@@ -74,6 +74,9 @@ def _safe_len(array):
     else:
         return len(array)
 
+def _all_str_(strlist):
+    return all([isinstance(item, str) for item in strlist])
+
 class PointCloud:
     '''
     PointCloud represents the base class in PCL for storing collections of 3D points.
@@ -203,7 +206,18 @@ class PointCloud:
 
     def __add__(self, pointcloud):
         copypc = PointCloud(self)
-        copypc.append(pointcloud)
+        if isinstance(pointcloud, type(self)) and \
+           len(set(self.names).intersection(pointcloud.names)) == 0:
+
+            if len(pointcloud) != len(self):
+                raise ValueError('size of point cloud should match when concatenating fields')
+            if not self.compare_metadata(pointcloud):
+                raise ValueError('do not concatenate two point cloud with difference metadata')
+
+            copypc.append_fields(pointcloud.fields, pointcloud.data)
+        else:
+            copypc.append(pointcloud)
+
         return copypc
 
     def __array__(self, *_):
@@ -215,13 +229,13 @@ class PointCloud:
             # indexing by index or field
             newdata = self.__points[indices]
             if isinstance(indices, str):
-                newfields = [dict(self.__fields)[indices]]
+                newfields = [(indices, dict(self.__fields)[indices])]
             else:
                 newfields = self.__fields
-        elif all([isinstance(field, str) for field in indices]): # indexing by fields
+        elif _all_str_(indices): # indexing by fields
             newdata = self.__points[list(indices)]
             fdict = dict(self.__fields)
-            newfields = [fdict[field] for field in indices]
+            newfields = [(field, fdict[field]) for field in indices]
         elif len(indices) is 2: # indexing by row and col
             if not self.is_organized:
                 raise IndexError('only organized point cloud support access by row and column')
@@ -236,19 +250,26 @@ class PointCloud:
         return cloud
 
     def __setitem__(self, indices, value):
-        if not isinstance(indices, tuple): # indexing by index or field or multiple fields
+        if not isinstance(indices, tuple) and not isinstance(indices, list):
+            # indexing by index or field or multiple fields
             self.__points[indices] = value
-        elif all([isinstance(field, str) for field in indices]):
-            self.__points[list(indices)] = value
+        elif _all_str_(indices):
+            if isinstance(value, (type(self), dict)):
+                for field in indices:
+                    self.__points[field] = value[field]
+            else:
+                for idx, data in enumerate(value):
+                    self.__points[indices[idx]] = data
         elif len(indices) is 2:
             if not self.is_organized:
                 raise IndexError('only organized point cloud support access by row and column')
             lin = np.arange(_safe_len(self.__points)).reshape(self.width, self.height)
-            self.__points[lin[indices]] = value
+            self.__points[lin[indices]] = np.array(value, dtype=self.__fields, copy=False).ravel()
         else:
             raise IndexError('too many indices')
 
     def __delitem__(self, indices):
+        oldlen = len(self)
         if isinstance(indices, str):
             # delete single field
             nfields = list(self.__fields)
@@ -258,10 +279,7 @@ class PointCloud:
                 ndata[name] = self.__points[name]
             self.__points = ndata
             self.__fields = nfields
-        elif not isinstance(indices, tuple):
-            # delete in one dimension
-            self.__points = np.delete(self.__points, indices, axis=0)
-        elif all([isinstance(field, str) for field in indices]):
+        elif isinstance(indices, (tuple, list)) and _all_str_(indices):
             # delete several fields
             indices = list(indices)
             nfields = list(self.__fields)
@@ -272,6 +290,9 @@ class PointCloud:
                 ndata[name] = self.__points[name]
             self.__points = ndata
             self.__fields = nfields
+        elif not isinstance(indices, tuple):
+            # delete in one dimension
+            self.__points = np.delete(self.__points, indices, axis=0)
         elif len(indices) is 2:
             # delete in two dimension (organized point cloud)
             if not self.is_organized:
@@ -280,6 +301,9 @@ class PointCloud:
             self.__points = np.delete(self.__points, lin[indices].flatten(), axis=0)
         else:
             raise IndexError('too many indices')
+        
+        if len(self) != oldlen:
+            self.disorganize()
 
     def __repr__(self):
         return "<PointCloud of %d points>" % _safe_len(self.__points)
@@ -301,8 +325,7 @@ class PointCloud:
 
     def __eq__(self, target):
         result = target.data == self.data
-        result &= target.sensor_orientation == self.sensor_orientation
-        result &= (target.sensor_origin == self.sensor_origin).all()
+        result &= self.compare_metadata(target)
         result &= target.width == self.width
         result &= target.height == self.height
 
@@ -366,6 +389,10 @@ class PointCloud:
         '''
         Get the ndarray storing the points data.
         This property accessor conserves the dtype (data type) of the array
+
+        # Notes
+        Operating field properties of raw data directly is not recommended because it may corrupt
+        the fields property of the PointCloud object
         '''
         return self.__points
 
@@ -476,6 +503,14 @@ class PointCloud:
         target.sensor_origin = self.__sensor_origin
         target.sensor_orientation = self.__sensor_orientation
 
+    def compare_metadata(self, target):
+        '''
+        Judge whether the metadata of the two point cloud is the same
+        '''
+        pred = (target.sensor_origin == self.sensor_origin).all()
+        pred &= target.sensor_orientation == self.__sensor_orientation
+        return pred
+
     @property
     def fields(self):
         '''
@@ -483,7 +518,7 @@ class PointCloud:
         The format of fields is a list of tuples (name, descriptor)
             where the descriptor is nearly the same as numpy
         '''
-        return list(self.__fields)
+        return tuple(self.__fields)
 
     @property
     def names(self):
@@ -491,6 +526,13 @@ class PointCloud:
         Get the names of the point fields
         '''
         return [name for name, _ in self.__fields]
+
+    @names.setter
+    def names(self, value):
+        '''
+        Set the names of the point fields
+        '''
+        self.rename_fields(value)
 
     def __str__(self):
         return ('''PointCloud with %d points
@@ -503,7 +545,7 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
 
     def append_fields(self, fields, data=None):
         '''
-        Append fields at the end of a point
+        Append fields at the end of fields list of the point cloud
 
         # Parameters
             fields: list of tuples or numpy.dtype
@@ -515,10 +557,14 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
                 If nothing is inputted, the data of new fields remains what they were in memory.
 
                 Examples:
-                - {'field1': [1, 5], 'field2': [3, 5]}
-                - [[1, 5], [3, 5]]
-                - array([(1, 3), (5, 5)], dtype=[('field1', 'i1'), ('field2', 'i2')])
-                - array([[1, 5], [3, 5]])
+                - `{'field1': [1, 5], 'field2': [3, 5]}`
+                - `[[1, 5], [3, 5]]`
+                - `array([(1, 3), (5, 5)], dtype=[('field1', 'i1'), ('field2', 'i2')])`
+                - `array([[1, 5], [3, 5]])`
+
+        # Notes
+        If you want to concatenate two PointCloud with the same size by fields, then just use
+        `cloud1.append_fields(cloud2.fields, cloud2.data)`
         '''
         fields, predict = _cast_fields_to_tuples(fields)
         if predict:
@@ -555,7 +601,7 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
 
     def insert_fields(self, fields, offsets, data=None):
         '''
-        Insert fields at given offset in a point
+        Insert fields at given offset in the fields list of the cloud
 
         # Parameters
             fields: list of tuples or numpy.dtype
@@ -565,8 +611,8 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
                 The offset is defined with field list rather than data bits.
 
                 Examples:
-                - {'field1': 2, 'field2': 3}
-                - [2, 3]
+                - `{'field1': 2, 'field2': 3}`
+                - `[2, 3]`
 
             data: number or dict or sequence or numpy array
                 The data correspond to the fields.
@@ -575,10 +621,10 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
                 If nothing is inputted, the data of new fields remains what they were in memory.
 
                 Examples:
-                - {'field1': [1, 5], 'field2': [3, 5]}
-                - [[1, 5], [3, 5]]
-                - array([(1, 3), (5, 5)], dtype=[('field1', 'i1'), ('field2', 'i2')])
-                - array([[1, 5], [3, 5]])
+                - `{'field1': [1, 5], 'field2': [3, 5]}`
+                - `[[1, 5], [3, 5]]`
+                - `array([(1, 3), (5, 5)], dtype=[('field1', 'i1'), ('field2', 'i2')])`
+                - `array([[1, 5], [3, 5]])`
         '''
         fields, predict = _cast_fields_to_tuples(fields)
         if predict:
@@ -639,15 +685,68 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
 
     def pop_fields(self, names):
         '''
-        Remove fields from the pointcloud and return the values respectively
+        Remove fields from the point cloud and return the values respectively
+
+        # Parametes
+            names : list of str
+                Names of the fields that are being removed
 
         # Returns
             values: numpy.array
-                data of deleted fields, stored in a record array
+                Data of deleted fields, stored in a record array
         '''
         points = np.array(self[names])
         del self[names]
         return points
+
+    def rename_fields(self, new_names, offsets=None, old_names=None):
+        '''
+        Rename the fields of the point cloud. To indentify the fields, offsets of them or old names
+        should be specified
+
+        # Parameters
+            new_names : list of str
+                The new names of target fields
+            offsets : list of str
+                The indices of the fields that are being renamed
+            old_names : list of str
+                The old names of target fields
+        '''
+        if isinstance(new_names, str):
+            new_names = [new_names]
+        if not _all_str_(new_names):
+            raise ValueError("invalid input new names")
+        if isinstance(offsets, int):
+            offsets = [offsets]
+        if isinstance(old_names, str):
+            old_names = [old_names]
+
+        if not offsets:
+            if not old_names:
+                if len(new_names) != len(self.fields):
+                    raise ValueError("the count of names doesn't match")
+
+                self.__points.dtype.names = new_names
+                for idx in range(len(self.__fields)):
+                    self.__fields[idx] = (new_names[idx], self.__fields[idx][1])
+                return
+            else:
+                if not _all_str_(old_names):
+                    raise ValueError("invalid input old names")
+                sname = self.names
+                offsets = [sname.index(name) for name in old_names]
+        elif old_names: # check match
+            sname = self.names
+            for idx, offset in enumerate(offsets):
+                if sname[offset] != old_names[idx]:
+                    raise ValueError("offsets and old names do not match")
+
+        if len(new_names) != len(offsets):
+            raise ValueError("count of offsets doesn't match with new names")
+
+        for idx, offset in enumerate(offsets):
+            self.__fields[offset] = (new_names[idx], self.__fields[offset][1])
+        self.__points.dtype.names = self.names
 
     def to_ndarray(self, names=None, dtype=None, copy=False):
         '''
@@ -666,6 +765,8 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
         '''
         if names is None:
             names = self.names
+        if isinstance(names, str):
+            names = [names]
         data = self.__points[names]
         if dtype is None:
             fdict = dict(self.__fields)
@@ -708,7 +809,7 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
         In PCL, rgb is stored as rgba with a=255
         '''
         # struct definition from PCL
-        struct = np.dtype([('b', 'i1'), ('g', 'i1'), ('r', 'i1'), ('a', 'i1')])
+        struct = np.dtype([('b', 'u1'), ('g', 'u1'), ('r', 'u1'), ('a', 'u1')])
         return self.data['rgb'].view(struct)[['r', 'g', 'b']]
 
     @property
@@ -718,5 +819,5 @@ sensor orientation (xyzw) : {3}''' % (len(self), self.width, self.height,)) \
             (float rgb -> uint r,g,b,a)
         '''
         # struct definition from PCL
-        struct = np.dtype([('b', 'i1'), ('g', 'i1'), ('r', 'i1'), ('a', 'i1')])
+        struct = np.dtype([('b', 'u1'), ('g', 'u1'), ('r', 'u1'), ('a', 'u1')])
         return self.data['rgba'].view(struct)
