@@ -59,9 +59,8 @@ script:
     - if [ "$RUN_COVERAGE" == "yes" ]; then
         py.test test/ --cov;
       else
-        py.test test/ -W ignore;
+        py.test test/;
       fi
 
-# after_success:
-  # coverage test here
+after_success:
     - if [ "$RUN_COVERAGE" == "yes" ]; then coveralls; fi

@@ -9,7 +9,7 @@ except ImportError:
 _VER_MAJOR = 0
 _VER_MINOR = 0
 _VER_MICRO = 5
-_VER_EXTRA = 'a'
+_VER_EXTRA = ''
 
 # Construct full version string from these.
 _VER = [_VER_MAJOR, _VER_MINOR]

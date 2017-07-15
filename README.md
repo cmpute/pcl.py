@@ -1,4 +1,4 @@
-# PyPCL [![Build Status](https://travis-ci.org/cmpute/pypcl.svg?branch=master)](https://travis-ci.org/cmpute/pypcl)
+# PyPCL [![Build Status](https://travis-ci.org/cmpute/pypcl.svg?branch=master)](https://travis-ci.org/cmpute/pypcl) [![Coverage Status](https://coveralls.io/repos/github/cmpute/pypcl/badge.svg)](https://coveralls.io/github/cmpute/pypcl)
 
 Re-implementation in pure python of Point Cloud Library (PCL)
 

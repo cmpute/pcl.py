@@ -538,3 +538,15 @@ def savepcd(file, cloud, binary=True, compress=False):
             Indicating whether compress binary data when saving
     '''
     PCDWriter().write(file, cloud, binary=binary, compress=compress)
+
+class PLYReader(FileReader):
+    '''
+    Polygon File Format (PLY) reader.
+    '''
+    pass # TODO: Not Implemented
+
+class PLYWriter(FileWriter):
+    '''
+    Polygon File Format (PLY) writer.
+    '''
+    pass # TODO: Not Implemented
