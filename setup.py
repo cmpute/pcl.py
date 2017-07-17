@@ -34,6 +34,7 @@ setup(name='PyPCL',
           'compress': ['python-lzf'],
           'search': ['nmslib'],
           'test': ['pytest'],
+          'visualize': ['vtk>5.4']
       },
       classifiers=[
           'Programming Language :: Python :: 3',
