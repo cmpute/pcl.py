@@ -19,6 +19,6 @@ class PolygonMesh:
 
     TODO: Judge differences between pcl::PolygonMesh and pcl::geometry::PolygonMesh
     '''
-    def __init__(self, cloud, vertices):
+    def __init__(self, cloud, polygon):
         self.cloud = cloud
-        self.vertices = vertices
+        self.polygon = polygon

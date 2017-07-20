@@ -2,7 +2,11 @@
 Implementation of following files:
     pcl/visualization/include/pcl/visualization/impl/pcl_visualizer.hpp
     pcl/visualization/include/pcl/visualization/pcl_visualizer.h
+    pcl/visualization/include/pcl/visualization/interactor_style.h
+    pcl/visualization/include/pcl/visualization/point_picking_event.h
     pcl/visualization/src/pcl_visualizer.cpp
+    pcl/visualization/src/interactor_style.cpp
+    pcl/visualization/src/point_picking_event.cpp
 '''
 
 import abc
