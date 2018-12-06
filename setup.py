@@ -2,11 +2,12 @@ import sys
 from skbuild import setup
 
 setup(
-    name="pcl-test",
+    name="PyPCL",
     version="0.0.1",
-    description="minial pcl binding",
-    author='The scikit-build team',
+    description="Minial PCL Binding",
+    author='Jacob Zhong',
     license="MIT",
     packages=['pcl'],
+    package_data={'pcl':['*.pxd', '*/*.pxd', '__init__.pxd']},
     install_requires=['cython'],
 )

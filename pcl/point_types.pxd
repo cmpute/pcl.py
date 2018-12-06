@@ -1,8 +1,9 @@
 from libc.stdint cimport uint8_t, uint32_t
 
 cdef extern from "pcl/point_types.h" namespace "pcl":
-    cdef struct PointXYZ:
+    cdef cppclass PointXYZ:
         PointXYZ()
+        PointXYZ(float x, float y, float z)
         float x
         float y
         float z
