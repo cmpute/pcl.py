@@ -116,3 +116,6 @@ dmypy.json
 
 # skbuild
 _skbuild/
+
+# VS Code
+.vscode/

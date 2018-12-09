@@ -8,14 +8,14 @@ cdef extern from "pcl/point_types.h" namespace "pcl":
         float y
         float z
 
-    cdef struct Normal:
+    cdef cppclass Normal:
         Normal()
         float normal_x
         float normal_y
         float normal_z
         float curvature
 
-    cdef struct PointXYZRGBA:
+    cdef cppclass PointXYZRGBA:
         PointXYZRGBA()
         float x
         float y
@@ -27,7 +27,7 @@ cdef extern from "pcl/point_types.h" namespace "pcl":
         float rgb
         uint32_t rgba
 
-    cdef struct PointXYZRGBL:
+    cdef cppclass PointXYZRGBL:
         PointXYZRGBL()
         float x
         float y

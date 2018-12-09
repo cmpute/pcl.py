@@ -1,11 +1,15 @@
-find_package(PCL REQUIRED COMPONENTS common)
+find_package(PCL REQUIRED COMPONENTS common io)
 
+# TODO: Make scikit-build able to automatically find these directories
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_cython_target(_pcl CXX)
-add_library(_pcl MODULE ${_pcl})
-python_extension_module(_pcl LINKED_MODULES_VAR linked_module_list)
+# Add at last to make sure using the right python library
+include_directories(BEFORE ${PYTHON_INCLUDE_DIR})
 
-install(TARGETS _pcl LIBRARY DESTINATION pcl)
+add_cython_target(PointCloud CXX)
+add_library(PointCloud MODULE ${PointCloud})
+target_link_libraries(PointCloud ${PCL_LIBRARIES})
+python_extension_module(PointCloud)
+install(TARGETS PointCloud LIBRARY DESTINATION pcl)

@@ -9,5 +9,5 @@ setup(
     license="MIT",
     packages=['pcl'],
     package_data={'pcl':['*.pxd', '*/*.pxd', '__init__.pxd']},
-    install_requires=['cython'],
+    install_requires=['cython', 'eigency'],
 )
