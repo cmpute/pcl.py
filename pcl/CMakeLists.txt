@@ -8,6 +8,12 @@ add_definitions(${PCL_DEFINITIONS})
 # Add at last to make sure using the right python library
 include_directories(BEFORE ${PYTHON_INCLUDE_DIR})
 
+add_cython_target(PointField CXX)
+add_library(PointField MODULE ${PointField})
+target_link_libraries(PointField ${PCL_LIBRARIES})
+python_extension_module(PointField)
+install(TARGETS PointField LIBRARY DESTINATION pcl)
+
 add_cython_target(PointCloud CXX)
 add_library(PointCloud MODULE ${PointCloud})
 target_link_libraries(PointCloud ${PCL_LIBRARIES})

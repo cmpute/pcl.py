@@ -1,8 +1,13 @@
+from libc.stdint cimport uint8_t
 from libcpp.string cimport string
 from cpython cimport bool as PyBool
+import numpy as np
+cimport numpy as np
+
 from pcl._eigen cimport Vector4f, Quaternionf
 from pcl._PCLPointCloud2 cimport PCLPointCloud2
 from pcl.io._pcd_io cimport loadPCDFile, savePCDFile
+from pcl.PointField cimport PointField
 
 cdef class PointCloud:
     cdef PCLPointCloud2 _base
@@ -10,14 +15,35 @@ cdef class PointCloud:
     cdef Quaternionf _orientation
 
     def __cinit__(self, init=None):
-        self._base = PCLPointCloud2()
-        self._origin = Vector4f.Zero() # TODO: default origin and orientation
-        self._orientation = Quaternionf()
+        self._origin = Vector4f.Zero()
+        self._orientation = Quaternionf.Identity()
+
+    property width:
+        '''The width of the point cloud'''
+        def __get__(self): return self._base.width
+    property height:
+        '''The height of the point cloud'''
+        def __get__(self): return self._base.height
+    property fields:
+        '''The fields of the point cloud'''
+        def __get__(self): 
+            return [PointField.wrap(field) for field in self._base.fields]
 
     def __len__(self):
         return self._base.width
 
-cdef str _nonzero_error_msg = "Function %s returned %d, please check stderr output!"
+    def __repr__(self):
+        return "<PointCloud of %d points>" % self._base.width
+
+    def to_ndarray(self):
+        cdef uint8_t *mem_ptr = self._base.data.data()
+        cdef uint8_t[:] mem_view = <uint8_t[:self._base.data.size()]>mem_ptr
+        cdef np.ndarray arr_raw = np.asarray(mem_view)
+        cdef list dtype = [(field.name, field.datatype) for field in self.fields]
+        cdef np.ndarray arr_view = arr_raw.view(dtype)
+        return arr_view
+
+cdef str _nonzero_error_msg = "Function {0} returned {1}, please check stderr output!"
 
 cdef inline bytes _ensure_path(path) except +:
     if isinstance(path, str):

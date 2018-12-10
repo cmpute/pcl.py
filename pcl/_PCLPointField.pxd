@@ -2,7 +2,7 @@ from libc.stdint cimport uint8_t, uint32_t
 from libcpp.string cimport string
 
 cdef extern from "pcl/PCLPointField.h" namespace "pcl":
-    cdef struct PCLPointField:
+    cdef cppclass PCLPointField:
         PCLPointField ()
         string name
         uint32_t offset
