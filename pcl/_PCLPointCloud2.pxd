@@ -19,3 +19,4 @@ cdef extern from "pcl/PCLPointCloud2.h" namespace "pcl":
         uint8_t is_dense
 
 ctypedef shared_ptr[PCLPointCloud2] PointCloud2Ptr
+ctypedef shared_ptr[const PCLPointCloud2] PointCloud2ConstPtr
