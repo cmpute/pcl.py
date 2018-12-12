@@ -1,6 +1,6 @@
 from pcl._PCLPointCloud2 cimport PCLPointCloud2
-from pcl._point_cloud cimport _point_cloud
+from pcl._point_cloud cimport PointCloud
 
 cdef extern from "pcl/conversions.h" namespace "pcl":
-    def void fromPCLPointCloud2[PointT](const PCLPointCloud2&, PointCloud[PointT]&)
-    def void toPCLPointCloud2[Point](const PointCloud[PointT]&, PCLPointCloud2&)
+    void fromPCLPointCloud2[PointT](const PCLPointCloud2&, PointCloud[PointT]&)
+    void toPCLPointCloud2[PointT](const PointCloud[PointT]&, PCLPointCloud2&)

@@ -1,5 +1,7 @@
 from pcl._PCLPointField cimport PCLPointField
 
+cdef dict _FIELD_TYPE_MAPPING
+
 cdef class PointField:
     cdef PCLPointField base
     cdef object __weakref__
