@@ -1,8 +1,8 @@
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
-from pcl._point_cloud cimport PointCloud
-from pcl._PCLPointCloud2 cimport PCLPointCloud2
+from pcl.common._point_cloud cimport PointCloud
+from pcl.common._PCLPointCloud2 cimport PCLPointCloud2
 from pcl._eigen cimport Vector4f, Quaternionf
 
 cdef extern from "pcl/io/pcd_io.h" namespace "pcl::io":

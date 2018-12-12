@@ -1,8 +1,8 @@
 from libcpp.vector cimport vector
 from libc.stdint cimport uint8_t, uint32_t
 from pcl._boost.smart_ptr cimport shared_ptr
-from pcl._PCLHeader cimport PCLHeader
-from pcl._PCLPointField cimport PCLPointField
+from pcl.common._PCLHeader cimport PCLHeader
+from pcl.common._PCLPointField cimport PCLPointField
 
 cdef extern from "pcl/PCLPointCloud2.h" namespace "pcl":
     # Note: structs in C++ can be all considered as cppclass in cython

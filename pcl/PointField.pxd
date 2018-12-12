@@ -1,4 +1,4 @@
-from pcl._PCLPointField cimport PCLPointField
+from pcl.common._PCLPointField cimport PCLPointField
 
 cdef dict _FIELD_TYPE_MAPPING
 

@@ -7,10 +7,10 @@ cimport numpy as np
 import warnings
 
 from pcl._eigen cimport Vector4f, Quaternionf
-from pcl._conversions cimport toPCLPointCloud2, fromPCLPointCloud2
-from pcl._PCLPointCloud2 cimport PCLPointCloud2
-from pcl._PCLPointField cimport PCLPointField
-from pcl._point_cloud cimport PointCloud as cPC
+from pcl.common._conversions cimport toPCLPointCloud2, fromPCLPointCloud2
+from pcl.common._PCLPointCloud2 cimport PCLPointCloud2
+from pcl.common._PCLPointField cimport PCLPointField
+from pcl.common._point_cloud cimport PointCloud as cPC
 from pcl.io._pcd_io cimport loadPCDFile, savePCDFile
 from pcl.PointField cimport PointField, _FIELD_TYPE_MAPPING
 
@@ -290,6 +290,7 @@ cdef inline bytes _ensure_path(path) except +:
         raise ValueError('Invalid path string!')
     else: return path
 
+# TODO: Inference point type from fields
 def load_pcd(path):
     cdef PointCloud cloud = PointCloud()
     cdef int retval = loadPCDFile(_ensure_path(path), cloud._base, cloud._origin, cloud._orientation)

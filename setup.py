@@ -1,5 +1,9 @@
 import sys
-from skbuild import setup
+
+try:
+    from skbuild import setup
+except ImportError:
+    raise ImportError('scikit-build is required for installing')
 
 setup(
     name="PyPCL",

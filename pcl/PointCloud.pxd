@@ -1,9 +1,9 @@
 from libcpp.string cimport string
 
 from pcl._eigen cimport Vector4f, Quaternionf
-from pcl._point_cloud cimport PointCloud as cPC
-from pcl._PCLPointCloud2 cimport PCLPointCloud2
-from pcl._PCLPointField cimport PCLPointField
+from pcl.common._point_cloud cimport PointCloud as cPC
+from pcl.common._PCLPointCloud2 cimport PCLPointCloud2
+from pcl.common._PCLPointField cimport PCLPointField
 
 cdef dict _POINT_TYPE_MAPPING
 
