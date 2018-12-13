@@ -1,5 +1,6 @@
 from libc.stdint cimport uint32_t
 from libcpp cimport bool
+from pcl._eigen cimport Vector4f, Quaternionf
 
 cdef extern from "pcl/point_cloud.h" namespace "pcl":
     cdef cppclass PointCloud[PointT]:
@@ -8,7 +9,11 @@ cdef extern from "pcl/point_cloud.h" namespace "pcl":
 
         PointT& at(int column, int row)
         PointT& operator()(int column, int row)
+
         bool isOrganized()
+        bool is_dense
+        Vector4f sensor_origin_
+        Quaternionf sensor_orientation_
 
         size_t size()
         void reserve(size_t n)

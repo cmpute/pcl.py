@@ -62,7 +62,7 @@ cdef string _check_dtype_compatible(np.dtype dtype):
 cdef bool _is_not_record_array(np.ndarray array):
     return array.dtype.isbuiltin
 
-cdef class PointCloud:
+cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
     def __cinit__(self):
         self._origin = Vector4f.Zero()
         self._orientation = Quaternionf.Identity()
