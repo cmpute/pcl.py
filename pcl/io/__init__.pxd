@@ -1,2 +1,2 @@
-from pcl.io._pcd_io cimport *
-from pcl.io._ply_io cimport *
+from pcl.io.pcd_io cimport *
+from pcl.io.ply_io cimport *

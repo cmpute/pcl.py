@@ -1,6 +1,6 @@
 from libcpp cimport bool
 
-cdef extern from "boost/shared_ptr.hpp" namespace "boost" nogil:
+cdef extern from "boost/smart_ptr/shared_ptr.hpp" namespace "boost" nogil:
     cdef cppclass shared_ptr[T]:
         shared_ptr()
         shared_ptr(T*)

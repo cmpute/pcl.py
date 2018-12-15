@@ -21,3 +21,6 @@ cdef extern from "Eigen/Eigen" namespace "Eigen" nogil:
 
         @staticmethod
         Quaternionf Identity()
+
+    cdef cppclass Affine3f:
+        pass

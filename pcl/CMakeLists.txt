@@ -8,6 +8,7 @@ add_definitions(${PCL_DEFINITIONS})
 # Add at last to make sure using the right python library
 include_directories(BEFORE ${PYTHON_INCLUDE_DIR})
 
+# support cython/c api
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 
@@ -22,3 +23,9 @@ add_library(PointCloud MODULE ${PointCloud} PointCloud_Impl.cxx)
 target_link_libraries(PointCloud ${PCL_LIBRARIES})
 python_extension_module(PointCloud)
 install(TARGETS PointCloud LIBRARY DESTINATION pcl)
+
+add_cython_target(Visualizer CXX)
+add_library(Visualizer MODULE ${Visualizer})
+target_link_libraries(Visualizer ${PCL_LIBRARIES})
+python_extension_module(Visualizer)
+install(TARGETS Visualizer LIBRARY DESTINATION pcl)

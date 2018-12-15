@@ -7,11 +7,12 @@ cimport numpy as np
 import warnings
 
 from pcl._eigen cimport Vector4f, Quaternionf
-from pcl.common._conversions cimport toPCLPointCloud2, fromPCLPointCloud2
-from pcl.common._PCLPointCloud2 cimport PCLPointCloud2
-from pcl.common._PCLPointField cimport PCLPointField
-from pcl.common._point_cloud cimport PointCloud as cPC
-from pcl.io._pcd_io cimport loadPCDFile, savePCDFile
+from pcl.common.conversions cimport toPCLPointCloud2, fromPCLPointCloud2
+from pcl.common.PCLPointCloud2 cimport PCLPointCloud2
+from pcl.common.PCLPointField cimport PCLPointField
+from pcl.common.point_cloud cimport PointCloud as cPC
+from pcl.io.pcd_io cimport loadPCDFile, savePCDFile
+from pcl.io.ply_io cimport loadPLYFile, savePLYFile
 from pcl.PointField cimport PointField, _FIELD_TYPE_MAPPING
 
 # XXX: unordered_map[string, vector[(string, uint8_t, uint32_t)]]
@@ -265,6 +266,9 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
     def __reduce__(self):
         raise NotImplementedError()
 
+    def __add__(self, item):
+        raise NotImplementedError()
+
     def to_ndarray(self):
         cdef uint8_t *mem_ptr = self._base.data.data()
         cdef uint8_t[:] mem_view = <uint8_t[:self._base.data.size()]>mem_ptr
@@ -283,22 +287,31 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
 
 cdef str _nonzero_error_msg = "Function {0} returned {1}, please check stderr output!"
 
-cdef inline bytes _ensure_path(path) except +:
-    if isinstance(path, str):
-        return path.encode('ascii')
-    elif not isinstance(path, bytes):
-        raise ValueError('Invalid path string!')
-    else: return path
-
 # TODO: Inference point type from fields
-def load_pcd(path):
+cpdef PointCloud load_pcd(str path):
     cdef PointCloud cloud = PointCloud()
-    cdef int retval = loadPCDFile(_ensure_path(path), cloud._base, cloud._origin, cloud._orientation)
+    cdef int retval = loadPCDFile(path.encode('ascii'), cloud._base, cloud._origin, cloud._orientation)
     if retval != 0: raise RuntimeError(_nonzero_error_msg.format("loadPCDFile", retval))
     return cloud
 
-def save_pcd(path, PointCloud cloud, PyBool binary=False):
-    _ensure_path(path)
-    cdef int retval = savePCDFile(_ensure_path(path), cloud._base, cloud._origin, cloud._orientation, binary)
+cpdef void save_pcd(str path, PointCloud cloud, PyBool binary=False):
+    cdef int retval = savePCDFile(path.encode('ascii'), cloud._base, cloud._origin, cloud._orientation, binary)
     if retval != 0: raise RuntimeError(_nonzero_error_msg.format("savePCDFile", retval))
 
+# TODO: Inference point type from fields
+def load_ply(str path, type return_type=PointCloud):
+    cdef:
+        PointCloud cloud
+        int retval
+
+    if return_type == PointCloud:
+        cloud = PointCloud()
+        retval = loadPLYFile(path.encode('ascii'), cloud._base, cloud._origin, cloud._orientation)
+        if retval != 0: raise RuntimeError(_nonzero_error_msg.format("loadPLYFile", retval))
+        return cloud
+    else:
+        raise TypeError("Unsupported return type!")
+
+cpdef void save_ply(str path, PointCloud cloud, PyBool binary=False, PyBool use_camera=True):
+    cdef int retval = savePLYFile(path.encode('ascii'), cloud._base, cloud._origin, cloud._orientation, binary, use_camera)
+    if retval != 0: raise RuntimeError(_nonzero_error_msg.format("savePLYFile", retval))

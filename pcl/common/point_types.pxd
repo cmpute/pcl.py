@@ -45,4 +45,12 @@ cdef extern from "pcl/point_types.h" namespace "pcl":
         float z
         uint32_t label
 
+    cdef struct PrincipalCurvatures:
+        PrincipalCurvatures()
+        float principal_curvature_x
+        float principal_curvature_y
+        float principal_curvature_z
+        float pc1
+        float pc2
+
     # TODO: include remaining types

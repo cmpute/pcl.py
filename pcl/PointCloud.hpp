@@ -9,6 +9,7 @@ struct CyPointCloud;
 
 namespace pcl
 {
+    // XXX: workaround for that cython doesn't support variadic template type arguments
     typedef boost::variant<
         PointCloud<Normal>,
         PointCloud<PointXY>,
