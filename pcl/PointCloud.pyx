@@ -1,3 +1,4 @@
+from cython.operator cimport dereference as deref
 from libc.stdint cimport uint8_t
 from libcpp cimport bool
 from libcpp.string cimport string
@@ -6,10 +7,8 @@ import numpy as np
 cimport numpy as np
 import warnings
 
-from pcl._eigen cimport Vector4f, Quaternionf
+from pcl._boost.smart_ptr cimport make_shared
 from pcl.common.conversions cimport toPCLPointCloud2, fromPCLPointCloud2
-from pcl.common.PCLPointCloud2 cimport PCLPointCloud2
-from pcl.common.PCLPointField cimport PCLPointField
 from pcl.common.point_cloud cimport PointCloud as cPC
 from pcl.io.pcd_io cimport loadPCDFile, savePCDFile
 from pcl.io.ply_io cimport loadPLYFile, savePLYFile
@@ -101,7 +100,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
 
         if isinstance(data, PointCloud):
             # TODO: support non-copy instantiation
-            self._base = (<PointCloud>data)._base
+            self._ptr = (<PointCloud>data)._ptr
             self._origin = (<PointCloud>data)._origin
             self._orientation = (<PointCloud>data)._orientation
             self._ptype = (<PointCloud>data)._ptype
@@ -122,13 +121,13 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                     raise ValueError("Unrecognized input data shape")
 
                 if len(data.shape) == 2:
-                    self._base.height = 1
-                    self._base.width = data.shape[0]
-                    self._base.is_dense = False
+                    self.ptr().height = 1
+                    self.ptr().width = data.shape[0]
+                    self.ptr().is_dense = False
                 else:
-                    self._base.height = data.shape[0]
-                    self._base.width = data.shape[1]
-                    self._base.is_dense = True
+                    self.ptr().height = data.shape[0]
+                    self.ptr().width = data.shape[1]
+                    self.ptr().is_dense = True
 
                 # data field interpreting
                 if point_type == None:
@@ -154,57 +153,60 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                     raise ValueError("Unrecognized input data shape")
 
                 if len(data.shape) == 1:
-                    self._base.height = 1
-                    self._base.width = data.shape[0]
-                    self._base.is_dense = False
+                    self.ptr().height = 1
+                    self.ptr().width = data.shape[0]
+                    self.ptr().is_dense = False
                 else:
-                    self._base.height = data.shape[0]
-                    self._base.width = data.shape[1]
-                    self._base.is_dense = True
+                    self.ptr().height = data.shape[0]
+                    self.ptr().width = data.shape[1]
+                    self.ptr().is_dense = True
 
                 # data field interpreting
                 self._ptype = _check_dtype_compatible(data.dtype)
                 if self._ptype.empty():
                     raise ValueError("Inconsistent input numpy array dtype!")
-                self._base.point_step = data.strides[-1]
+                self.ptr().point_step = data.strides[-1]
 
             # data strides calculation
-            self._base.point_step = 0
+            self.ptr().point_step = 0
             for name, typeid, count in _POINT_TYPE_MAPPING[self._ptype]:
                 temp_field = PCLPointField()
                 temp_field.name = name
-                temp_field.offset = self._base.point_step
+                temp_field.offset = self.ptr().point_step
                 temp_field.datatype = typeid
                 temp_field.count = count
-                self._base.fields.push_back(temp_field)
-                self._base.point_step += _FIELD_TYPE_MAPPING[typeid][1] * count
-            self._base.row_step = self._base.point_step * self._base.width
+                self.ptr().fields.push_back(temp_field)
+                self.ptr().point_step += _FIELD_TYPE_MAPPING[typeid][1] * count
+            self.ptr().row_step = self.ptr().point_step * self.ptr().width
 
             if not _is_not_record_array(data):
-                assert self._base.point_step != data.strides[-1]
+                assert self.ptr().point_step != data.strides[-1]
 
             # data interpreting
             # FIXME: generate warning if byte order is not consistent
-            if self._base.is_bigendian:
-                self._base.data = data.view('>u1').reshape(-1)
+            if self.ptr().is_bigendian:
+                self.ptr().data = data.view('>u1').reshape(-1)
             else:
-                self._base.data = data.view('<u1').reshape(-1)
+                self.ptr().data = data.view('<u1').reshape(-1)
 
             initialized = True
-        
+        if data is None:
+            self._ptr = make_shared[PCLPointCloud2]()
+            initialized = True
+
         if not initialized:
             raise ValueError("Unrecognized data input!")
 
     property width:
         '''The width of the point cloud'''
-        def __get__(self): return self._base.width
+        def __get__(self): return self.ptr().width
     property height:
         '''The height of the point cloud'''
-        def __get__(self): return self._base.height
+        def __get__(self): return self.ptr().height
     property fields:
         '''The fields of the point cloud'''
         def __get__(self): 
-            return [PointField.wrap(field) for field in self._base.fields]
+            return [PointField.wrap(field) for field in self.ptr().fields]
     property sensor_orientation:
         ''' Sensor acquisition pose (rotation). '''
         def __get__(self):
@@ -222,7 +224,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         In PCL, xyz coordinate is stored in data[4] and the last field is filled with 1
         '''
         def __get__(self):
-            return self.to_ndarray()['x', 'y', 'z']
+            return self.to_ndarray()[['x', 'y', 'z']].view('f4').reshape(len(self), -1)
     property normal:
         '''
         Get normal vectors of the point cloud, data type will be infered from data
@@ -230,7 +232,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         In PCL, normals are stored in data_n[4] and the last field is filled with 0
         '''
         def __get__(self):
-            return self.to_ndarray()['normal_x', 'normal_y', 'normal_z']
+            return self.to_ndarray()[['normal_x', 'normal_y', 'normal_z']].view('f4').reshape(len(self), -1)
     property rgb:
         '''
         Get the color field of the pointcloud, the property returns unpacked rgb values
@@ -252,7 +254,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             return self.to_ndarray()['rgba'].view(struct)
 
     def __len__(self):
-        return self._base.width * self._base.height
+        return self.ptr().width * self.ptr().height
 
     def __repr__(self):
         return "<PointCloud of %d points>" % len(self)
@@ -268,12 +270,17 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
 
     def __add__(self, item):
         raise NotImplementedError()
+    def __array__(self, *_):
+        '''support conversion to ndarray'''
+        return self.to_ndarray()
 
+    cdef PCLPointCloud2* ptr(self):
+        return self._ptr.get()
     def to_ndarray(self):
-        cdef uint8_t *mem_ptr = self._base.data.data()
-        cdef uint8_t[:] mem_view = <uint8_t[:self._base.data.size()]>mem_ptr
+        cdef uint8_t *mem_ptr = self.ptr().data.data()
+        cdef uint8_t[:] mem_view = <uint8_t[:self.ptr().data.size()]>mem_ptr
         cdef np.ndarray arr_raw = np.asarray(mem_view)
-        cdef str byte_order = '>' if self._base.is_bigendian else '<'
+        cdef str byte_order = '>' if self.ptr().is_bigendian else '<'
         cdef list dtype = [(field.name, str(field.count) + byte_order + field.datatype)
                            for field in self.fields]
         cdef np.ndarray arr_view = arr_raw.view(dtype)
@@ -290,12 +297,12 @@ cdef str _nonzero_error_msg = "Function {0} returned {1}, please check stderr ou
 # TODO: Inference point type from fields
 cpdef PointCloud load_pcd(str path):
     cdef PointCloud cloud = PointCloud()
-    cdef int retval = loadPCDFile(path.encode('ascii'), cloud._base, cloud._origin, cloud._orientation)
+    cdef int retval = loadPCDFile(path.encode('ascii'), deref(cloud._ptr), cloud._origin, cloud._orientation)
     if retval != 0: raise RuntimeError(_nonzero_error_msg.format("loadPCDFile", retval))
     return cloud
 
 cpdef void save_pcd(str path, PointCloud cloud, PyBool binary=False):
-    cdef int retval = savePCDFile(path.encode('ascii'), cloud._base, cloud._origin, cloud._orientation, binary)
+    cdef int retval = savePCDFile(path.encode('ascii'), deref(cloud._ptr), cloud._origin, cloud._orientation, binary)
     if retval != 0: raise RuntimeError(_nonzero_error_msg.format("savePCDFile", retval))
 
 # TODO: Inference point type from fields
@@ -306,12 +313,12 @@ def load_ply(str path, type return_type=PointCloud):
 
     if return_type == PointCloud:
         cloud = PointCloud()
-        retval = loadPLYFile(path.encode('ascii'), cloud._base, cloud._origin, cloud._orientation)
+        retval = loadPLYFile(path.encode('ascii'), deref(cloud._ptr), cloud._origin, cloud._orientation)
         if retval != 0: raise RuntimeError(_nonzero_error_msg.format("loadPLYFile", retval))
         return cloud
     else:
         raise TypeError("Unsupported return type!")
 
 cpdef void save_ply(str path, PointCloud cloud, PyBool binary=False, PyBool use_camera=True):
-    cdef int retval = savePLYFile(path.encode('ascii'), cloud._base, cloud._origin, cloud._orientation, binary, use_camera)
+    cdef int retval = savePLYFile(path.encode('ascii'), deref(cloud._ptr), cloud._origin, cloud._orientation, binary, use_camera)
     if retval != 0: raise RuntimeError(_nonzero_error_msg.format("savePLYFile", retval))

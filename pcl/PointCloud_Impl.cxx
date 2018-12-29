@@ -18,7 +18,7 @@ namespace pcl
             template <typename PointT>
             void operator()(const PointCloud<PointT> &input) const
             {
-                toPCLPointCloud2(input, _output._base);
+                toPCLPointCloud2(input, *(_output._ptr));
                 _output._origin = input.sensor_origin_;
                 _output._orientation = input.sensor_orientation_;
                 // TODO: infer type name
@@ -30,7 +30,7 @@ namespace pcl
         if (input._ptype == "XY")
         {
             PointCloud<PointXY> cloud;
-            fromPCLPointCloud2(input._base, cloud);
+            fromPCLPointCloud2(*(input._ptr), cloud);
             cloud.sensor_origin_ = input._origin;
             cloud.sensor_orientation_ = input._orientation;
             output = cloud;

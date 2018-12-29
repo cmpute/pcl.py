@@ -1,29 +1,39 @@
 from libcpp cimport bool
+from libcpp.string cimport string
+from pcl._boost.smart_ptr cimport shared_ptr
+from pcl.common.point_cloud cimport PointCloud
+from pcl.common.PCLPointCloud2 cimport PCLPointCloud2
 
-cdef extern from "pcl/visualization/point_cloud_color_handlers.h" namespace "pcl::visualization":
-    # FIXME: cython unsupported derivation
+cdef extern from "pcl/visualization/point_cloud_color_handlers.h" namespace "pcl::visualization" nogil:
     cdef cppclass PointCloudColorHandler[PointT]:
+        PointCloudColorHandler(const shared_ptr[const PointCloud[PointT]] &cloud)
+        bool isCapable ()
+        string getName ()
+        string getFieldName ()
+        # XXX: virtual bool getColor (vtkSmartPointer<vtkDataArray> &scalars) const = 0;
+        void setInputCloud (const shared_ptr[const PointCloud[PointT]] &cloud)
+    cdef cppclass PointCloudColorHandlerRandom[PointT](PointCloudColorHandler[PointT]):
         pass
-    cdef cppclass PointCloudColorHandlerRandom[PointT](PointCloudColorHandler[PointT]): #(PointCloudColorHander[PointT]):
+    cdef cppclass PointCloudColorHandlerCustom[PointT](PointCloudColorHandler[PointT]):
         pass
-    cdef cppclass PointCloudColorHandlerCustom[PointT]:
+    cdef cppclass PointCloudColorHandlerRGBField[PointT](PointCloudColorHandler[PointT]):
         pass
-    cdef cppclass PointCloudColorHandlerRGBField[PointT]:
+    cdef cppclass PointCloudColorHandlerHSVField[PointT](PointCloudColorHandler[PointT]):
         pass
-    cdef cppclass PointCloudColorHandlerHSVField[PointT]:
-        pass
-    cdef cppclass PointCloudColorHandlerGenericField[PointT]:
+    cdef cppclass PointCloudColorHandlerGenericField[PointT](PointCloudColorHandler[PointT]):
         pass
 
-    cdef cppclass PointCloudColorHandler_PCLPointCloud2 "PointCloudColorHandler<pcl::PCLPointCloud2>":
-        pass
-    cdef cppclass PointCloudColorHandlerRandom_PCLPointCloud2(PointCloudColorHandler_PCLPointCloud2) "PointCloudColorHandlerRandom<pcl::PCLPointCloud2>":
-        pass
-    cdef cppclass PointCloudColorHandlerCustom_PCLPointCloud2(PointCloudColorHandler_PCLPointCloud2) "PointCloudColorHandlerCustom<pcl::PCLPointCloud2>":
-        pass
-    cdef cppclass PointCloudColorHandlerRGBField_PCLPointCloud2(PointCloudColorHandler_PCLPointCloud2) "PointCloudColorHandlerRGBField<pcl::PCLPointCloud2>":
-        pass
-    cdef cppclass PointCloudColorHandlerHSVField_PCLPointCloud2(PointCloudColorHandler_PCLPointCloud2) "PointCloudColorHandlerHSVField<pcl::PCLPointCloud2>":
-        pass
-    cdef cppclass PointCloudColorHandlerGenericField_PCLPointCloud2(PointCloudColorHandler_PCLPointCloud2) "PointCloudColorHandlerGenericField<pcl::PCLPointCloud2>"
-        pass
+    cdef cppclass PointCloudColorHandler_PCLPointCloud2 "pcl::visualization::PointCloudColorHandler<pcl::PCLPointCloud2>":
+        PointCloudColorHandler_PCLPointCloud2(const shared_ptr[const PCLPointCloud2] &cloud)
+    cdef cppclass PointCloudColorHandlerRandom_PCLPointCloud2 "pcl::visualization::PointCloudColorHandlerRandom<pcl::PCLPointCloud2>" (PointCloudColorHandler_PCLPointCloud2):
+        PointCloudColorHandlerRandom_PCLPointCloud2(const shared_ptr[const PCLPointCloud2] &cloud)
+    cdef cppclass PointCloudColorHandlerCustom_PCLPointCloud2 "pcl::visualization::PointCloudColorHandlerCustom<pcl::PCLPointCloud2>" (PointCloudColorHandler_PCLPointCloud2):
+        PointCloudColorHandlerCustom_PCLPointCloud2(const shared_ptr[const PCLPointCloud2] &cloud, double r, double g, double b)
+    cdef cppclass PointCloudColorHandlerRGBField_PCLPointCloud2 "pcl::visualization::PointCloudColorHandlerRGBField<pcl::PCLPointCloud2>" (PointCloudColorHandler_PCLPointCloud2):
+        PointCloudColorHandlerRGBField_PCLPointCloud2(const shared_ptr[const PCLPointCloud2] &cloud)
+    cdef cppclass PointCloudColorHandlerHSVField_PCLPointCloud2 "pcl::visualization::PointCloudColorHandlerHSVField<pcl::PCLPointCloud2>" (PointCloudColorHandler_PCLPointCloud2):
+        PointCloudColorHandlerHSVField_PCLPointCloud2(const shared_ptr[const PCLPointCloud2] &cloud)
+    cdef cppclass PointCloudColorHandlerGenericField_PCLPointCloud2 "pcl::visualization::PointCloudColorHandlerGenericField<pcl::PCLPointCloud2>" (PointCloudColorHandler_PCLPointCloud2):
+        PointCloudColorHandlerGenericField_PCLPointCloud2(const shared_ptr[const PCLPointCloud2] &cloud, const string &field_name)
+    
+    # TODO: Add details for the handlers

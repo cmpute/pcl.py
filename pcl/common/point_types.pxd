@@ -15,6 +15,16 @@ cdef extern from "pcl/point_types.h" namespace "pcl":
         float normal_z
         float curvature
 
+    cdef cppclass PointXYZRGB:
+        PointXYZRGB()
+        float x
+        float y
+        float z
+        uint8_t b
+        uint8_t g
+        uint8_t r
+        float rgb
+
     cdef cppclass PointXYZRGBA:
         PointXYZRGBA()
         float x

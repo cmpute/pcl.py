@@ -22,3 +22,6 @@ cdef extern from "boost/smart_ptr/shared_ptr.hpp" namespace "boost" nogil:
 
         bool operator==(const shared_ptr&)
         bool operator!=(const shared_ptr&)
+    
+cdef extern from "boost/smart_ptr/make_shared.hpp" namespace "boost" nogil:
+    cdef shared_ptr[T] make_shared[T](...)
