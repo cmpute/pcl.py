@@ -6,7 +6,7 @@ from pcl._boost.smart_ptr cimport shared_ptr
 from pcl._eigen cimport Affine3f, Vector4f, Quaternionf
 from pcl.common.point_types cimport PointXYZ, PointXYZRGB, PointXYZRGBA, Normal, PrincipalCurvatures
 from pcl.common.point_cloud cimport PointCloud
-from pcl.common.PCLPointCloud2 cimport PCLPointCloud2
+from pcl.common.PCLPointCloud2 cimport PCLPointCloud2, PCLPointCloud2ConstPtr
 from pcl.common.PolygonMesh cimport PolygonMesh
 from pcl.common.Vertices cimport Vertices
 from pcl.visualization.area_picking_event cimport AreaPickingEvent
@@ -19,8 +19,9 @@ from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryH
 # XXX: optional args in extern functions can sometimes generate errors
 cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualization":
     cdef cppclass PCLVisualizer:
+        PCLVisualizer()
         # PCLVisualizer (const std::string &name = "", const bool create_interactor = true)
-        PCLVisualizer(const string &name="", bool create_interactor=true)
+        PCLVisualizer(const string &name, bool create_interactor)
         # XXX: PCLVisualizer (int &argc, char **argv, const std::string &name = "", PCLVisualizerInteractorStyle* style = PCLVisualizerInteractorStyle::New (), const bool create_interactor = true)
 
         void setFullScreen(bool mode)
@@ -117,11 +118,11 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         bool addPointCloud[PointT] (const shared_ptr[const PointCloud[PointT]] &cloud, const shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2] &geometry_handler, const shared_ptr[const PointCloudColorHandler_PCLPointCloud2] &color_handler, const string &id, int viewport)
 
         # bool addPointCloud (const pcl::PCLPointCloud2::ConstPtr &cloud, const GeometryHandlerConstPtr &geometry_handler, const ColorHandlerConstPtr &color_handler, const Eigen::Vector4f& sensor_origin, const Eigen::Quaternion<float>& sensor_orientation, const std::string &id = "cloud", int viewport = 0);
-        bool addPointCloud (const shared_ptr[const PCLPointCloud2] &cloud, const shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2] &geometry_handler, const shared_ptr[const PointCloudColorHandler_PCLPointCloud2] &color_handler, const Vector4f &sensor_origin, const Quaternionf &sensor_orientation, const string &id, int viewport)
+        bool addPointCloud (const PCLPointCloud2ConstPtr &cloud, const shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2] &geometry_handler, const shared_ptr[const PointCloudColorHandler_PCLPointCloud2] &color_handler, const Vector4f &sensor_origin, const Quaternionf &sensor_orientation, const string &id, int viewport)
         # bool addPointCloud (const pcl::PCLPointCloud2::ConstPtr &cloud, const GeometryHandlerConstPtr &geometry_handler, const Eigen::Vector4f& sensor_origin, const Eigen::Quaternion<float>& sensor_orientation, const std::string &id = "cloud", int viewport = 0);
-        bool addPointCloud (const shared_ptr[const PCLPointCloud2] &cloud, const shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2] &geometry_handler, const Vector4f &sensor_origin, const Quaternionf &sensor_orientation, const string &id, int viewport)
+        bool addPointCloud (const PCLPointCloud2ConstPtr &cloud, const shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2] &geometry_handler, const Vector4f &sensor_origin, const Quaternionf &sensor_orientation, const string &id, int viewport)
         # bool addPointCloud (const pcl::PCLPointCloud2::ConstPtr &cloud, const ColorHandlerConstPtr &color_handler, const Eigen::Vector4f& sensor_origin, const Eigen::Quaternion<float>& sensor_orientation, const std::string &id = "cloud", int viewport = 0);
-        bool addPointCloud (const shared_ptr[const PCLPointCloud2] &cloud, const shared_ptr[const PointCloudColorHandler_PCLPointCloud2] &color_handler, const Vector4f &sensor_origin, const Quaternionf &sensor_orientation, const string &id, int viewport)
+        bool addPointCloud (const PCLPointCloud2ConstPtr &cloud, const shared_ptr[const PointCloudColorHandler_PCLPointCloud2] &color_handler, const Vector4f &sensor_origin, const Quaternionf &sensor_orientation, const string &id, int viewport)
         # template <typename PointT> bool addPointCloud (const typename pcl::PointCloud<PointT>::ConstPtr &cloud, const PointCloudColorHandler<PointT> &color_handler, const PointCloudGeometryHandler<PointT> &geometry_handler, const std::string &id = "cloud", int viewport = 0);
         bool addPointCloud[PointT] (const shared_ptr[const PointCloud[PointT]] &cloud, const PointCloudColorHandler[PointT] &color_handler, const PointCloudGeometryHandler[PointT] &geometry_handler, const string &id, int viewport)
 
@@ -212,3 +213,6 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         # XXX: bool addModelFromPLYFile (const std::string &filename, vtkSmartPointer<vtkTransform> transform, const std::string &id = "PLYModel", int viewport = 0);
 
         # TODO: continues at row 1260 of pcl_visualizer.h
+
+ctypedef shared_ptr[PCLVisualizer] PCLVisualizerPtr
+ctypedef shared_ptr[const PCLVisualizer] PCLVisualizerConstPtr

@@ -1,4 +1,4 @@
-find_package(PCL REQUIRED COMPONENTS common io)
+find_package(PCL REQUIRED COMPONENTS common io visualization)
 set(CMAKE_CXX_STANDARD 11)
 
 include_directories(${PCL_INCLUDE_DIRS})
