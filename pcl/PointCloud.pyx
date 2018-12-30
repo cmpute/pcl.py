@@ -8,6 +8,7 @@ cimport numpy as np
 import warnings
 
 from pcl._boost.smart_ptr cimport make_shared
+from pcl._ros import ros_exist
 from pcl.common.conversions cimport toPCLPointCloud2, fromPCLPointCloud2
 from pcl.common.point_cloud cimport PointCloud as cPC
 from pcl.io.pcd_io cimport loadPCDFile, savePCDFile
@@ -98,6 +99,24 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         cdef PCLPointField temp_field
         cdef bool initialized = False
 
+        if ros_exist:
+            import sensor_msgs.msg as msg
+            if isinstance(data, msg.PointCloud2):
+                # TODO: migrate_header
+                self._ptr = make_shared[PCLPointCloud2]()
+                self.ptr().header = data.header
+                self.ptr().height = data.height
+                self.ptr().width = data.width
+                for field in data.fields:
+                    temp_field = PCLPointField()
+                    # TODO: migrate PCLPointField
+                    self.ptr().fields.push_back(field)
+                self.ptr().is_bigendian = data.is_bigendian
+                self.ptr().point_step = data.point_step
+                self.ptr().row_step = data.row_step
+                self.ptr().data = data.data
+                self.ptr().is_dense = data.is_dense
+                initialized = False
         if isinstance(data, PointCloud):
             # TODO: support non-copy instantiation
             self._ptr = (<PointCloud>data)._ptr
@@ -106,6 +125,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             self._ptype = (<PointCloud>data)._ptype
             initialized = True
         if isinstance(data, (list, tuple)):
+            # TODO: support different dtype
             data = np.ndarray(data)
         if isinstance(data, np.ndarray):
             # matrix order detection
