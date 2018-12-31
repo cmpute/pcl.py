@@ -1,3 +1,5 @@
+from pcl.ros import ros_exist, ros_error
+if ros_exist: from .ros cimport from_msg_field, to_msg_field
 from pcl.common.PCLPointField cimport PCLPointField
 
 cdef dict _FIELD_TYPE_MAPPING = {
@@ -12,6 +14,12 @@ cdef dict _FIELD_TYPE_MAPPING = {
 }
 
 cdef class PointField:
+    def __init__(self, data=None):
+        if ros_exist:
+            from sensor_msgs.msg import PointField as rospf
+            if isinstance(data, rospf):
+                from_msg_field(data, self.base)
+
     property name:
         def __get__(self): return self.base.name.decode('ascii')
     
@@ -26,6 +34,10 @@ cdef class PointField:
 
     def __repr__(self):
         return "<PointField {0} : {1}>".format(self.name, self.datatype)
+
+    def to_msg(self):
+        if not ros_exist: raise ros_error
+        return to_msg_field(self.base)
 
     @staticmethod
     cdef PointField wrap(PCLPointField& data):

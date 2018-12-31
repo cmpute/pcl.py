@@ -3,4 +3,3 @@
 - [ ] Add conversion between numpy array and Eigen objects
 - [ ] Migrate original implementations of pypcl
 - [ ] Fix TODOs in the code
-- [ ] Add support for ros

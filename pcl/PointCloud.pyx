@@ -8,7 +8,8 @@ cimport numpy as np
 import warnings
 
 from pcl._boost.smart_ptr cimport make_shared
-from pcl._ros import ros_exist
+from .ros import ros_exist, ros_error
+if ros_exist: from pcl.ros cimport from_msg_cloud, to_msg_cloud
 from pcl.common.conversions cimport toPCLPointCloud2, fromPCLPointCloud2
 from pcl.common.point_cloud cimport PointCloud as cPC
 from pcl.io.pcd_io cimport loadPCDFile, savePCDFile
@@ -100,23 +101,11 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         cdef bool initialized = False
 
         if ros_exist:
-            import sensor_msgs.msg as msg
-            if isinstance(data, msg.PointCloud2):
-                # TODO: migrate_header
+            from sensor_msgs.msg import PointCloud2
+            if isinstance(data, PointCloud2):
                 self._ptr = make_shared[PCLPointCloud2]()
-                self.ptr().header = data.header
-                self.ptr().height = data.height
-                self.ptr().width = data.width
-                for field in data.fields:
-                    temp_field = PCLPointField()
-                    # TODO: migrate PCLPointField
-                    self.ptr().fields.push_back(field)
-                self.ptr().is_bigendian = data.is_bigendian
-                self.ptr().point_step = data.point_step
-                self.ptr().row_step = data.row_step
-                self.ptr().data = data.data
-                self.ptr().is_dense = data.is_dense
-                initialized = False
+                from_msg_cloud(data, deref(self._ptr))
+                initialized = True
         if isinstance(data, PointCloud):
             # TODO: support non-copy instantiation
             self._ptr = (<PointCloud>data)._ptr
@@ -305,6 +294,14 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                            for field in self.fields]
         cdef np.ndarray arr_view = arr_raw.view(dtype)
         return arr_view
+
+    def to_msg(self):
+        if not ros_exist: raise ros_error
+
+        import rospy
+        cdef object retval = to_msg_cloud(deref(self._ptr))
+        retval.header.stamp = rospy.Time.now()
+        return retval
 
     def disorganize(self):
         '''
