@@ -22,18 +22,25 @@ cdef class PointField:
 
     property name:
         def __get__(self): return self.base.name.decode('ascii')
+        # def __set__(self, str value): self.base.name = value.encode('ascii')
     
     property count:
         def __get__(self): return self.base.count
+        # def __set__(self, int value): self.base.count = value
 
     property offset:
         def __get__(self): return self.base.offset
+        # def __set__(self, int value): self.base.offset = value
 
     property datatype:
+        def __get__(self): return self.base.datatype
+        # def __set__(self, unsigned char value): self.base.datatype = value
+
+    property npdtype:
         def __get__(self): return _FIELD_TYPE_MAPPING[self.base.datatype][0]
 
     def __repr__(self):
-        return "<PointField {0} : {1}>".format(self.name, self.datatype)
+        return "<PointField {0} : {1}>".format(self.name, self.npdtype)
 
     def to_msg(self):
         if not ros_exist: raise ros_error

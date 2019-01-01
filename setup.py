@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
     name="PyPCL",
-    version="0.0.1",
+    version="0.1.1",
     description="Minial PCL Binding",
     author='Jacob Zhong',
     license="MIT",

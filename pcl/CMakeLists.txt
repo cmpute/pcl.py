@@ -29,3 +29,5 @@ add_library(Visualizer MODULE ${Visualizer})
 target_link_libraries(Visualizer ${PCL_LIBRARIES})
 python_extension_module(Visualizer)
 install(TARGETS Visualizer LIBRARY DESTINATION pcl)
+
+add_subdirectory(io)
