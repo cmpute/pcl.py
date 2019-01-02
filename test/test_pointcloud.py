@@ -30,3 +30,15 @@ class TestNumpyInitialize(unittest.TestCase):
         cloud = pcl.PointCloud([(1,2,3,255),(2,3,4,255)], 'xyzrgb')
         assert len(cloud) == 2
         assert cloud.names == ['x', 'y', 'z', 'rgb']
+
+    def test_origin(self):
+        cloud = pcl.PointCloud([(1,2,3),(2,3,4)])
+        assert np.all(cloud.sensor_origin == np.zeros(3))
+        cloud.sensor_origin = [1, 2, 3]
+        assert np.all(cloud.sensor_origin == np.array([1,2,3]))
+
+    def test_orientation(self):
+        cloud = pcl.PointCloud([(1,2,3),(2,3,4)])
+        assert np.all(cloud.sensor_orientation == np.array([0,0,0,1]))
+        cloud.sensor_orientation = [1, 2, 3, 1]
+        assert np.all(cloud.sensor_orientation == np.array([1,2,3,1]))

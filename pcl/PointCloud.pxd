@@ -13,8 +13,3 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
     cdef Quaternionf _orientation
     cdef string _ptype
     cdef PCLPointCloud2* ptr(self)
-
-cdef extern from "PointCloud.hpp" namespace "pcl":
-    cdef cppclass PointCloudFused
-    void CyTemplatize(PointCloud input, const PointCloudFused &output)
-    void CyInstantiate(PointCloud output, PointCloudFused &input)

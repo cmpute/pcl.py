@@ -1,0 +1,52 @@
+dist: trusty
+language: python
+matrix:
+    include:
+        - python: 3.4
+          env: NUMPY=1.10
+        - python: 3.5
+          env: NUMPY=1.11 RUN_COVERAGE=yes
+        - python: 3.6
+          env: NUMPY=1.13
+      # - os: osx
+      #   python: 3.6
+      #   env: NUMPY=1.12 BUILD_DOC=yes
+
+branches:
+    only:
+        - master
+      # - travis
+
+before_install:
+    #### Install Miniconda ####
+    - unamestr=`uname`
+    - if [[ "$unamestr" == 'Linux' ]]; then
+        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      elif [[ "$unamestr" == 'Darwin' ]]; then
+        wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
+      else
+        echo Error;
+      fi
+    - chmod +x miniconda.sh
+    - ./miniconda.sh -b
+    - export PATH=$HOME/miniconda3/bin:$PATH
+    - conda config --set always_yes yes --set changeps1 no
+    - conda update -q conda
+    # Useful for debugging any issues with conda
+    - conda info -a
+    - conda create -q -n travis python=$TRAVIS_PYTHON_VERSION numpy=$NUMPY pytest cython
+    - source activate travis
+    - if [ "$RUN_COVERAGE" == "yes" ]; then pip install coveralls pytest-cov -q; fi
+
+install:
+    - pip install .
+
+script:
+    - if [ "$RUN_COVERAGE" == "yes" ]; then
+        py.test test/ --cov;
+      else
+        py.test test/;
+      fi
+
+after_success:
+    - if [ "$RUN_COVERAGE" == "yes" ]; then coveralls; fi

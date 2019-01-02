@@ -1,6 +1,6 @@
 - [ ] Add unit tests and tests
 - [ ] Implement official test codes
-- [ ] Add conversion between numpy array and Eigen objects
+- [x] Add conversion between numpy array and Eigen objects
 - [ ] Migrate original implementations of pypcl
 - [ ] Fix TODOs in the code
 - [ ] Instantiate template classes to given point-type (e.g. PointXYZ)

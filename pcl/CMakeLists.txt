@@ -19,7 +19,7 @@ python_extension_module(PointField)
 install(TARGETS PointField LIBRARY DESTINATION pcl)
 
 add_cython_target(PointCloud CXX)
-add_library(PointCloud MODULE ${PointCloud} PointCloud_Impl.cxx)
+add_library(PointCloud MODULE ${PointCloud})
 target_link_libraries(PointCloud ${PCL_LIBRARIES})
 python_extension_module(PointCloud)
 install(TARGETS PointCloud LIBRARY DESTINATION pcl)

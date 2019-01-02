@@ -1,24 +1,18 @@
-# bindings in the package will be finally combined into eigency
-# from eigency.core cimport *
+# bindings in the package could be finally combined into eigency
 
 cdef extern from "Eigen/Eigen" namespace "Eigen" nogil:
     cdef cppclass Vector4f:
         Vector4f() except +
-        Vector4f(float c0, float c1, float c2, float c3) except + 
+        Vector4f(float, float, float, float) except + 
         float *data()
-        float& element "operator()"(int row, int col)
-
+        float& element "operator()"(int index)
         @staticmethod
         Vector4f Zero()
         
     cdef cppclass Quaternionf:
         Quaternionf()
-        Quaternionf(float, float, float, float)
-        float w()
-        float x()
-        float y()
-        float z()
-
+        Quaternionf(float w, float x, float y, float z)
+        Vector4f& coeffs()
         @staticmethod
         Quaternionf Identity()
 

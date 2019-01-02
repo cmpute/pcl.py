@@ -243,13 +243,23 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         def __get__(self): 
             return [field.name.decode('ascii') for field in self.ptr().fields]
     property sensor_orientation:
-        ''' Sensor acquisition pose (rotation). '''
+        ''' Sensor acquisition pose (rotation) in quaternion (x,y,z,w). '''
         def __get__(self):
-            raise NotImplementedError()
+            cdef float *mem_ptr = self._orientation.coeffs().data()
+            cdef float[:] mem_view = <float[:4]>mem_ptr
+            cdef np.ndarray arr_raw = np.asarray(mem_view)
+            return arr_raw
+        def __set__(self, value):
+            self._orientation = Quaternionf(value[3], value[0], value[1], value[2])
     property sensor_origin:
         ''' Sensor acquisition pose (origin/translation). '''
         def __get__(self):
-            raise NotImplementedError()
+            cdef float *mem_ptr = self._origin.data()
+            cdef float[:] mem_view = <float[:3]>mem_ptr
+            cdef np.ndarray arr_raw = np.asarray(mem_view)
+            return arr_raw
+        def __set__(self, value):
+            self._origin = Vector4f(value[0], value[1], value[2], 0)
 
     property xyz:
         '''
@@ -291,6 +301,8 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         '''
         Get whether the point cloud is organized
         '''
+        def __get__(self):
+            return self.height > 1
 
     def __len__(self):
         return self.ptr().width * self.ptr().height
