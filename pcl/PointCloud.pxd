@@ -1,6 +1,6 @@
 from libcpp.string cimport string
 
-from pcl._boost.smart_ptr cimport shared_ptr
+from pcl._boost cimport shared_ptr
 from pcl._eigen cimport Vector4f, Quaternionf
 from pcl.common.PCLPointCloud2 cimport PCLPointCloud2
 from pcl.common.PCLPointField cimport PCLPointField

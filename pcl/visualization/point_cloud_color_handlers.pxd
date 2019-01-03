@@ -1,6 +1,6 @@
 from libcpp cimport bool
 from libcpp.string cimport string
-from pcl._boost.smart_ptr cimport shared_ptr
+from pcl._boost cimport shared_ptr
 from pcl.common.point_cloud cimport PointCloud
 from pcl.common.PCLPointCloud2 cimport PCLPointCloud2, PCLPointCloud2ConstPtr
 

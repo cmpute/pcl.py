@@ -1,6 +1,6 @@
 from libc.stdint cimport uint8_t, uint32_t
 from libcpp.string cimport string
-from pcl._boost.smart_ptr cimport shared_ptr
+from pcl._boost cimport shared_ptr
 
 cdef extern from "pcl/PCLPointField.h" namespace "pcl":
     cdef cppclass PCLPointField:

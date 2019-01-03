@@ -34,11 +34,12 @@ before_install:
     - conda update -q conda
     # Useful for debugging any issues with conda
     - conda info -a
-    - conda create -q -n travis python=$TRAVIS_PYTHON_VERSION numpy=$NUMPY pytest cython
+    - conda create -q -n travis python=$TRAVIS_PYTHON_VERSION numpy=$NUMPY cython pytest
     - source activate travis
     - if [ "$RUN_COVERAGE" == "yes" ]; then pip install coveralls pytest-cov -q; fi
 
 install:
+    - pip install scikit-build
     - pip install .
 
 script:

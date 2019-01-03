@@ -1,6 +1,6 @@
 from libcpp.vector cimport vector
 from libc.stdint cimport uint8_t, uint32_t
-from pcl._boost.smart_ptr cimport shared_ptr
+from pcl._boost cimport shared_ptr
 from pcl.common.PCLHeader cimport PCLHeader
 from pcl.common.PCLPointField cimport PCLPointField
 

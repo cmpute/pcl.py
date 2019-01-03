@@ -1,5 +1,5 @@
 from libcpp.vector cimport vector
-from pcl._boost.smart_ptr cimport shared_ptr
+from pcl._boost cimport shared_ptr
 from pcl.common.PCLHeader cimport PCLHeader
 from pcl.common.PCLPointCloud2 cimport PCLPointCloud2
 from pcl.common.Vertices cimport Vertices

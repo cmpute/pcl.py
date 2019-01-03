@@ -6,7 +6,7 @@ import sys
 import numpy as np
 cimport numpy as np
 
-from pcl._boost.smart_ptr cimport make_shared
+from pcl._boost cimport make_shared
 from .ros import ros_exist, ros_error
 if ros_exist: from pcl.ros cimport from_msg_cloud, to_msg_cloud
 from pcl.common.conversions cimport toPCLPointCloud2, fromPCLPointCloud2

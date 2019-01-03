@@ -1,6 +1,6 @@
 from libc.stdint cimport uint8_t, uint32_t
 from libcpp.vector cimport vector
-from pcl._boost.smart_ptr cimport shared_ptr
+from pcl._boost cimport shared_ptr
 from pcl.common.PCLHeader cimport PCLHeader
 
 cdef extern from "pcl/PointIndices.h" namespace "pcl":

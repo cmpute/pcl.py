@@ -1,9 +1,9 @@
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
-from pcl._boost.signals2 cimport connection
-from pcl._boost.smart_ptr cimport shared_ptr
-from pcl._eigen cimport Affine3f, Vector4f, Quaternionf
+from pcl._boost cimport connection, shared_ptr
+from pcl._eigen cimport Affine3f, Matrix3f, Matrix4f, Vector3f, Vector4f, Quaternionf
+from pcl.common.ModelCoefficients cimport ModelCoefficients
 from pcl.common.point_types cimport PointXYZ, PointXYZRGB, PointXYZRGBA, Normal, PrincipalCurvatures
 from pcl.common.point_cloud cimport PointCloud
 from pcl.common.PCLPointCloud2 cimport PCLPointCloud2, PCLPointCloud2ConstPtr
@@ -42,7 +42,6 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         void spinOnce(int time, bool force_redraw)
 
         # XXX: void addOrientationMarkerWidgetAxes(vtkRenderWindowInteractor* interactor)
-
         void removeOrientationMarkerWidgetAxes ()
 
         # void addCoordinateSystem (double scale = 1.0, int viewport = 0);
@@ -79,7 +78,7 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         # bool updateText (const std::string &text, int xpos, int ypos, const std::string &id = "");
         bool updateText(const string &text, int xpos, int ypos, const string &id)
         # bool updateText (const std::string &text, int xpos, int ypos, double r, double g, double b, const std::string &id = "");
-        bool updateText(const string &text, int xpos, int ypos, double r, double g, double b,const string &id)
+        bool updateText(const string &text, int xpos, int ypos, double r, double g, double b, const string &id)
         # bool updateText (const std::string &text, int xpos, int ypos, int fontsize, double r, double g, double b, const std::string &id = "");
         bool updateText(const string &text, int xpos, int ypos, int fontsize, double r, double g, double b, const string &id)
 
@@ -212,7 +211,69 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         bool addModelFromPLYFile(const string &filename, const string &id, int viewport)
         # XXX: bool addModelFromPLYFile (const std::string &filename, vtkSmartPointer<vtkTransform> transform, const std::string &id = "PLYModel", int viewport = 0);
 
-        # TODO: continues at row 1260 of pcl_visualizer.h
+        # bool addCylinder (const pcl::ModelCoefficients &coefficients, const std::string &id = "cylinder", int viewport = 0);
+        bool addCylinder(const ModelCoefficients &coefficients, const string &id, int viewpoint)
+        # bool addSphere (const pcl::ModelCoefficients &coefficients, const std::string &id = "sphere", int viewport = 0);
+        bool addSphere(const ModelCoefficients &coefficients, const string &id, int viewpoint)
+        # bool addLine (const pcl::ModelCoefficients &coefficients, const std::string &id = "line", int viewport = 0);
+        bool addLine(const ModelCoefficients &coefficients, const string &id, int viewpoint)
+        # bool addPlane (const pcl::ModelCoefficients &coefficients, const std::string &id = "plane", int viewport = 0);
+        bool addPlane(const ModelCoefficients &coefficients, const string &id, int viewpoint)
+        # bool addPlane (const pcl::ModelCoefficients &coefficients, double x, double y, double z, const std::string &id = "plane", int viewport = 0);
+        bool addPlane(const ModelCoefficients &coefficients, double x, double y, double z, string &id, int viewpoint)
+        # bool addCircle (const pcl::ModelCoefficients &coefficients, const std::string &id = "circle", int viewport = 0);
+        bool addPlane(const ModelCoefficients &coefficients, const string &id, int viewpoint)
+        # bool addCone (const pcl::ModelCoefficients &coefficients, const std::string &id = "cone", int viewport = 0);
+        bool addCone(const ModelCoefficients &coefficients, const string &id, int viewpoint)
+        # bool addCube (const pcl::ModelCoefficients &coefficients, const std::string &id = "cube", int viewport = 0);
+        bool addCube(const ModelCoefficients &coefficients, const string &id, int viewpoint)
+        # bool addCube (const Eigen::Vector3f &translation, const Eigen::Quaternionf &rotation, double width, double height, double depth, const std::string &id = "cube", int viewport = 0);
+        bool addCube(const Vector3f &translation, const Quaternionf &rotation, double width, double height, double depth, const string &id, int viewpoint)
+        # bool addCube (float x_min, float x_max, float y_min, float y_max, float z_min, float z_max, double r = 1.0, double g = 1.0, double b = 1.0, const std::string &id = "cube", int viewport = 0);
+        bool addCube(float x_min, float x_max, float y_min, float y_max, float z_min, float z_max, double r, double g, double b, const string &id, int viewport)
+
+        void setRepresentationToSurfaceForAllActors()
+        void setRepresentationToPointsForAllActors()
+        void setRepresentationToWireframeForAllActors()
+        void setShowFPS (bool show_fps)
+
+        void renderView (int xres, int yres, shared_ptr[PointCloud[PointXYZ]] & cloud)
+        # XXX: void renderViewTesselatedSphere (int xres, int yres, pcl::PointCloud<pcl::PointXYZ>::CloudVectorType & cloud, std::vector<Eigen::Matrix4f,Eigen::aligned_allocator< Eigen::Matrix4f > > & poses, std::vector<float> & enthropies, int tesselation_level, float view_angle = 45, float radius_sphere = 1, bool use_vertices = true);
+        
+        void initCameraParameters ()
+        bool getCameraParameters (int argc, char **argv)
+        bool cameraParamsSet ()
+        void updateCamera ()
+        void resetCamera ()
+        # void resetCameraViewpoint (const std::string &id = "cloud");
+        void resetCameraViewpoint (const string &id)
+        # void setCameraPosition (double pos_x, double pos_y, double pos_z, double view_x, double view_y, double view_z, double up_x, double up_y, double up_z, int viewport = 0);
+        void setCameraPosition (double pos_x, double pos_y, double pos_z, double view_x, double view_y, double view_z, double up_x, double up_y, double up_z, int viewport)
+        # void setCameraPosition (double pos_x, double pos_y, double pos_z, double up_x, double up_y, double up_z, int viewport = 0);
+        void setCameraPosition (double pos_x, double pos_y, double pos_z, double up_x, double up_y, double up_z, int viewport)
+        # void setCameraParameters (const Eigen::Matrix3f &intrinsics, const Eigen::Matrix4f &extrinsics, int viewport = 0);
+        void setCameraParameters (const Matrix3f &intrinsics, const Matrix4f &extrinsics, int viewport)
+        # XXX: void setCameraParameters (const Camera &camera, int viewport = 0);
+        # void setCameraClipDistances (double near, double far, int viewport = 0);
+        void setCameraClipDistances (double near, double far, int viewport)
+        void setCameraFieldOfView (double fovy, int viewport)
+        # XXX: void getCameras (std::vector<Camera>& cameras);
+        # Eigen::Affine3f getViewerPose (int viewport = 0);
+        Affine3f getViewerPose (int viewport)
+        void saveScreenshot (const string &file)
+
+        # XXX: vtkSmartPointer<vtkRenderWindow> getRenderWindow ()
+        # XXX: vtkSmartPointer<vtkRendererCollection> getRendererCollection ()
+        # XXX: CloudActorMapPtr getCloudActorMap ()
+        
+        void setPosition (int x, int y)
+        void setSize (int xw, int yw)
+        void setUseVbos (bool use_vbos)
+        void createInteractor ()
+
+        # XXX: void setupInteractor (vtkRenderWindowInteractor *iren, vtkRenderWindow *win);
+        # XXX: void setupInteractor (vtkRenderWindowInteractor *iren, vtkRenderWindow *win, vtkInteractorStyle *style);
+        # XXX: inline vtkSmartPointer<PCLVisualizerInteractorStyle> getInteractorStyle ()
 
 ctypedef shared_ptr[PCLVisualizer] PCLVisualizerPtr
 ctypedef shared_ptr[const PCLVisualizer] PCLVisualizerConstPtr
