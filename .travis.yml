@@ -37,6 +37,8 @@ before_install:
     - conda create -q -n travis python=$TRAVIS_PYTHON_VERSION numpy=$NUMPY cython pytest
     - source activate travis
     - if [ "$RUN_COVERAGE" == "yes" ]; then pip install coveralls pytest-cov -q; fi
+    #### Install PCL ####
+    - sudo apt install libpcl-dev
 
 install:
     - pip install scikit-build

@@ -47,7 +47,7 @@ cdef class PointField:
         return to_msg_field(self.base)
 
     @staticmethod
-    cdef PointField wrap(PCLPointField& data):
+    cdef PointField wrap(const PCLPointField& data):
         cdef PointField obj = PointField.__new__(PointField)
         obj.base = data
         return obj

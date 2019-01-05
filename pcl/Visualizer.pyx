@@ -5,6 +5,33 @@ from pcl.common.PCLPointCloud2 cimport PCLPointCloud2, PCLPointCloud2ConstPtr
 from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryHandler_PCLPointCloud2, PointCloudGeometryHandlerXYZ_PCLPointCloud2
 from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler_PCLPointCloud2, PointCloudColorHandlerCustom_PCLPointCloud2
 
+cdef class KeyboardEvent:
+    cdef cKeyboardEvent* ptr(self):
+        return self._ptr.get()
+    cpdef bool isAltPressed(self):
+        return self.ptr().isAltPressed()
+    cpdef bool isCtrlPressed(self):
+        return self.ptr().isCtrlPressed()
+    cpdef bool isShiftPressed(self):
+        return self.ptr().isShiftPressed()
+    cpdef str getKeyCode(self):
+        return chr(self.ptr().getKeyCode())
+    cpdef str getKeySym(self):
+        return self.ptr().getKeySym().decode('ascii')
+    cpdef bool keyDown(self):
+        return self.ptr().keyDown()
+    cpdef bool keyUp(self):
+        return self.ptr().keyUp()
+
+    @staticmethod
+    cdef KeyboardEvent wrap(const cKeyboardEvent& data):
+        cdef KeyboardEvent obj = KeyboardEvent.__new__(KeyboardEvent)
+        obj._ptr = make_shared[cKeyboardEvent](data)
+        return obj
+
+cdef void KeyboardEventCallback(const cKeyboardEvent &event, void *func):
+    (<object>func)(KeyboardEvent.wrap(event))
+
 cdef class Visualizer:
     cdef PCLVisualizer* ptr(self):
         return self._ptr.get()
@@ -19,6 +46,9 @@ cdef class Visualizer:
         self.ptr().setWindowBorders(mode)
     cpdef void setBackgroundColor(self, double r, double g, double b, int viewpoint=0):
         self.ptr().setBackgroundColor(r, g, b, viewpoint)
+
+    cpdef void registerKeyboardCallback(self, callback):
+        self.ptr().registerKeyboardCallback(KeyboardEventCallback, <void*>callback)
 
     cpdef void spin(self):
         self.ptr().spin()

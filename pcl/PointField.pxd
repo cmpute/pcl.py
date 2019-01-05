@@ -7,4 +7,4 @@ cdef class PointField:
     cdef object __weakref__
 
     @staticmethod
-    cdef PointField wrap(PCLPointField& data)
+    cdef PointField wrap(const PCLPointField& data)

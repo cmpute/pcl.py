@@ -3,6 +3,25 @@ cimport numpy as np
 from pcl._boost cimport shared_ptr
 from pcl.PointCloud cimport PointCloud
 from pcl.visualization.pcl_visualizer cimport PCLVisualizer
+from pcl.visualization.area_picking_event cimport AreaPickingEvent as cAreaPickingEvent
+from pcl.visualization.keyboard_event cimport KeyboardEvent as cKeyboardEvent
+from pcl.visualization.mouse_event cimport MouseEvent as cMouseEvent
+from pcl.visualization.point_picking_event cimport PointPickingEvent as cPointPickingEvent
+
+cdef class KeyboardEvent:
+    cdef shared_ptr[cKeyboardEvent] _ptr
+    cdef cKeyboardEvent* ptr(self)
+
+    cpdef bool isAltPressed(self)
+    cpdef bool isCtrlPressed(self)
+    cpdef bool isShiftPressed(self)
+    cpdef str getKeyCode(self)
+    cpdef str getKeySym(self)
+    cpdef bool keyDown(self)
+    cpdef bool keyUp(self)
+
+    @staticmethod
+    cdef KeyboardEvent wrap(const cKeyboardEvent& data)
 
 cdef class Visualizer:
     cdef shared_ptr[PCLVisualizer] _ptr
@@ -13,6 +32,9 @@ cdef class Visualizer:
     cpdef void setWindowName(self, str name)
     cpdef void setWindowBorders(self, bool mode)
     cpdef void setBackgroundColor(self, double r, double g, double b, int viewpoint=*)
+
+    # TODO: return connection object
+    cpdef void registerKeyboardCallback(self, callback)
 
     cpdef void spin(self)
     cpdef void spinOnce(self, int time=*, bool force_redraw=*)
