@@ -25,4 +25,4 @@ cdef extern from "pcl/visualization/keyboard_event.h" namespace "pcl::visualizat
         unsigned int getX()
         unsigned int getY()
         unsigned int getKeyboardModifiers()
-        bool getSeletionMode()
+        bool getSelectionMode()

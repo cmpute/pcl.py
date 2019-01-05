@@ -15,13 +15,32 @@ cdef class KeyboardEvent:
     cpdef bool isAltPressed(self)
     cpdef bool isCtrlPressed(self)
     cpdef bool isShiftPressed(self)
-    cpdef str getKeyCode(self)
-    cpdef str getKeySym(self)
     cpdef bool keyDown(self)
     cpdef bool keyUp(self)
 
     @staticmethod
     cdef KeyboardEvent wrap(const cKeyboardEvent& data)
+
+cdef class MouseEvent:
+    cdef shared_ptr[cMouseEvent] _ptr
+    cdef cMouseEvent* ptr(self)
+
+    @staticmethod
+    cdef MouseEvent wrap(const cMouseEvent& data)
+
+cdef class PointPickingEvent:
+    cdef shared_ptr[cPointPickingEvent] _ptr
+    cdef cPointPickingEvent* ptr(self)
+
+    @staticmethod
+    cdef PointPickingEvent wrap(const cPointPickingEvent& data)
+
+cdef class AreaPickingEvent:
+    cdef shared_ptr[cAreaPickingEvent] _ptr
+    cdef cAreaPickingEvent* ptr(self)
+
+    @staticmethod
+    cdef AreaPickingEvent wrap(const cAreaPickingEvent& data)
 
 cdef class Visualizer:
     cdef shared_ptr[PCLVisualizer] _ptr
@@ -33,8 +52,11 @@ cdef class Visualizer:
     cpdef void setWindowBorders(self, bool mode)
     cpdef void setBackgroundColor(self, double r, double g, double b, int viewpoint=*)
 
-    # TODO: return connection object
+    # TODO: return wrapped connection object
     cpdef void registerKeyboardCallback(self, callback)
+    cpdef void registerMouseCallback(self, callback)
+    cpdef void registerPointPickingCallback(self, callback)
+    cpdef void registerAreaPickingCallback(self, callback)
 
     cpdef void spin(self)
     cpdef void spinOnce(self, int time=*, bool force_redraw=*)

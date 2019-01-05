@@ -1,3 +1,5 @@
+from libcpp.vector cimport vector
+from enum import Enum
 from pcl._boost cimport shared_ptr, make_shared
 from pcl._eigen cimport Affine3f, toAffine3f
 from pcl.common cimport _ensure_true
@@ -14,10 +16,12 @@ cdef class KeyboardEvent:
         return self.ptr().isCtrlPressed()
     cpdef bool isShiftPressed(self):
         return self.ptr().isShiftPressed()
-    cpdef str getKeyCode(self):
-        return chr(self.ptr().getKeyCode())
-    cpdef str getKeySym(self):
-        return self.ptr().getKeySym().decode('ascii')
+    property KeyCode:
+        def __get__(self):
+            return chr(self.ptr().getKeyCode())
+    property KeySym:
+        def __get__(self):
+            return self.ptr().getKeySym().decode('ascii')
     cpdef bool keyDown(self):
         return self.ptr().keyDown()
     cpdef bool keyUp(self):
@@ -31,6 +35,107 @@ cdef class KeyboardEvent:
 
 cdef void KeyboardEventCallback(const cKeyboardEvent &event, void *func):
     (<object>func)(KeyboardEvent.wrap(event))
+
+class MouseEvent_Type(Enum):
+    MouseMove=1
+    MouseButtonPress=2
+    MouseButtonRelease=3
+    MouseScrollDown=4
+    MouseScrollUp=5
+    MouseDblClick=6
+
+class MouseEvent_MouseButton(Enum):
+    NoButton=0
+    LeftButton=1
+    MiddleButton=2
+    RightButton=3
+    VScroll=4
+
+cdef class MouseEvent:
+    cdef cMouseEvent* ptr(self):
+        return self._ptr.get()
+    property Type:
+        def __get__(self):
+            return MouseEvent_Type(self.ptr().getType())
+        def __set__(self, int value):
+            self.ptr().setType(<cMouseEvent.Type>value)
+    property Button:
+        def __get__(self):
+            return MouseEvent_MouseButton(self.ptr().getButton())
+        def __set__(self, int value):
+            self.ptr().setButton(<cMouseEvent.MouseButton>value)
+    property X:
+        def __get__(self):
+            return self.ptr().getX()
+    property Y:
+        def __get__(self):
+            return self.ptr().getY()
+    property KeyboardModifiers:
+        def __get__(self):
+            return self.ptr().getKeyboardModifiers()
+    property SelectionMode:
+        def __get__(self):
+            return self.ptr().getSelectionMode()
+
+    @staticmethod
+    cdef MouseEvent wrap(const cMouseEvent& data):
+        cdef MouseEvent obj = MouseEvent.__new__(MouseEvent)
+        obj._ptr = make_shared[cMouseEvent](data)
+        return obj
+
+cdef void MouseEventCallback(const cMouseEvent &event, void *func):
+    (<object>func)(MouseEvent.wrap(event))
+
+cdef class PointPickingEvent:
+    cdef cPointPickingEvent* ptr(self):
+        return self._ptr.get()
+
+    property Point:
+        def __get__(self):
+            cdef float x=0,y=0,z=0
+            self.ptr().getPoint(x,y,z)
+            return (x,y,z)
+    property PointIndex:
+        def __get__(self):
+            return self.ptr().getPointIndex()
+    property Points:
+        def __get__(self):
+            cdef float x1=0,y1=0,z1=0,x2=0,y2=0,z2=0
+            _ensure_true(self.ptr().getPoints(x1,y1,z1,x2,y2,z2), 'getPoints')
+            return [(x1,y1,z1),(x2,y2,z2)]
+    property PointIndices:
+        def __get__(self):
+            cdef int i1=0,i2=0
+            _ensure_true(self.ptr().getPointIndices(i1,i2), 'PointIndices')
+            return (i1,i2)
+
+    @staticmethod
+    cdef PointPickingEvent wrap(const cPointPickingEvent& data):
+        cdef PointPickingEvent obj = PointPickingEvent.__new__(PointPickingEvent)
+        obj._ptr = make_shared[cPointPickingEvent](data)
+        return obj
+
+cdef void PointPickingEventCallback(const cPointPickingEvent &event, void *func):
+    (<object>func)(PointPickingEvent.wrap(event))
+
+cdef class AreaPickingEvent:
+    cdef cAreaPickingEvent* ptr(self):
+        return self._ptr.get()
+
+    property PointsIndices:
+        def __get__(self):
+            cdef vector[int] indices
+            _ensure_true(self.ptr().getPointsIndices(indices), 'getPointsIndices')
+            return indices
+
+    @staticmethod
+    cdef AreaPickingEvent wrap(const cAreaPickingEvent& data):
+        cdef AreaPickingEvent obj = AreaPickingEvent.__new__(AreaPickingEvent)
+        obj._ptr = make_shared[cAreaPickingEvent](data)
+        return obj
+
+cdef void AreaPickingEventCallback(const cAreaPickingEvent &event, void *func):
+    (<object>func)(AreaPickingEvent.wrap(event))
 
 cdef class Visualizer:
     cdef PCLVisualizer* ptr(self):
@@ -49,6 +154,12 @@ cdef class Visualizer:
 
     cpdef void registerKeyboardCallback(self, callback):
         self.ptr().registerKeyboardCallback(KeyboardEventCallback, <void*>callback)
+    cpdef void registerMouseCallback(self, callback):
+        self.ptr().registerMouseCallback(MouseEventCallback, <void*>callback)
+    cpdef void registerPointPickingCallback(self, callback):
+        self.ptr().registerPointPickingCallback(PointPickingEventCallback, <void*>callback)
+    cpdef void registerAreaPickingCallback(self, callback):
+        self.ptr().registerAreaPickingCallback(AreaPickingEventCallback, <void*>callback)
 
     cpdef void spin(self):
         self.ptr().spin()
@@ -63,30 +174,30 @@ cdef class Visualizer:
         else:
             self.ptr().addCoordinateSystem(scale, x, y, z, viewpoint)
     cpdef void removeCoordinateSystem(self, int viewpoint=0):
-        self.ptr().removeCoordinateSystem(viewpoint)
+        _ensure_true(self.ptr().removeCoordinateSystem(viewpoint), 'removeCoordinateSystem')
 
     cpdef void removePointCloud(self, str id="cloud", int viewpoint=0):
-        self.ptr().removePointCloud(id.encode('ascii'), viewpoint)
+        _ensure_true(self.ptr().removePointCloud(id.encode('ascii'), viewpoint), 'removePointCloud')
     cpdef void removePolygonMesh(self, str id="polygon", int viewpoint=0):
-        self.ptr().removePolygonMesh(id.encode('ascii'), viewpoint)
+        _ensure_true(self.ptr().removePolygonMesh(id.encode('ascii'), viewpoint), 'removePolygonMesh')
     cpdef void removeShape(self, str id="cloud", int viewpoint=0):
-        self.ptr().removeShape(id.encode('ascii'), viewpoint)
+        _ensure_true(self.ptr().removeShape(id.encode('ascii'), viewpoint), 'removeShape')
     cpdef void removeText3D(self, str id="cloud", int viewpoint=0):
-        self.ptr().removeText3D(id.encode('ascii'), viewpoint)
+        _ensure_true(self.ptr().removeText3D(id.encode('ascii'), viewpoint), 'removeText3D')
     cpdef void removeAllPointClouds(self, int viewpoint=0):
-        self.ptr().removeAllPointClouds(viewpoint)
+        _ensure_true(self.ptr().removeAllPointClouds(viewpoint), 'removeAllPointClouds')
     cpdef void removeAllShapes(self, int viewpoint=0):
-        self.ptr().removeAllShapes(viewpoint)
+        _ensure_true(self.ptr().removeAllShapes(viewpoint), 'removeAllShapes')
 
     cpdef void addText(self, str text, int xpos, int ypos, int fontsize=10, double r=1, double g=1, double b=1, str id="", int viewpoint=0):
-        self.ptr().addText(text, xpos, ypos, fontsize, r, g, b, id.encode('ascii'), viewpoint)
+        _ensure_true(self.ptr().addText(text, xpos, ypos, fontsize, r, g, b, id.encode('ascii'), viewpoint), 'addText')
     cpdef void updateText(self, str text, int xpos, int ypos, int fontsize=10, double r=1, double g=1, double b=1, str id=""):
-        self.ptr().updateText(text, xpos, ypos, fontsize, r, g, b, id.encode('ascii'))
+        _ensure_true(self.ptr().updateText(text, xpos, ypos, fontsize, r, g, b, id.encode('ascii')), 'updateText')
     
     cpdef void updateShapePose(self, str id, np.ndarray pose):
-        self.ptr().updateShapePose(id, toAffine3f(pose))
+        _ensure_true(self.ptr().updateShapePose(id, toAffine3f(pose)), 'updateShapePose')
     cpdef void updatePointCloudPose(self, str id, np.ndarray pose):
-        self.ptr().updateShapePose(id, toAffine3f(pose))
+        _ensure_true(self.ptr().updatePointCloudPose(id, toAffine3f(pose)), 'updatePointCloudPose')
 
     cpdef bool wasStopped(self):
         return self.ptr().wasStopped()

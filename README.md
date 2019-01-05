@@ -7,6 +7,9 @@ Implement a easy-using cython library to process point cloud, combined with scip
 
 Nevertheless, this library focuses on simplicity, readability and accessibility, the heavily templatized part of original PCL is not implemented in this library due to the limitation of cython. However, the templated cython headers are added and you can still write this part of code in C++ and then wrap the input and output in python easily with this library.  
 
+### Interface
+The major classes in this library are `pcl.PointCloud`, `pcl.Visualizer`. Most methods from C++ library are directly wrapped into Python, while methods with `get` and `set` prefix are changed into Python object properties.
+
 ------------------------
 
 ## Compatibility
