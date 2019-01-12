@@ -34,3 +34,10 @@ def load_ply(str path, type return_type=PointCloud):
 cpdef void save_ply(str path, PointCloud cloud, bool binary=False, bool use_camera=True):
     _ensure_zero(savePLYFile(path.encode('ascii'), deref(cloud._ptr),
         cloud._origin, cloud._orientation, binary, use_camera), "savePLYFile")
+
+cpdef PointCloud load_bin(str path, str point_type="xyz"):
+    cdef PointCloud cloud
+    return cloud # TODO: implement
+
+cpdef void save_bin(str path):
+    pass # TODO: implement
