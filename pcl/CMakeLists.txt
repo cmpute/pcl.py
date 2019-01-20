@@ -1,4 +1,4 @@
-find_package(PCL REQUIRED COMPONENTS common visualization)
+find_package(PCL REQUIRED COMPONENTS common)
 set(CMAKE_CXX_STANDARD 11)
 
 include_directories(${PCL_INCLUDE_DIRS})
@@ -24,13 +24,8 @@ target_link_libraries(PointCloud ${PCL_LIBRARIES})
 python_extension_module(PointCloud)
 install(TARGETS PointCloud LIBRARY DESTINATION pcl)
 
-add_cython_target(Visualizer CXX)
-add_library(Visualizer MODULE ${Visualizer})
-target_link_libraries(Visualizer ${PCL_LIBRARIES})
-python_extension_module(Visualizer)
-install(TARGETS Visualizer LIBRARY DESTINATION pcl)
-
 add_subdirectory(common)
 add_subdirectory(filters)
 add_subdirectory(io)
 add_subdirectory(sample_consensus)
+add_subdirectory(visualization)

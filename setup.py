@@ -15,7 +15,7 @@ setup(
     url='https://github.com/cmpute/pypcl',
     download_url='https://github.com/cmpute/pypcl/archive/master.zip',
     license='BSD-3-Clause',
-    packages=['pcl', 'pcl.common', 'pcl.filters', 'pcl.io', 'pcl.sample_consensus'],
+    packages=['pcl', 'pcl.common', 'pcl.filters', 'pcl.io', 'pcl.sample_consensus', 'pcl.visualization'],
     package_data={'pcl':['*.pxd', '*/*.pxd', '__init__.pxd', '_eigen.hpp']},
     install_requires=['numpy'],
     setup_requires=['cython', 'scikit-build'],
