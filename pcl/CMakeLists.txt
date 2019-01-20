@@ -1,4 +1,4 @@
-find_package(PCL REQUIRED COMPONENTS common io visualization)
+find_package(PCL REQUIRED COMPONENTS common visualization)
 set(CMAKE_CXX_STANDARD 11)
 
 include_directories(${PCL_INCLUDE_DIRS})
@@ -30,4 +30,6 @@ target_link_libraries(Visualizer ${PCL_LIBRARIES})
 python_extension_module(Visualizer)
 install(TARGETS Visualizer LIBRARY DESTINATION pcl)
 
+add_subdirectory(common)
+add_subdirectory(filters)
 add_subdirectory(io)

@@ -1,0 +1,5 @@
+add_cython_target(PCLBase CXX)
+add_library(PCLBase MODULE ${PCLBase})
+target_link_libraries(PCLBase ${PCL_LIBRARIES})
+python_extension_module(PCLBase)
+install(TARGETS PCLBase LIBRARY DESTINATION pcl/common)

@@ -336,8 +336,6 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
     def __releasebuffer__(self, Py_buffer *buffer):
         raise NotImplementedError()
 
-    cdef PCLPointCloud2* ptr(self):
-        return self._ptr.get()
     def to_ndarray(self):
         cdef uint8_t *mem_ptr = self.ptr().data.data()
         cdef uint8_t[:] mem_view = <uint8_t[:self.ptr().data.size()]>mem_ptr

@@ -1,7 +1,8 @@
 from cython.operator cimport dereference as deref
 from libcpp cimport bool
 
-from pcl.PointCloud cimport PointCloud
+import numpy as np
+from pcl.PointCloud cimport PointCloud, _POINT_TYPE_MAPPING
 from pcl.common cimport _ensure_zero
 from pcl.io.pcd_io cimport loadPCDFile, savePCDFile
 from pcl.io.ply_io cimport loadPLYFile, savePLYFile
@@ -36,8 +37,9 @@ cpdef void save_ply(str path, PointCloud cloud, bool binary=False, bool use_came
         cloud._origin, cloud._orientation, binary, use_camera), "savePLYFile")
 
 cpdef PointCloud load_bin(str path, str point_type="xyz"):
-    cdef PointCloud cloud
-    return cloud # TODO: implement
+    cdef object points = np.fromfile(path, dtype=np.float32)
+    cdef PointCloud cloud = PointCloud(points.reshape(-1, len(_POINT_TYPE_MAPPING[point_type.upper().encode('ascii')])), point_type)
+    return cloud
 
-cpdef void save_bin(str path):
-    pass # TODO: implement
+cpdef void save_bin(str path, PointCloud cloud):
+    cloud.to_ndarray().tofile(path)

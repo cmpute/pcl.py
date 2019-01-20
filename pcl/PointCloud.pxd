@@ -12,4 +12,8 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
     cdef Vector4f _origin
     cdef Quaternionf _orientation
     cdef string _ptype
-    cdef PCLPointCloud2* ptr(self)
+    
+    cdef inline PCLPointCloud2* ptr(self):
+        return self._ptr.get()
+    cdef inline shared_ptr[const PCLPointCloud2] csptr(self):
+        return <shared_ptr[const PCLPointCloud2]>self._ptr

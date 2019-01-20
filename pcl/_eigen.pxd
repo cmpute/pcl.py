@@ -2,6 +2,14 @@
 from numpy cimport ndarray
 
 cdef extern from "Eigen/Eigen" namespace "Eigen" nogil:
+    cdef cppclass Vector3i:
+        Vector3i() except +
+        Vector3i(int, int, int) except + 
+        float *data()
+        float& element "operator()"(int index)
+        @staticmethod
+        Vector3i Zero()
+
     cdef cppclass Vector3f:
         Vector3f() except +
         Vector3f(float, float, float) except + 
@@ -50,6 +58,8 @@ cdef extern from "Eigen/Eigen" namespace "Eigen" nogil:
 cdef extern from "_eigen.hpp" nogil:
     cdef T _toEigen[T,U](U*)
     cdef Affine3f _toEigenAffine(float*)
+cdef inline Vector3i toVector3i(ndarray arr):
+    return _toEigen[Vector3i, int](<int*>arr.data)
 cdef inline Vector3f toVector3f(ndarray arr):
     return _toEigen[Vector3f, float](<float*>arr.data)
 cdef inline Vector4f toVector4f(ndarray arr):
