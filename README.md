@@ -10,6 +10,13 @@ Nevertheless, this library focuses on simplicity, readability and accessibility,
 ### Interface
 The major classes in this library are `pcl.PointCloud`, `pcl.Visualizer`. Most methods from C++ library are directly wrapped into Python, while methods with `get` and `set` prefix are changed into Python object properties.
 
+### Advantage over [python-pcl](https://github.com/strawlab/python-pcl/)
+- PointCloud is stored in PCLPointCloud2 instead of PointCloud<PointT>. Thus the cloud can store various kind of point type
+- Cython files are in the same structure as C++ library, which means the code you write in cython can be easily transferred to C++
+- ROS support
+- Templated algorithms are implemented with most used point type, the other fields will be reserved.
+- Using CMake to build extension, thus this library can be compiled upon different settings of PCL
+
 ------------------------
 
 ## Compatibility

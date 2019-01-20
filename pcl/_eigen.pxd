@@ -4,6 +4,7 @@ from numpy cimport ndarray
 cdef extern from "Eigen/Eigen" namespace "Eigen" nogil:
     cdef cppclass Vector3i:
         Vector3i() except +
+        Vector3f(int*) except + 
         Vector3i(int, int, int) except + 
         float *data()
         float& element "operator()"(int index)
@@ -12,11 +13,31 @@ cdef extern from "Eigen/Eigen" namespace "Eigen" nogil:
 
     cdef cppclass Vector3f:
         Vector3f() except +
+        Vector3f(float*) except + 
         Vector3f(float, float, float) except + 
         float *data()
         float& element "operator()"(int index)
         @staticmethod
         Vector3f Zero()
+
+    cdef cppclass Vector4f:
+        Vector4f() except +
+        Vector4f(float*) except + 
+        Vector4f(float, float, float, float) except + 
+        float *data()
+        float& element "operator()"(int index)
+        @staticmethod
+        Vector4f Zero()
+
+    cdef cppclass VectorXf:
+        VectorXf() except +
+        VectorXf(size_t) except + 
+        VectorXf(float*, size_t) except + 
+        float *data()
+        float& element "operator()"(int index)
+        size_t size()
+        @staticmethod
+        VectorXf Zero()
 
     cdef cppclass Matrix3f:
         Matrix3f() except +
@@ -25,14 +46,6 @@ cdef extern from "Eigen/Eigen" namespace "Eigen" nogil:
         float& element "operator()"(int row, int col)
         @staticmethod
         Matrix3f Zero()
-
-    cdef cppclass Vector4f:
-        Vector4f() except +
-        Vector4f(float, float, float, float) except + 
-        float *data()
-        float& element "operator()"(int index)
-        @staticmethod
-        Vector4f Zero()
 
     cdef cppclass Matrix4f:
         Matrix4f() except +
