@@ -51,7 +51,7 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         # void addCoordinateSystem (double scale, const Eigen::Affine3f& t, int viewport = 0);
         void addCoordinateSystem(double scale, const Affine3f &t, int viewport)
         # bool removeCoordinateSystem (int viewport = 0);
-        bool removeCoordinateSystem(int viewpoint)
+        bool removeCoordinateSystem(int viewport)
 
         # bool removePointCloud (const std::string &id = "cloud", int viewport = 0);
         bool removePointCloud(const string &id, int viewport)
@@ -67,14 +67,14 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         bool removeAllShapes(int viewport)
         
         # void setBackgroundColor (const double &r, const double &g, const double &b, int viewport = 0);
-        void setBackgroundColor(const double &r, const double &g, const double &b, int viewpoint)
+        void setBackgroundColor(const double &r, const double &g, const double &b, int viewport)
 
         # bool addText (const std::string &text, int xpos, int ypos, const std::string &id = "", int viewport = 0);
-        bool addText(const string &text, int xpos, int ypos, const string &id, int viewpoint)
+        bool addText(const string &text, int xpos, int ypos, const string &id, int viewport)
         # bool addText (const std::string &text, int xpos, int ypos, double r, double g, double b, const std::string &id = "", int viewport = 0);
-        bool addText(const string &text, int xpos, int ypos, double r, double g, double b, const string &id, int viewpoint)
+        bool addText(const string &text, int xpos, int ypos, double r, double g, double b, const string &id, int viewport)
         # bool addText (const std::string &text, int xpos, int ypos, int fontsize, double r, double g, double b, const std::string &id = "", int viewport = 0);
-        bool addText(const string &text, int xpos, int ypos, int fontsize, double r, double g, double b, const string &id, int viewpoint)
+        bool addText(const string &text, int xpos, int ypos, int fontsize, double r, double g, double b, const string &id, int viewport)
         # bool updateText (const std::string &text, int xpos, int ypos, const std::string &id = "");
         bool updateText(const string &text, int xpos, int ypos, const string &id)
         # bool updateText (const std::string &text, int xpos, int ypos, double r, double g, double b, const std::string &id = "");
@@ -86,15 +86,15 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         bool updatePointCloudPose(const string &id, const Affine3f &pose)
 
         # template <typename PointT> bool addText3D (const std::string &text, const PointT &position, double textScale = 1.0, double r = 1.0, double g = 1.0, double b = 1.0, const std::string &id = "", int viewport = 0);
-        bool addText3D[PointT](const string &text, const PointT &position, double textScale, double r, double g, double b, const string &id, int viewpoint)
+        bool addText3D[PointT](const string &text, const PointT &position, double textScale, double r, double g, double b, const string &id, int viewport)
         # template <typename PointNT> bool addPointCloudNormals (const typename pcl::PointCloud<PointNT>::ConstPtr &cloud, int level = 100, float scale = 0.02f, const std::string &id = "cloud", int viewport = 0);
-        bool addPointCloudNormals[PointNT](const shared_ptr[PointCloud[PointNT]] &cloud, int level, float scale, const string &id, int viewpoint)
+        bool addPointCloudNormals[PointNT](const shared_ptr[PointCloud[PointNT]] &cloud, int level, float scale, const string &id, int viewport)
         # template <typename PointT, typename PointNT> bool addPointCloudNormals (const typename pcl::PointCloud<PointT>::ConstPtr &cloud, const typename pcl::PointCloud<PointNT>::ConstPtr &normals, int level = 100, float scale = 0.02f, const std::string &id = "cloud", int viewport = 0);
-        bool addPointCloudNormals[PointT, PointNT](const shared_ptr[PointCloud[PointT]] &cloud, const shared_ptr[PointCloud[PointNT]] &normals, int level, float scale, const string &id, int viewpoint)
+        bool addPointCloudNormals[PointT, PointNT](const shared_ptr[PointCloud[PointT]] &cloud, const shared_ptr[PointCloud[PointNT]] &normals, int level, float scale, const string &id, int viewport)
         # bool addPointCloudPrincipalCurvatures (const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud, const pcl::PointCloud<pcl::Normal>::ConstPtr &normals, const pcl::PointCloud<pcl::PrincipalCurvatures>::ConstPtr &pcs, int level = 100, float scale = 1.0f, const std::string &id = "cloud", int viewport = 0);
-        bool addPointCloudPrincipalCurvatures(const shared_ptr[const PointCloud[PointXYZ]] &cloud, shared_ptr[const PointCloud[Normal]] &normals, const shared_ptr[const PointCloud[PrincipalCurvatures]] &pcs, int level, float scale,const string &id, int viewport);
+        bool addPointCloudPrincipalCurvatures(const shared_ptr[const PointCloud[PointXYZ]] &cloud, shared_ptr[const PointCloud[Normal]] &normals, const shared_ptr[const PointCloud[PrincipalCurvatures]] &pcs, int level, float scale, const string &id, int viewport);
 
-        # template <typename PointT, typename GradientT> bool addPointCloudIntensityGradients (const typename pcl::PointCloud<PointT>::ConstPtr &cloud, const typename pcl::PointCloud<GradientT>::ConstPtr &g const std::string &id = "cloud", int viewport = 0);
+        # template <typename PointT, typename GradientT> bool addPointCloudIntensityGradients (const typename pcl::PointCloud<PointT>::ConstPtr &cloud, const typename pcl::PointCloud<GradientT>::ConstPtr &radients, int level = 100, double scale = 1e-6, const std::string &id = "cloud", int viewport = 0);
         bool addPointCloudIntensityGradients [PointT, GradientT](const shared_ptr[const PointCloud[PointT]] &cloud, const shared_ptr[const PointCloud[GradientT]] &gradients, int level, double scale, const string &id, int viewport = 0);
 
         # template <typename PointT> bool addPointCloud (const typename pcl::PointCloud<PointT>::ConstPtr &cloud, const std::string &id = "cloud", int viewport = 0);
@@ -132,31 +132,31 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         # inline bool addPointCloud (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud, const std::string &id = "cloud", int viewport = 0)
         bool addPointCloud (const shared_ptr[const PointCloud[PointXYZRGBA]] &cloud, const string &id, int viewport)
         # inline bool updatePointCloud (const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud, const std::string &id = "cloud")
-        bool updatePointCloud (const shared_ptr[const PointCloud[PointXYZ]] &cloud, const string &id)
+        bool updatePointCloud_XYZ "updatePointCloud<pcl::PointXYZ>" (const shared_ptr[const PointCloud[PointXYZ]] &cloud, const string &id)
         # inline bool updatePointCloud (const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr &cloud, const std::string &id = "cloud")
-        bool updatePointCloud (const shared_ptr[const PointCloud[PointXYZRGB]] &cloud, const string &id)
+        bool updatePointCloud_XYZRGB "updatePointCloud<pcl::PointXYZRGB>" (const shared_ptr[const PointCloud[PointXYZRGB]] &cloud, const string &id)
         # inline bool updatePointCloud (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud, const std::string &id = "cloud")
-        bool updatePointCloud (const shared_ptr[const PointCloud[PointXYZRGBA]] &cloud, const string &id)
+        bool updatePointCloud_XYZRGBA "updatePointCloud<pcl::PointXYZRGBA>" (const shared_ptr[const PointCloud[PointXYZRGBA]] &cloud, const string &id)
 
         # bool addPolygonMesh (const pcl::PolygonMesh &polymesh, const std::string &id = "polygon", int viewport = 0);
-        bool addPolygonMesh(const PolygonMesh &polymesh, const string &id, int viewpoint)
+        bool addPolygonMesh(const PolygonMesh &polymesh, const string &id, int viewport)
         # template <typename PointT> bool addPolygonMesh (const typename pcl::PointCloud<PointT>::ConstPtr &cloud, const std::vector<pcl::Vertices> &vertices, const std::string &id = "polygon", int viewport = 0);
-        bool addPolygonMesh[PointT](const shared_ptr[const PointCloud[PointT]] &cloud, const vector[Vertices] &vertices, const string &id, int viewpoint)
+        bool addPolygonMesh[PointT](const shared_ptr[const PointCloud[PointT]] &cloud, const vector[Vertices] &vertices, const string &id, int viewport)
         # template <typename PointT> bool updatePolygonMesh (const typename pcl::PointCloud<PointT>::ConstPtr &cloud, const std::vector<pcl::Vertices> &vertices, const std::string &id = "polygon");
         bool updatePolygonMesh[PointT](const shared_ptr[const PointCloud[PointT]] &cloud, const vector[Vertices] &vertices, const string &id)
         # bool updatePolygonMesh (const pcl::PolygonMesh &polymesh, const std::string &id = "polygon");
         bool updatePolygonMesh (const PolygonMesh &polymesh, const string &id)
         # bool addPolylineFromPolygonMesh (const pcl::PolygonMesh &polymesh, const std::string &id = "polyline", int viewport = 0);
         bool addPolylineFromPolygonMesh (const PolygonMesh &polymesh, const string 
-        &id, int viewpoint)
+        &id, int viewport)
 
         # template <typename PointT> bool addCorrespondences (const typename pcl::PointCloud<PointT>::ConstPtr &source_points, const typename pcl::PointCloud<PointT>::ConstPtr &target_points, const std::vector<int> & correspondences, const std::string &id = "correspondences", int viewport = 0);
-        bool addCorrespondences[PointT](const shared_ptr[const PointCloud[PointT]] &source_points, const shared_ptr[const PointCloud[PointT]] &target_points, const vector[int] &correspondences, const string &id, int viewpoint)
+        bool addCorrespondences[PointT](const shared_ptr[const PointCloud[PointT]] &source_points, const shared_ptr[const PointCloud[PointT]] &target_points, const vector[int] &correspondences, const string &id, int viewport)
         # XXX: template <typename PointT> bool addCorrespondences (const typename pcl::PointCloud<PointT>::ConstPtr &source_points, const typename pcl::PointCloud<PointT>::ConstPtr &target_points, const pcl::Correspondences &correspondences, int nth, const std::string &id = "correspondences", int viewport = 0);
         # XXX: template <typename PointT> bool addCorrespondences (const typename pcl::PointCloud<PointT>::ConstPtr &source_points, const typename pcl::PointCloud<PointT>::ConstPtr &target_points, const pcl::Correspondences &correspondences, const std::string &id = "correspondences", int viewport = 0)
         # XXX: template <typename PointT> bool updateCorrespondences (const typename pcl::PointCloud<PointT>::ConstPtr &source_points, const typename pcl::PointCloud<PointT>::ConstPtr &target_points, const pcl::Correspondences &correspondences, int nth, const std::string &id = "correspondences");
         # void removeCorrespondences (const std::string &id = "correspondences", int viewport = 0);
-        void removeCorrespondences (const string &id, int viewpoint)
+        void removeCorrespondences (const string &id, int viewport)
 
         # int getColorHandlerIndex (const std::string &id);
         int getColorHandlerIndex (const string &id)
@@ -168,13 +168,13 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
 
         bool setPointCloudRenderingProperties (int property, double val1, double val2, double val3, const string &id, int viewport)
         # bool setPointCloudRenderingProperties (int property, double value, const std::string &id = "cloud", int viewport = 0);
-        bool setPointCloudRenderingProperties (int property, double value, const string &id, int viewpoint)
+        bool setPointCloudRenderingProperties (int property, double value, const string &id, int viewport)
         # bool getPointCloudRenderingProperties (int property, double &value, const std::string &id = "cloud");
         bool getPointCloudRenderingProperties (int property, double &value, const string &id)
         # bool setPointCloudSelected (const bool selected, const std::string &id = "cloud" );
         bool setPointCloudSelected (bool selected, const string &id);
         # bool setShapeRenderingProperties (int property, double value, const std::string &id, int viewport = 0);
-        bool setShapeRenderingProperties (int property, double value, const string &id, int viewpoint)
+        bool setShapeRenderingProperties (int property, double value, const string &id, int viewport)
 
         bool wasStopped()
         void resetStoppedFlag()
@@ -195,7 +195,7 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         # template <typename P1, typename P2> bool addArrow (const P1 &pt1, const P2 &pt2, double r, double g, double b, const std::string &id = "arrow", int viewport = 0);
         bool addArrow[P1, P2](const P1 &pt1, const P2 &pt2, double r, double g, double b, const string &id, int viewport)
         # template <typename P1, typename P2> bool addArrow (const P1 &pt1, const P2 &pt2, double r, double g, double b, bool display_length, const std::string &id = "arrow", int viewport = 0);
-        bool addArrow[P1, P2](const P1 &pt1, const P2 &pt2, double r, double g, double b, bool display_length, const string &id = "arrow", int viewport = 0)
+        bool addArrow[P1, P2](const P1 &pt1, const P2 &pt2, double r, double g, double b, bool display_length, const string &id, int viewport)
         # template <typename P1, typename P2> bool addArrow (const P1 &pt1, const P2 &pt2, double r_line, double g_line, double b_line, double r_text, double g_text, double b_text, const std::string &id = "arrow", int viewport = 0);
         bool addArrow[P1, P2](const P1 &pt1, const P2 &pt2, double r_line, double g_line, double b_line, double r_text, double g_text, double b_text, const string &id, int viewport)
         # template <typename PointT> bool addSphere (const PointT &center, double radius, const std::string &id = "sphere", int viewport = 0);
@@ -212,23 +212,23 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         # XXX: bool addModelFromPLYFile (const std::string &filename, vtkSmartPointer<vtkTransform> transform, const std::string &id = "PLYModel", int viewport = 0);
 
         # bool addCylinder (const pcl::ModelCoefficients &coefficients, const std::string &id = "cylinder", int viewport = 0);
-        bool addCylinder(const ModelCoefficients &coefficients, const string &id, int viewpoint)
+        bool addCylinder(const ModelCoefficients &coefficients, const string &id, int viewport)
         # bool addSphere (const pcl::ModelCoefficients &coefficients, const std::string &id = "sphere", int viewport = 0);
-        bool addSphere(const ModelCoefficients &coefficients, const string &id, int viewpoint)
+        bool addSphere(const ModelCoefficients &coefficients, const string &id, int viewport)
         # bool addLine (const pcl::ModelCoefficients &coefficients, const std::string &id = "line", int viewport = 0);
-        bool addLine(const ModelCoefficients &coefficients, const string &id, int viewpoint)
+        bool addLine(const ModelCoefficients &coefficients, const string &id, int viewport)
         # bool addPlane (const pcl::ModelCoefficients &coefficients, const std::string &id = "plane", int viewport = 0);
-        bool addPlane(const ModelCoefficients &coefficients, const string &id, int viewpoint)
+        bool addPlane(const ModelCoefficients &coefficients, const string &id, int viewport)
         # bool addPlane (const pcl::ModelCoefficients &coefficients, double x, double y, double z, const std::string &id = "plane", int viewport = 0);
-        bool addPlane(const ModelCoefficients &coefficients, double x, double y, double z, string &id, int viewpoint)
+        bool addPlane(const ModelCoefficients &coefficients, double x, double y, double z, string &id, int viewport)
         # bool addCircle (const pcl::ModelCoefficients &coefficients, const std::string &id = "circle", int viewport = 0);
-        bool addPlane(const ModelCoefficients &coefficients, const string &id, int viewpoint)
+        bool addPlane(const ModelCoefficients &coefficients, const string &id, int viewport)
         # bool addCone (const pcl::ModelCoefficients &coefficients, const std::string &id = "cone", int viewport = 0);
-        bool addCone(const ModelCoefficients &coefficients, const string &id, int viewpoint)
+        bool addCone(const ModelCoefficients &coefficients, const string &id, int viewport)
         # bool addCube (const pcl::ModelCoefficients &coefficients, const std::string &id = "cube", int viewport = 0);
-        bool addCube(const ModelCoefficients &coefficients, const string &id, int viewpoint)
+        bool addCube(const ModelCoefficients &coefficients, const string &id, int viewport)
         # bool addCube (const Eigen::Vector3f &translation, const Eigen::Quaternionf &rotation, double width, double height, double depth, const std::string &id = "cube", int viewport = 0);
-        bool addCube(const Vector3f &translation, const Quaternionf &rotation, double width, double height, double depth, const string &id, int viewpoint)
+        bool addCube(const Vector3f &translation, const Quaternionf &rotation, double width, double height, double depth, const string &id, int viewport)
         # bool addCube (float x_min, float x_max, float y_min, float y_max, float z_min, float z_max, double r = 1.0, double g = 1.0, double b = 1.0, const std::string &id = "cube", int viewport = 0);
         bool addCube(float x_min, float x_max, float y_min, float y_max, float z_min, float z_max, double r, double g, double b, const string &id, int viewport)
 
@@ -245,8 +245,8 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         bool cameraParamsSet ()
         void updateCamera ()
         void resetCamera ()
-        # void resetCameraViewpoint (const std::string &id = "cloud");
-        void resetCameraViewpoint (const string &id)
+        # void resetCameraviewport (const std::string &id = "cloud");
+        void resetCameraviewport (const string &id)
         # void setCameraPosition (double pos_x, double pos_y, double pos_z, double view_x, double view_y, double view_z, double up_x, double up_y, double up_z, int viewport = 0);
         void setCameraPosition (double pos_x, double pos_y, double pos_z, double view_x, double view_y, double view_z, double up_x, double up_y, double up_z, int viewport)
         # void setCameraPosition (double pos_x, double pos_y, double pos_z, double up_x, double up_y, double up_z, int viewport = 0);

@@ -14,8 +14,8 @@ class TestLoaders(unittest.TestCase):
         
         v1 = viewer.createViewPort(0, 0, 0.5, 1)
         v2 = viewer.createViewPort(0.5, 0, 1, 1)
-        viewer.addPointCloud(cloud1, viewpoint=v1)
-        viewer.addPointCloud(cloud2, viewpoint=v2)
+        viewer.addPointCloud(cloud1, viewport=v1)
+        viewer.addPointCloud(cloud2, viewport=v2)
         
         viewer.spinOnce(time=1000)
         viewer.close()
@@ -39,4 +39,20 @@ class TestLoaders(unittest.TestCase):
         viewer.registerAreaPickingCallback(area_callback)
 
         viewer.spinOnce(time=2000)
+        viewer.close()
+
+    def test_add_shape(self):
+        cloud = pcl.PointCloud(np.random.rand(100, 3).astype('f4'))
+        
+        viewer = pcl.Visualizer()
+        viewer.addPointCloud(cloud)
+        
+        viewer.addLine([-1,-1,-1], [1,1,1])
+        viewer.addArrow([1,-1,-1], [-1,1,1], r_line=0.7, r_text=0.3)
+        viewer.addSphere([0,0,0], 1)
+        
+        viewer.spinOnce(time=500)
+        viewer.updateSphere([0,0,0], 2)
+        viewer.spinOnce(time=500)
+        
         viewer.close()

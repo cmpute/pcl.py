@@ -317,11 +317,33 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         return item in self.to_ndarray()
 
     def __getitem__(self, indices):
-        raise NotImplementedError()
+        if not isinstance(indices, tuple) and not isinstance(indices, list):
+            # indexing by index or field
+            newdata = self.to_ndarray()[indices]
+            if isinstance(indices, str):
+                raise NotImplementedError("Accessing by field is currently not supported")
+            else:
+                newptype = self._ptype
+        elif len(indices) is 2: # indexing by row and col
+            raise NotImplementedError("Organized cloud is currently not supported")
+        else:
+            raise IndexError('too many indices')
+
+        cloud = PointCloud(newdata, point_type=newptype)
+        cloud._origin = self._origin
+        cloud._orientation = self._orientation
+        return cloud
+
     def __setitem__(self, indices, value):
-        raise NotImplementedError()
+        if not isinstance(indices, tuple) and not isinstance(indices, list):
+            # indexing by index or field or multiple fields
+            self.to_ndarray()[indices] = value
+        elif len(indices) is 2:
+            raise NotImplementedError("Organized cloud is currently not supported")
+        else: raise IndexError('too many indices')
+
     def __delitem__(self, indices):
-        raise NotImplementedError()
+        raise NotImplementedError("Organized cloud is currently not supported")
 
     def __add__(self, item):
         raise NotImplementedError()

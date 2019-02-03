@@ -50,7 +50,7 @@ cdef class Visualizer:
     cpdef void setFullScreen(self, bool mode)
     cpdef void setWindowName(self, str name)
     cpdef void setWindowBorders(self, bool mode)
-    cpdef void setBackgroundColor(self, double r, double g, double b, int viewpoint=*)
+    cpdef void setBackgroundColor(self, double r, double g, double b, int viewport=*)
 
     # TODO: return wrapped connection object
     cpdef void registerKeyboardCallback(self, callback)
@@ -61,19 +61,26 @@ cdef class Visualizer:
     cpdef void spin(self)
     cpdef void spinOnce(self, int time=*, bool force_redraw=*)
 
-    cpdef void addCoordinateSystem(self, double scale=*, float x=*, float y=*, float z=*, np.ndarray t=*, int viewpoint=*)
-    cpdef void removeCoordinateSystem(self, int viewpoint=*)
+    cpdef void addCoordinateSystem(self, double scale=*, float x=*, float y=*, float z=*, np.ndarray t=*, int viewport=*)
+    cpdef void removeCoordinateSystem(self, int viewport=*)
 
-    cpdef void removePointCloud(self, str id=*, int viewpoint=*)
-    cpdef void removePolygonMesh(self, str id=*, int viewpoint=*)
-    cpdef void removeShape(self, str id=*, int viewpoint=*)
-    cpdef void removeText3D(self, str id=*, int viewpoint=*)
-    cpdef void removeAllPointClouds(self, int viewpoint=*)
-    cpdef void removeAllShapes(self, int viewpoint=*)
+    cpdef void removePointCloud(self, str id=*, int viewport=*)
+    cpdef void removePolygonMesh(self, str id=*, int viewport=*)
+    cpdef void removeShape(self, str id=*, int viewport=*)
+    cpdef void removeText3D(self, str id=*, int viewport=*)
+    cpdef void removeAllPointClouds(self, int viewport=*)
+    cpdef void removeAllShapes(self, int viewport=*)
 
-    cpdef void addText(self, str text, int xpos, int ypos, int fontsize=*, double r=*, double g=*, double b=*, str id=*, int viewpoint=*)
+    cpdef void addText(self, str text, int xpos, int ypos, int fontsize=*, double r=*, double g=*, double b=*, str id=*, int viewport=*)
     cpdef void updateText(self, str text, int xpos, int ypos, int fontsize=*, double r=*, double g=*, double b=*, str id=*)
-    
+    cpdef void addText3D(self, str text, position, double textScale=*, double r=*, double g=*, double b=*, str id=*, int viewport=*)
+    cpdef void addPointCloudNormals(self, PointCloud cloud, PointCloud normals=*, int level=*, float scale=*, str id=*, int viewport=*)
+    cpdef void addPointCloudPrincipalCurvatures(self, PointCloud cloud, PointCloud normals, PointCloud pcs, int level=*, float scale=*, str id=*, int viewport=*)
+    cpdef void addPointCloudIntensityGradients(self, PointCloud cloud, PointCloud gradients, int level=*, double scale=*, str id=*, int viewport=*)
+
+    cpdef void addCorrespondences(self, PointCloud source_points, PointCloud target_points, correspondences, str id=*, int viewport=*)
+    cpdef void removeCorrespondences (self, str id=*, int viewport=*)
+
     cpdef void updateShapePose(self, str id, np.ndarray pose)
     cpdef void updatePointCloudPose(self, str id, np.ndarray pose)
 
@@ -83,5 +90,11 @@ cdef class Visualizer:
     cpdef int createViewPort(self, double xmin, double ymin, double xmax, double ymax)
     cpdef void createViewPortCamera(self, int viewport)
 
-    cpdef void addPointCloud(self, PointCloud cloud, str id=*, int viewpoint=*)
-    # TODO: cpdef void updatePointCloud(self, PointCloud cloud
+    # TODO: support custom handlers
+    cpdef void addPointCloud(self, PointCloud cloud, str id=*, int viewport=*)
+    cpdef void updatePointCloud(self, PointCloud cloud, str id=*)
+
+    cpdef void addLine(self, p1, p2, double r=*, double g=*, double b=*, str id=*, int viewport=*)
+    cpdef void addArrow(self, p1, p2, double r_line=*, double g_line=*, double b_line=*, double r_text=*, double g_text=*, double b_text=*, bool display_length=*, str id=*, int viewport=*)
+    cpdef void addSphere(self, center, double radius, double r=*, double g=*, double b=*, str id=*, int viewport=*)
+    cpdef void updateSphere(self, center, double radius, double r=*, double g=*, double b=*, str id=*)
