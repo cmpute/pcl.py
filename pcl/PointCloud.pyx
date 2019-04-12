@@ -318,6 +318,8 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
 
     def __getitem__(self, indices):
         if not isinstance(indices, tuple) and not isinstance(indices, list):
+            if isinstance(indices, int):
+                indices = slice(indices, indices+1) # access one point will return np.void type
             # indexing by index or field
             newdata = self.to_ndarray()[indices]
             if isinstance(indices, str):
@@ -329,7 +331,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         else:
             raise IndexError('too many indices')
 
-        cloud = PointCloud(newdata, point_type=newptype)
+        cloud = PointCloud(newdata, point_type=newptype.decode('ascii'))
         cloud._origin = self._origin
         cloud._orientation = self._orientation
         return cloud
@@ -343,12 +345,41 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         else: raise IndexError('too many indices')
 
     def __delitem__(self, indices):
-        raise NotImplementedError("Organized cloud is currently not supported")
+        raise NotImplementedError("Delete point is currently not supported")
+
+    def append(self, points):
+        copy = self.to_ndarray().copy()
+        copy = np.append(copy, np.array(points, dtype=copy.dtype))
+        return PointCloud(copy, self._ptype.decode('ascii'))
+
+    def append_fields(self, fields, data):
+        raise NotImplementedError('Adding field is currently unsupported')
 
     def __add__(self, item):
-        raise NotImplementedError()
-    def __eq__(self, target):
-        raise NotImplementedError()
+        '''
+        Insert several points at the end of the container.
+        # Parameters
+            points: ndarray with 2-dimension and same point structure with the cloud
+                the points that are being inserted
+        '''
+        if isinstance(item, type(self)) and \
+           len(set(self.fields).intersection(item.fields)) == 0:
+
+            if len(item) != len(self):
+                raise ValueError('size of point cloud should match when concatenating fields')
+            if not self.compare_metadata(item):
+                raise ValueError('do not concatenate two point cloud with difference metadata')
+
+            return self.append_fields(None, item)
+        else:
+            return self.append(item)
+
+    def __eq__(self, PointCloud target):
+        result = (target.to_ndarray() == self.to_ndarray()).all()
+        result &= self.compare_metadata(target)
+        result &= target.width == self.width
+        result &= target.height == self.height
+        return result
 
     def __array__(self, *_):
         '''support conversion to ndarray'''
@@ -363,8 +394,12 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         cdef uint8_t[:] mem_view = <uint8_t[:self.ptr().data.size()]>mem_ptr
         cdef np.ndarray arr_raw = np.asarray(mem_view)
         cdef str byte_order = '>' if self.ptr().is_bigendian else '<'
-        cdef list dtype = [(field.name, str(field.count) + byte_order + field.npdtype)
-                           for field in self.fields]
+        cdef np.dtype dtype = np.dtype([(field.name, str(field.count) + byte_order + field.npdtype)
+                           for field in self.fields])
+        # fix if there is padding bytes. TODO: fix for middle align bytes
+        if dtype.itemsize < self.ptr().point_step:
+            arr_raw = arr_raw.reshape(-1, self.ptr().point_step)
+            arr_raw = np.reshape(arr_raw[:,:dtype.itemsize], -1)
         cdef np.ndarray arr_view = arr_raw.view(dtype)
         return arr_view
 

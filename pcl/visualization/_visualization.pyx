@@ -8,7 +8,7 @@ from pcl.common cimport _ensure_true
 from pcl.common.conversions cimport fromPCLPointCloud2
 from pcl.common.PCLPointCloud2 cimport PCLPointCloud2, PCLPointCloud2ConstPtr
 from pcl.common.point_cloud cimport PointCloud as cPointCloud
-from pcl.common.point_types cimport PointXYZ
+from pcl.common.point_types cimport PointXYZ, PointXYZRGB, PointXYZRGBA
 from pcl.PointCloud cimport _POINT_TYPE_MAPPING as pmap
 from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryHandler_PCLPointCloud2, PointCloudGeometryHandlerXYZ_PCLPointCloud2
 from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler_PCLPointCloud2, PointCloudColorHandlerCustom_PCLPointCloud2, PointCloudColorHandlerRGBField_PCLPointCloud2
@@ -196,12 +196,13 @@ cdef class Visualizer:
         _ensure_true(self.ptr().removeAllShapes(viewport), 'removeAllShapes')
 
     cpdef void addText(self, str text, int xpos, int ypos, int fontsize=10, double r=1, double g=1, double b=1, str id="", int viewport=0):
-        _ensure_true(self.ptr().addText(text, xpos, ypos, fontsize, r, g, b, id.encode('ascii'), viewport), 'addText')
+        _ensure_true(self.ptr().addText(text.encode('ascii'), xpos, ypos, fontsize, r, g, b, id.encode('ascii'), viewport), 'addText')
     cpdef void updateText(self, str text, int xpos, int ypos, int fontsize=10, double r=1, double g=1, double b=1, str id=""):
-        _ensure_true(self.ptr().updateText(text, xpos, ypos, fontsize, r, g, b, id.encode('ascii')), 'updateText')
+        _ensure_true(self.ptr().updateText(text.encode('ascii'), xpos, ypos, fontsize, r, g, b, id.encode('ascii')), 'updateText')
     cpdef void addText3D(self, str text, position, double textScale=1, double r=1, double g=1, double b=1, str id="", int viewport=0):
+        '''Note (TODO): This method should be called in the same thread with spin, and viewport seems not to be working'''
         cdef PointXYZ pos = PointXYZ(position[0], position[1], position[2])
-        _ensure_true(self.ptr().addText3D[PointXYZ](text, pos, textScale, r, g, b, id.encode('ascii'), viewport), 'addText3D')
+        _ensure_true(self.ptr().addText3D[PointXYZ](text.encode('ascii'), pos, textScale, r, g, b, id.encode('ascii'), viewport), 'addText3D')
     cpdef void addPointCloudNormals(self, PointCloud cloud, PointCloud normals=None, int level=100, float scale=0.02, str id="cloud", int viewport=0):
         raise NotImplementedError()
     cpdef void addPointCloudPrincipalCurvatures(self, PointCloud cloud, PointCloud normals, PointCloud pcs, int level=100, float scale=1, str id="cloud", int viewport=0):
@@ -263,7 +264,7 @@ cdef class Visualizer:
         if ('rgb' in fieldlist) or ('rgba' in fieldlist):
             ccloud_rgba = make_shared[cPointCloud[PointXYZRGBA]]()
             fromPCLPointCloud2(deref(cloud._ptr.get()), deref(ccloud_rgba.get()))
-            _ensure_true(self.ptr().updatePointCloud_RGBA(<const shared_ptr[const cPointCloud[PointXYZRGBA]]>ccloud_rgba,
+            _ensure_true(self.ptr().updatePointCloud_XYZRGBA(<const shared_ptr[const cPointCloud[PointXYZRGBA]]>ccloud_rgba,
                 id.encode('ascii')), "updatePointCloud")
         else:
             ccloud_xyz = make_shared[cPointCloud[PointXYZ]]()

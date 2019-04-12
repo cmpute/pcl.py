@@ -9,6 +9,8 @@ from pcl.io.ply_io cimport loadPLYFile, savePLYFile
 
 cdef str _nonzero_error_msg = "Function {0} returned {1}, please check stderr output!"
 
+# TODO: Add checking for whether file exists
+
 # TODO: Inference point type from fields
 cpdef PointCloud load_pcd(str path):
     cdef PointCloud cloud = PointCloud()

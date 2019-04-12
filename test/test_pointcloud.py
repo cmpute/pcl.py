@@ -22,6 +22,7 @@ class TestNumpyInitialize(unittest.TestCase):
         cloud = pcl.PointCloud(cloud_array)
         copy = pcl.PointCloud(cloud)
         assert np.all(copy.xyz == cloud_array)
+        assert copy == cloud
         cloud.xyz[0,0] = 0
         assert np.any(cloud.xyz != cloud_array)
         assert np.all(copy.xyz == cloud_array)

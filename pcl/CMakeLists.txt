@@ -9,8 +9,8 @@ add_definitions(${PCL_DEFINITIONS})
 include_directories(BEFORE ${PYTHON_INCLUDE_DIR})
 
 # support cython/c api
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include_directories(${CMAKE_CURRENT_LIST_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 
 add_cython_target(PointField CXX)
 add_library(PointField MODULE ${PointField})

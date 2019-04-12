@@ -50,6 +50,9 @@ class TestLoaders(unittest.TestCase):
         viewer.addLine([-1,-1,-1], [1,1,1])
         viewer.addArrow([1,-1,-1], [-1,1,1], r_line=0.7, r_text=0.3)
         viewer.addSphere([0,0,0], 1)
+
+        viewer.addText("Text", -1, 1, fontsize=100)
+        viewer.addText3D("Text3D", [-1,1,-1], textScale=2)
         
         viewer.spinOnce(time=500)
         viewer.updateSphere([0,0,0], 2)
