@@ -11,7 +11,7 @@ from pcl.common.point_cloud cimport PointCloud as cPointCloud
 from pcl.common.point_types cimport PointXYZ, PointXYZRGB, PointXYZRGBA
 from pcl.PointCloud cimport _POINT_TYPE_MAPPING as pmap
 from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryHandler_PCLPointCloud2, PointCloudGeometryHandlerXYZ_PCLPointCloud2
-from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler_PCLPointCloud2, PointCloudColorHandlerCustom_PCLPointCloud2, PointCloudColorHandlerRGBField_PCLPointCloud2
+from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler_PCLPointCloud2, PointCloudColorHandlerCustom_PCLPointCloud2, PointCloudColorHandlerRGBField_PCLPointCloud2, PointCloudColorHandlerGenericField_PCLPointCloud2
 
 cdef class KeyboardEvent:
     cdef cKeyboardEvent* ptr(self):
@@ -237,6 +237,8 @@ cdef class Visualizer:
         cdef shared_ptr[PointCloudGeometryHandlerXYZ_PCLPointCloud2] xyz_handler
         cdef shared_ptr[PointCloudColorHandlerRGBField_PCLPointCloud2] rgb_handler
         cdef shared_ptr[PointCloudColorHandlerCustom_PCLPointCloud2] mono_handler
+        cdef shared_ptr[PointCloudColorHandlerGenericField_PCLPointCloud2] field_handler
+        cdef bytes cfield
 
         fieldlist = [name for name,_,_ in pmap[cloud._ptype]]
         if ('rgb' in fieldlist) or ('rgba' in fieldlist):
@@ -245,6 +247,15 @@ cdef class Visualizer:
             _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
                 <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
                 <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>rgb_handler,
+                cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
+                "addPointCloud")
+        elif field is not None:
+            cfield = field.encode('ascii')
+            xyz_handler = make_shared[PointCloudGeometryHandlerXYZ_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
+            field_handler = make_shared[PointCloudColorHandlerGenericField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr, cfield)
+            _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
+                <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
+                <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>field_handler,
                 cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
                 "addPointCloud")
         else:
