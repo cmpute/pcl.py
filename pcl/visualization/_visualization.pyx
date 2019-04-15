@@ -233,7 +233,7 @@ cdef class Visualizer:
     cpdef void createViewPortCamera(self, int viewport):
         self.ptr().createViewPortCamera(viewport)
 
-    cpdef void addPointCloud(self, PointCloud cloud, str id="cloud", int viewport=0):
+    cpdef void addPointCloud(self, PointCloud cloud, int r=255, int g=255, int b=255, str field=None, str id="cloud", int viewport=0):
         cdef shared_ptr[PointCloudGeometryHandlerXYZ_PCLPointCloud2] xyz_handler
         cdef shared_ptr[PointCloudColorHandlerRGBField_PCLPointCloud2] rgb_handler
         cdef shared_ptr[PointCloudColorHandlerCustom_PCLPointCloud2] mono_handler
@@ -249,7 +249,7 @@ cdef class Visualizer:
                 "addPointCloud")
         else:
             xyz_handler = make_shared[PointCloudGeometryHandlerXYZ_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
-            mono_handler = make_shared[PointCloudColorHandlerCustom_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr, 255, 255, 255)
+            mono_handler = make_shared[PointCloudColorHandlerCustom_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr, r, g, b)
             _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
                 <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
                 <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>mono_handler,
