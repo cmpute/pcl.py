@@ -13,7 +13,7 @@ from pcl.common.conversions cimport toPCLPointCloud2, fromPCLPointCloud2
 from pcl.common.point_cloud cimport PointCloud as cPC
 from pcl.PointField cimport PointField, _FIELD_TYPE_MAPPING
 
-# XXX: unordered_map[string, vector[(string, uint8_t, uint32_t)]]
+# XXX: unordered_map[name: string, vector[(field_name: string, size_type: uint8_t, count: uint32_t)]]
 cdef dict _POINT_TYPE_MAPPING = {
     b'AXIS':    ((b'normal_x',7,1), (b'normal_y',7,1), (b'normal_z',7,1)),
     b'INTENSITY': ((b'intensity',7,1),),
@@ -56,7 +56,7 @@ cdef string _check_dtype_compatible(np.dtype dtype):
         data_dtypes = tuple(_parse_single_dtype(dtype[name]) for name in dtype.names)
         if builtin_fields == data_fields and builtin_dtypes == data_dtypes:
             return name
-    return b""
+    return b"custom"
 
 cdef inline bool _is_not_record_array(np.ndarray array):
     # https://github.com/numpy/numpy/blob/master/numpy/core/_dtype.py#L107
@@ -103,6 +103,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             if isinstance(data, PointCloud2):
                 self._ptr = make_shared[PCLPointCloud2]()
                 from_msg_cloud(data, deref(self._ptr))
+                self.infer_ptype()
                 initialized = True
         if isinstance(data, PointCloud):
             self._ptr = make_shared[PCLPointCloud2]()
@@ -124,7 +125,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                 ndtype.append((name.decode('ascii'),
                     str(count) + byte_order + _FIELD_TYPE_MAPPING[typeid][0]))
             data = np.array(data, dtype=ndtype)
-        if isinstance(data, np.ndarray):
+        if isinstance(data, np.ndarray): # TODO: check continuity
             self._ptr = make_shared[PCLPointCloud2]()
             # matrix order detection
             if not data.flags.c_contiguous:
@@ -187,8 +188,6 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                 # data field interpreting
                 if self._ptype.empty(): # not previously defined
                     self._ptype = _check_dtype_compatible(data.dtype)
-                    if self._ptype.empty():
-                        raise ValueError("Inconsistent input numpy array dtype!")
                 self.ptr().point_step = data.strides[-1]
 
                 # byteorder intepreting
@@ -203,16 +202,19 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                 data = data.astype(ndtype)
 
             # data strides calculation
-            self.ptr().point_step = 0
-            for name, typeid, count in _POINT_TYPE_MAPPING[self._ptype]:
-                temp_field = PCLPointField()
-                temp_field.name = name
-                temp_field.offset = self.ptr().point_step
-                temp_field.datatype = typeid
-                temp_field.count = count
-                self.ptr().fields.push_back(temp_field)
-                self.ptr().point_step += _FIELD_TYPE_MAPPING[typeid][1] * count
-            self.ptr().row_step = self.ptr().point_step * self.ptr().width
+            if self._ptype != b"custom":
+                self.ptr().point_step = 0
+                for name, typeid, count in _POINT_TYPE_MAPPING[self._ptype]:
+                    temp_field = PCLPointField()
+                    temp_field.name = name
+                    temp_field.offset = self.ptr().point_step
+                    temp_field.datatype = typeid
+                    temp_field.count = count
+                    self.ptr().fields.push_back(temp_field)
+                    self.ptr().point_step += _FIELD_TYPE_MAPPING[typeid][1] * count
+                self.ptr().row_step = self.ptr().point_step * self.ptr().width
+            else:
+                # TODO: Fix
 
             if not _is_not_record_array(data):
                 assert self.ptr().point_step - data.strides[-1] == 0
@@ -416,3 +418,30 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         Disorganize the point cloud. The function can act as updating function
         '''
         raise NotImplementedError()
+
+    cdef void infer_ptype(self):
+        cdef bool field_matched, ptype_matched
+        for ptype in _POINT_TYPE_MAPPING.keys():
+            ptype_matched = True
+            for field in self.ptr().fields:
+                field_matched = False
+                for fdef in _POINT_TYPE_MAPPING[ptype]:
+                    if field.name == bytes(fdef[0]) and field.datatype == fdef[1] and field.count == fdef[2]:
+                        field_matched = True
+                        break
+                if not field_matched:
+                    ptype_matched = False
+                    break
+            if ptype_matched:
+                self._ptype = ptype
+                return
+        self._ptype = b"custom"
+
+    @staticmethod
+    cdef PointCloud wrapp(const shared_ptr[PCLPointCloud2]& data):
+        cdef PointCloud obj = PointCloud.__new__(PointCloud)
+        obj._ptr = data
+        obj._origin = Vector4f.Zero()
+        obj._orientation = Quaternionf.Identity()
+        obj.infer_ptype()
+        return obj

@@ -3,33 +3,31 @@ from libcpp cimport bool
 
 import numpy as np
 from pcl.PointCloud cimport PointCloud, _POINT_TYPE_MAPPING
-from pcl.common cimport _ensure_zero
+from pcl.common cimport _ensure_zero, _ensure_exist
 from pcl.io.pcd_io cimport loadPCDFile, savePCDFile
 from pcl.io.ply_io cimport loadPLYFile, savePLYFile
 
-cdef str _nonzero_error_msg = "Function {0} returned {1}, please check stderr output!"
-
-# TODO: Add checking for whether file exists
-
-# TODO: Inference point type from fields
 cpdef PointCloud load_pcd(str path):
     cdef PointCloud cloud = PointCloud()
+    _ensure_exist(path)
     _ensure_zero(loadPCDFile(path.encode('ascii'), deref(cloud._ptr),
         cloud._origin, cloud._orientation), "loadPCDFile")
+    cloud.infer_ptype()
     return cloud
 
 cpdef void save_pcd(str path, PointCloud cloud, bool binary=False):
     _ensure_zero(savePCDFile(path.encode('ascii'), deref(cloud._ptr),
         cloud._origin, cloud._orientation, binary), "savePCDFile")
 
-# TODO: Inference point type from fields
-def load_ply(str path, type return_type=PointCloud):
+def load_ply(str path, type return_type=PointCloud): # return_type can be Polygon etc.
     cdef PointCloud cloud
+    _ensure_exist(path)
 
     if return_type == PointCloud:
         cloud = PointCloud()
         _ensure_zero(loadPLYFile(path.encode('ascii'), deref(cloud._ptr),
             cloud._origin, cloud._orientation), "loadPLYFile")
+        cloud.infer_ptype()
         return cloud
     else:
         raise TypeError("Unsupported return type!")
