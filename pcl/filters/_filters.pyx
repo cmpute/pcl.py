@@ -71,11 +71,11 @@ cdef class VoxelGrid(Filter):
 
     def getCentroidIndex(self, float x, float y, float z):
         return VoxelGrid_ptr(self).getCentroidIndex(x,y,z)
-    def getNeighborCentroidIndices(self, float x, float y, float z, relative_coordinates):
-        cdef vector[Vector3i] coords
-        for row in relative_coordinates:
-            coords.push_back(Vector3i(row[0], row[1], row[2]))
-        return VoxelGrid_ptr(self).getNeighborCentroidIndices(x, y, z, coords)
+    # def getNeighborCentroidIndices(self, float x, float y, float z, relative_coordinates):
+    #     cdef vector[Vector3i] coords
+    #     for row in relative_coordinates:
+    #         coords.push_back(Vector3i(row[0], row[1], row[2]))
+    #     return VoxelGrid_ptr(self).getNeighborCentroidIndices(x, y, z, coords)
 
     property LeafLayout:
         def __get__(self):

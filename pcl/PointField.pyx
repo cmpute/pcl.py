@@ -1,6 +1,7 @@
 from pcl.ros import ros_exist, ros_error
 if ros_exist: from .ros cimport from_msg_field, to_msg_field
 from pcl.common.PCLPointField cimport PCLPointField
+cimport numpy as cnp
 
 cdef dict _FIELD_TYPE_MAPPING = {
     1: ('i1', 1),
@@ -12,6 +13,8 @@ cdef dict _FIELD_TYPE_MAPPING = {
     7: ('f4', 4),
     8: ('f8', 8),
 }
+
+cdef dict _FIELD_TYPE_MAPPING_INV = {v[0]: k for k, v in _FIELD_TYPE_MAPPING.items()}
 
 cdef class PointField:
     def __init__(self, data=None):

@@ -11,27 +11,32 @@ from .ros import ros_exist, ros_error
 if ros_exist: from pcl.ros cimport from_msg_cloud, to_msg_cloud
 from pcl.common.conversions cimport toPCLPointCloud2, fromPCLPointCloud2
 from pcl.common.point_cloud cimport PointCloud as cPC
-from pcl.PointField cimport PointField, _FIELD_TYPE_MAPPING
+from pcl.PointField cimport PointField, _FIELD_TYPE_MAPPING, _field_type_map_inv
 
-# XXX: unordered_map[name: string, vector[(field_name: string, size_type: uint8_t, count: uint32_t)]]
+# (field_name: string, size_type: uint8_t, count: uint32_t, tpadding: uint8_t)
+cdef tuple UNION_POINT4D    = ((b'x',7,1,0),        (b'y',7,1,0),       (b'z',7,1,4))
+cdef tuple UNION_NORMAL4D   = ((b'normal_x',7,1,0), (b'normal_y',7,1,0),(b'normal_z',7,1,4))
+cdef tuple UNION_RGB        = ((b'rgba',6,1,0),)
+
+# Dictionary for built-in point types
 cdef dict _POINT_TYPE_MAPPING = {
-    b'AXIS':    ((b'normal_x',7,1), (b'normal_y',7,1), (b'normal_z',7,1)),
-    b'INTENSITY': ((b'intensity',7,1),),
-    b'LABLE':   ((b'label',6,1),),
-    b'NORMAL':  ((b'normal_x',7,1), (b'normal_y',7,1), (b'normal_z',7,1), (b'curvature',7,1)),
-    b'RGB':     ((b'rgba',6,1),),
-    b'UV':      ((b'u',7,1), (b'v',7,1)),
-    b'XY':      ((b'x',7,1), (b'y',7,1)),
-    b'XYZ':     ((b'x',7,1), (b'y',7,1), (b'z',7,1)),
-    b'XYZI':    ((b'x',7,1), (b'y',7,1), (b'z',7,1), (b'intensity',7,1)),
-    b'XYZIN':   ((b'x',7,1), (b'y',7,1), (b'z',7,1), (b'intensity',7,1), (b'normal_x',7,1), (b'normal_y',7,1), (b'normal_z',7,1), (b'curvature',7,1)),
-    b'XYZL':    ((b'x',7,1), (b'y',7,1), (b'z',7,1), (b'label',6,1)),
-    b'XYZN':    ((b'x',7,1), (b'y',7,1), (b'z',7,1), (b'normal_x',7,1), (b'normal_y',7,1), (b'normal_z',7,1), (b'curvature',7,1)),
-    b'XYZRGB':  ((b'x',7,1), (b'y',7,1), (b'z',7,1), (b'rgb',7,1)),
-    b'XYZRGBA': ((b'x',7,1), (b'y',7,1), (b'z',7,1), (b'rgba',6,1)),
-    b'XYZRGBL': ((b'x',7,1), (b'y',7,1), (b'z',7,1), (b'rgb',7,1), (b'label',6,1)),
-    b'XYZRGBN': ((b'x',7,1), (b'y',7,1), (b'z',7,1), (b'rgb',7,1), (b'normal_y',7,1), (b'normal_z',7,1), (b'curvature',7,1)),
-    b'XYZHSV':  ((b'x',7,1), (b'y',7,1), (b'z',7,1), (b'h',7,1), (b's',7,1), (b'v',7,1)),
+    b'AXIS':    UNION_NORMAL4D,
+    b'INTENSITY': ((b'intensity',7,1,0),),
+    b'LABLE':   ((b'label',6,1,0),),
+    b'NORMAL':  UNION_NORMAL4D + ((b'curvature',7,1,12),),
+    b'RGB':     UNION_RGB,
+    b'UV':      ((b'u',7,1,0), (b'v',7,1,0)),
+    b'XY':      ((b'x',7,1,0), (b'y',7,1,0)),
+    b'XYZ':     UNION_POINT4D,
+    b'XYZI':    UNION_POINT4D + ((b'intensity',7,1,12),),
+    b'XYZIN':   UNION_POINT4D + UNION_NORMAL4D + ((b'intensity',7,1,0), (b'curvature',7,1,8)),
+    b'XYZL':    UNION_POINT4D + ((b'label',6,1,0)),
+    b'XYZN':    UNION_POINT4D + UNION_NORMAL4D + ((b'curvature',7,1,12),), # original name: PointNormal
+    b'XYZRGB':  UNION_POINT4D + UNION_RGB,
+    b'XYZRGBA': UNION_POINT4D + UNION_RGB,
+    b'XYZRGBL': UNION_POINT4D + UNION_RGB + ((b'label',6,1,0),),
+    b'XYZRGBN': UNION_POINT4D + UNION_NORMAL4D + UNION_RGB + ((b'curvature',7,1,8),),
+    b'XYZHSV':  UNION_POINT4D + ((b'h',7,1,0), (b's',7,1,0), (b'v',7,1,4)),
 }
 
 cdef str _parse_single_dtype(np.dtype dtype):
@@ -119,11 +124,16 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             if <bytes>(self._ptype) not in _POINT_TYPE_MAPPING:
                 raise TypeError('Unsupported point type!')
 
-            ndtype = []
+            ndtype = {'names':[], 'formats':[], 'offsets':[]}
+            offset = 0
             byte_order = '>' if sys.byteorder == 'big' else '<'
-            for name, typeid, count in _POINT_TYPE_MAPPING[self._ptype]:
-                ndtype.append((name.decode('ascii'),
-                    str(count) + byte_order + _FIELD_TYPE_MAPPING[typeid][0]))
+            for name, typeid, count, tpad in _POINT_TYPE_MAPPING[self._ptype]:
+                tname, tsize = _FIELD_TYPE_MAPPING[typeid]
+                ndtype['names'].append(name.decode('ascii'))
+                ndtype['formats'].append(str(count) + byte_order + tname)
+                ndtype['offsets'].append(offset)
+                offset += tsize * count + tpad
+            ndtype['itemsize'] = offset
             data = np.array(data, dtype=ndtype)
         if isinstance(data, np.ndarray): # TODO: check continuity
             self._ptr = make_shared[PCLPointCloud2]()
@@ -156,7 +166,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                     # field consensus check
                     if data.shape[-1] != len(_POINT_TYPE_MAPPING[self._ptype]):
                         raise ValueError('Inconsistent field count!')
-                    typeid_list = [typeid for _,typeid,_ in _POINT_TYPE_MAPPING[self._ptype]]
+                    typeid_list = [typeid for _,typeid,_,_ in _POINT_TYPE_MAPPING[self._ptype]]
                     if typeid_list.count(typeid_list[0]) != len(typeid_list):
                         raise ValueError('This type of point contains different entry types, input\
                                           data is misinterpreted!')
@@ -191,33 +201,51 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                 self.ptr().point_step = data.strides[-1]
 
                 # byteorder intepreting
-                ndtype = {'names':[], 'formats':[]}
+                ndtype = {'names':[], 'formats':[], 'offsets':[]}
                 for subname in data.dtype.names:
-                    subtype = data.dtype[subname]
+                    subtype, offset = data.dtype.fields[subname]
                     if (subtype.byteorder == '<' and self.ptr().is_bigendian) or\
                        (subtype.byteorder == '>' and not self.ptr().is_bigendian):
                         subtype.byetorder = '>' if self.ptr().is_bigendian else '<'
                     ndtype['names'].append(subname)
                     ndtype['formats'].append(subtype)
+                    ndtype['offsets'].append(offset)
+                ndtype['itemsize'] = data.dtype.itemsize
                 data = data.astype(ndtype)
 
             # data strides calculation
             if self._ptype != b"custom":
                 self.ptr().point_step = 0
-                for name, typeid, count in _POINT_TYPE_MAPPING[self._ptype]:
+                for name, typeid, count, tpad in _POINT_TYPE_MAPPING[self._ptype]:
                     temp_field = PCLPointField()
                     temp_field.name = name
                     temp_field.offset = self.ptr().point_step
                     temp_field.datatype = typeid
                     temp_field.count = count
                     self.ptr().fields.push_back(temp_field)
-                    self.ptr().point_step += _FIELD_TYPE_MAPPING[typeid][1] * count
+                    self.ptr().point_step += _FIELD_TYPE_MAPPING[typeid][1] * count + tpad
                 self.ptr().row_step = self.ptr().point_step * self.ptr().width
-            else:
-                # TODO: Fix
+            else: # only structured array will go into this statement
+                self.ptr().point_step = 0
+                for idx in range(len(data.dtype)):
+                    temp_field = PCLPointField()
+                    temp_field.name = ndtype['names'][idx].encode('ascii')
+                    temp_field.offset = ndtype['offsets'][idx]
+                    if ndtype['formats'][idx].subdtype != None:
+                        subtype, subcount = ndtype['offsets'].subdtype
+                        if len(subcount) > 1:
+                            raise ValueError("The input array contain complex field shape which is not supported")
+                        temp_field.count = subcount[0]
+                        temp_field.datatype = _field_type_map_inv(subtype)
+                    else:
+                        temp_field.count = 1
+                        temp_field.datatype = _field_type_map_inv(ndtype['formats'][idx])
+                    self.ptr().fields.push_back(temp_field)
+                self.ptr().point_step = ndtype['itemsize']
+                self.ptr().row_step = self.ptr().point_step * self.ptr().width
 
             if not _is_not_record_array(data):
-                assert self.ptr().point_step - data.strides[-1] == 0
+                assert self.ptr().point_step - data.dtype.itemsize == 0
 
             # data interpreting
             self.ptr().data = data.view('B').ravel()
@@ -290,14 +318,14 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         def __get__(self):
             # struct definition from PCL
             cdef np.dtype struct = np.dtype([('b','u1'), ('g','u1'), ('r','u1'), ('a','u1')])
-            return self.to_ndarray()['rgb'].view(struct)[['r', 'g', 'b']]
+            return self.to_ndarray()['rgba'].view(struct)[['r', 'g', 'b']]
     property rgba:
         '''
         Get the color field of the pointcloud, the property returns unpacked rgba values
             (float rgb -> uint r,g,b,a)
         '''
         def __get__(self):
-            cdef np.dtype struct = np.dtype([('b', 'u1'), ('g', 'u1'), ('r', 'u1'), ('a', 'u1')])
+            cdef np.dtype struct = np.dtype([('b','u1'), ('g','u1'), ('r','u1'), ('a','u1')])
             return self.to_ndarray()['rgba'].view(struct)
     property is_organized:
         '''
@@ -395,13 +423,16 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         cdef uint8_t *mem_ptr = self.ptr().data.data()
         cdef uint8_t[:] mem_view = <uint8_t[:self.ptr().data.size()]>mem_ptr
         cdef np.ndarray arr_raw = np.asarray(mem_view)
+
         cdef str byte_order = '>' if self.ptr().is_bigendian else '<'
-        cdef np.dtype dtype = np.dtype([(field.name, str(field.count) + byte_order + field.npdtype)
-                           for field in self.fields])
-        # fix if there is padding bytes. TODO: fix for middle align bytes
-        if dtype.itemsize < self.ptr().point_step:
-            arr_raw = arr_raw.reshape(-1, self.ptr().point_step)
-            arr_raw = np.reshape(arr_raw[:,:dtype.itemsize], -1)
+        ndtype = {'names':[], 'formats':[], 'offsets':[]}
+        for field in self.fields:
+            ndtype['names'].append(field.name)
+            ndtype['formats'].append(str(field.count) + byte_order + field.npdtype)
+            ndtype['offsets'].append(field.offset)
+        ndtype['itemsize'] = self.ptr().point_step
+        dtype = np.dtype(ndtype)
+
         cdef np.ndarray arr_view = arr_raw.view(dtype)
         return arr_view
 

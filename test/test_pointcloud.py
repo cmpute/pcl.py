@@ -30,7 +30,7 @@ class TestNumpyInitialize(unittest.TestCase):
     def test_point_type(self):
         cloud = pcl.PointCloud([(1,2,3,255),(2,3,4,255)], 'xyzrgb')
         assert len(cloud) == 2
-        assert cloud.names == ['x', 'y', 'z', 'rgb']
+        assert cloud.names == ['x', 'y', 'z', 'rgba']
 
     def test_origin(self):
         cloud = pcl.PointCloud([(1,2,3),(2,3,4)])
