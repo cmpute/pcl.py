@@ -4,8 +4,8 @@ import pcl
 
 class TestLoaders(unittest.TestCase):
     def test_load_pointcloud(self):
-        cloud1 = pcl.PointCloud(np.random.rand(100, 3).astype('f4'))
-        cloud2 = pcl.PointCloud(np.random.rand(100, 3).astype('f4'))
+        cloud1 = pcl.PointCloud(np.random.rand(100, 4).astype('f4'))
+        cloud2 = pcl.PointCloud(np.random.rand(100, 4).astype('f4'))
         
         viewer = pcl.Visualizer()
         viewer.addPointCloud(cloud1)
@@ -30,7 +30,7 @@ class TestLoaders(unittest.TestCase):
         def area_callback(event):
             print(event.PointsIndices)
 
-        cloud = pcl.PointCloud(np.random.rand(100, 3).astype('f4'))
+        cloud = pcl.PointCloud(np.random.rand(100, 4).astype('f4'))
         viewer = pcl.Visualizer()
         viewer.addPointCloud(cloud)
         viewer.registerKeyboardCallback(key_callback)
@@ -42,7 +42,7 @@ class TestLoaders(unittest.TestCase):
         viewer.close()
 
     def test_add_shape(self):
-        cloud = pcl.PointCloud(np.random.rand(100, 3).astype('f4'))
+        cloud = pcl.PointCloud(np.random.rand(100, 4).astype('f4'))
         
         viewer = pcl.Visualizer()
         viewer.addPointCloud(cloud)

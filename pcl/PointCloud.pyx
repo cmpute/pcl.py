@@ -30,7 +30,7 @@ cdef dict _POINT_TYPE_MAPPING = {
     b'XYZ':     UNION_POINT4D,
     b'XYZI':    UNION_POINT4D + ((b'intensity',7,1,12),),
     b'XYZIN':   UNION_POINT4D + UNION_NORMAL4D + ((b'intensity',7,1,0), (b'curvature',7,1,8)),
-    b'XYZL':    UNION_POINT4D + ((b'label',6,1,0)),
+    b'XYZL':    UNION_POINT4D + ((b'label',6,1,0),),
     b'XYZN':    UNION_POINT4D + UNION_NORMAL4D + ((b'curvature',7,1,12),),
     b'XYZRGB':  UNION_POINT4D + UNION_RGB,
     b'XYZRGBA': UNION_POINT4D + UNION_RGB,
@@ -188,8 +188,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                         for _,typeid,count,offset in _POINT_TYPE_MAPPING[self._ptype]]
                     if data.strides[-2] != sum(size_list):
                         raise ValueError('Proper padding data are needed for normal array input.'
-                                         'Please add padding data or convert the input to list to tuples'
-                                         + _FIELD_TYPE_MAPPING[typeid_list[0]][0])
+                                         'Please add padding data or convert the input to list to tuples')
 
                 # byteorder intepreting
                 if (data.dtype.byteorder == '<' and self.ptr().is_bigendian) or\
@@ -310,6 +309,8 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         def __set__(self, value):
             self._origin = Vector4f(value[0], value[1], value[2], 0)
 
+    # The field manipulating is specified to countinuous memory. For details,
+    # check https://docs.scipy.org/doc/numpy/user/basics.rec.html#accessing-multiple-fields
     property xyz:
         '''
         Get coordinate array of the point cloud, data type will be infered from data
@@ -318,10 +319,18 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         In PCL, xyz coordinate is stored in data[4] and the last field is filled with 1
         '''
         def __get__(self):
-            arr_view = self.to_ndarray()
-            start_offset = int(arr_view.dtype.fields['x'][1]/4)
-            arr_offset = arr_view.view('f4')[start_offset:]
-            return np.lib.stride_tricks.as_strided(arr_offset, (len(self),3), (self.ptr().point_step,4))
+            cdef np.ndarray arr_view = self.to_ndarray()
+            
+            cdef list offset_check = [arr_view.dtype.fields['x'][1],
+                arr_view.dtype.fields['y'][1],
+                arr_view.dtype.fields['z'][1]]
+            if offset_check != sorted(offset_check):
+                raise ValueError("The offsets of x, y, z are not in order and contiguous.")
+
+            ndtype = {'names':['xyz'], 'formats':['3f4'],
+                'offsets':[arr_view.dtype.fields['x'][1]], 'itemsize':arr_view.itemsize}
+
+            return arr_view.view(ndtype)['xyz']
     property normal:
         '''
         Get normal vectors of the point cloud, data type will be infered from data
@@ -329,10 +338,18 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         In PCL, normals are stored in data_n[4] and the last field is filled with 0
         '''
         def __get__(self):
-            arr_view = self.to_ndarray()
-            start_offset = int(arr_view.dtype.fields['normal_x'][1]/4)
-            arr_offset = arr_view.view('f4')[start_offset:]
-            return np.lib.stride_tricks.as_strided(arr_offset, (len(self),3), (self.ptr().point_step,4))
+            cdef np.ndarray arr_view = self.to_ndarray()
+            
+            cdef list offset_check = [arr_view.dtype.fields['normal_x'][1],
+                arr_view.dtype.fields['normal_y'][1],
+                arr_view.dtype.fields['normal_z'][1]]
+            if offset_check != sorted(offset_check):
+                raise ValueError("The offsets of normal_x, normal_y, normal_z are not in order and contiguous.")
+
+            ndtype = {'names':['normal_xyz'], 'formats':['3f4'],
+                'offsets':[arr_view.dtype.fields['normal_x'][1]], 'itemsize':arr_view.itemsize}
+
+            return arr_view.view(ndtype)['normal_xyz']
     property rgb:
         '''
         Get the color field of the pointcloud, the property returns unpacked rgb values
@@ -358,6 +375,9 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         '''
         def __get__(self):
             return self.height > 1
+    property ptype:
+        def __get__(self):
+            return self._ptype.decode("ascii")
 
     def __len__(self):
         return self.ptr().width * self.ptr().height
@@ -444,7 +464,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
     def __releasebuffer__(self, Py_buffer *buffer):
         raise NotImplementedError()
 
-    def to_ndarray(self):
+    def to_ndarray(self, fields=None):
         cdef uint8_t *mem_ptr = self.ptr().data.data()
         cdef uint8_t[:] mem_view = <uint8_t[:self.ptr().data.size()]>mem_ptr
         cdef np.ndarray arr_raw = np.asarray(mem_view)
@@ -453,6 +473,8 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         cdef str byte_order = '>' if self.ptr().is_bigendian else '<'
         ndtype = {'names':[], 'formats':[], 'offsets':[]}
         for field in self.fields:
+            if fields != None and not field.name in fields:
+                continue
             ndtype['names'].append(field.name)
             ndtype['formats'].append(str(field.count) + byte_order + field.npdtype)
             ndtype['offsets'].append(field.offset)
@@ -493,7 +515,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             if ptype_matched:
                 self._ptype = ptype
                 return
-        self._ptype = b"custom"
+        self._ptype = b"CUSTOM"
 
     @staticmethod
     cdef PointCloud wrapp(const shared_ptr[PCLPointCloud2]& data):

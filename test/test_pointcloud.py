@@ -11,23 +11,29 @@ class TestNumpyInitialize(unittest.TestCase):
         cloud_array_pad = np.array([[1,2,3,0],[2,3,4,0]], dtype='f4')
         cloud = pcl.PointCloud(cloud_array_pad)
         assert len(cloud) == 2
-        assert np.all(cloud.xyz == cloud_array)
+        assert np.allclose(cloud.xyz, cloud_array)
         assert len(cloud.fields) == 3
         assert cloud.names == ['x', 'y', 'z']
 
     def test_list_init(self):
         cloud = pcl.PointCloud([(1,2,3),(2,3,4)], 'xyz')
         assert len(cloud) == 2
-        assert cloud.xyz[1,1] == 3
+        assert np.allclose(cloud.xyz, [[1,2,3],[2,3,4]])
         assert cloud.names == ['x', 'y', 'z']
 
     def test_struct_init(self):
         cloud_array = np.array([(1,2,3),(2,3,4)],
-            dtype={'names':['x','y','z'], 'formats':['f4','f4','f4'], 'offset':16})
+            dtype={'names':['x','y','z'], 'formats':['f4','f4','f4'], 'itemsize':16})
         cloud = pcl.PointCloud(cloud_array)
         assert len(cloud) == 2
-        assert cloud.xyz[1,1] == 3
+        assert np.allclose(cloud.xyz, [[1,2,3],[2,3,4]])
         assert cloud.names == ['x', 'y', 'z']
+
+        cloud = pcl.PointCloud(np.array([(1,2,3,5),(2,3,4,5)], 
+            dtype={'names':['x','y','z','i'], 'formats':['f4','f4','f4','i1'], 'offsets':[0,4,8,16]}))
+        assert len(cloud) == 2
+        assert np.allclose(cloud.xyz, [[1,2,3],[2,3,4]])
+        assert cloud.names == ['x', 'y', 'z', 'i']
 
     def test_copy_init(self):
         cloud_array = np.array([[1,2,3],[2,3,4]], dtype='f4')
