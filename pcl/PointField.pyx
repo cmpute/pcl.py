@@ -13,7 +13,6 @@ cdef dict _FIELD_TYPE_MAPPING = {
     7: ('f4', 4),
     8: ('f8', 8),
 }
-
 cdef dict _FIELD_TYPE_MAPPING_INV = {v[0]: k for k, v in _FIELD_TYPE_MAPPING.items()}
 
 cdef class PointField:

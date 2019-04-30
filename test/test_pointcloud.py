@@ -5,7 +5,11 @@ import unittest
 class TestNumpyInitialize(unittest.TestCase):
     def test_normal_init(self):
         cloud_array = np.array([[1,2,3],[2,3,4]], dtype='f4')
-        cloud = pcl.PointCloud(cloud_array)
+        with self.assertRaises(ValueError):
+            cloud = pcl.PointCloud(cloud_array)
+        # add padding zeros after points
+        cloud_array_pad = np.array([[1,2,3,0],[2,3,4,0]], dtype='f4')
+        cloud = pcl.PointCloud(cloud_array_pad)
         assert len(cloud) == 2
         assert np.all(cloud.xyz == cloud_array)
         assert len(cloud.fields) == 3
@@ -17,9 +21,17 @@ class TestNumpyInitialize(unittest.TestCase):
         assert cloud.xyz[1,1] == 3
         assert cloud.names == ['x', 'y', 'z']
 
+    def test_struct_init(self):
+        cloud_array = np.array([(1,2,3),(2,3,4)],
+            dtype={'names':['x','y','z'], 'formats':['f4','f4','f4'], 'offset':16})
+        cloud = pcl.PointCloud(cloud_array)
+        assert len(cloud) == 2
+        assert cloud.xyz[1,1] == 3
+        assert cloud.names == ['x', 'y', 'z']
+
     def test_copy_init(self):
         cloud_array = np.array([[1,2,3],[2,3,4]], dtype='f4')
-        cloud = pcl.PointCloud(cloud_array)
+        cloud = pcl.PointCloud([(1,2,3),(2,3,4)], 'xyz')
         copy = pcl.PointCloud(cloud)
         assert np.all(copy.xyz == cloud_array)
         assert copy == cloud
@@ -31,6 +43,8 @@ class TestNumpyInitialize(unittest.TestCase):
         cloud = pcl.PointCloud([(1,2,3,255),(2,3,4,255)], 'xyzrgb')
         assert len(cloud) == 2
         assert cloud.names == ['x', 'y', 'z', 'rgba']
+        assert len(cloud.rgb) == 2
+        assert len(cloud.rgba) == 2
 
     def test_origin(self):
         cloud = pcl.PointCloud([(1,2,3),(2,3,4)])

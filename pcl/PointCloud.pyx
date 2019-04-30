@@ -11,7 +11,7 @@ from .ros import ros_exist, ros_error
 if ros_exist: from pcl.ros cimport from_msg_cloud, to_msg_cloud
 from pcl.common.conversions cimport toPCLPointCloud2, fromPCLPointCloud2
 from pcl.common.point_cloud cimport PointCloud as cPC
-from pcl.PointField cimport PointField, _FIELD_TYPE_MAPPING, _field_type_map_inv
+from pcl.PointField cimport PointField, _FIELD_TYPE_MAPPING, _FIELD_TYPE_MAPPING_INV
 
 # (field_name: string, size_type: uint8_t, count: uint32_t, tpadding: uint8_t)
 cdef tuple UNION_POINT4D    = ((b'x',7,1,0),        (b'y',7,1,0),       (b'z',7,1,4))
@@ -22,7 +22,7 @@ cdef tuple UNION_RGB        = ((b'rgba',6,1,0),)
 cdef dict _POINT_TYPE_MAPPING = {
     b'AXIS':    UNION_NORMAL4D,
     b'INTENSITY': ((b'intensity',7,1,0),),
-    b'LABLE':   ((b'label',6,1,0),),
+    b'LABEL':   ((b'label',6,1,0),),
     b'NORMAL':  UNION_NORMAL4D + ((b'curvature',7,1,12),),
     b'RGB':     UNION_RGB,
     b'UV':      ((b'u',7,1,0), (b'v',7,1,0)),
@@ -31,7 +31,7 @@ cdef dict _POINT_TYPE_MAPPING = {
     b'XYZI':    UNION_POINT4D + ((b'intensity',7,1,12),),
     b'XYZIN':   UNION_POINT4D + UNION_NORMAL4D + ((b'intensity',7,1,0), (b'curvature',7,1,8)),
     b'XYZL':    UNION_POINT4D + ((b'label',6,1,0)),
-    b'XYZN':    UNION_POINT4D + UNION_NORMAL4D + ((b'curvature',7,1,12),), # original name: PointNormal
+    b'XYZN':    UNION_POINT4D + UNION_NORMAL4D + ((b'curvature',7,1,12),),
     b'XYZRGB':  UNION_POINT4D + UNION_RGB,
     b'XYZRGBA': UNION_POINT4D + UNION_RGB,
     b'XYZRGBL': UNION_POINT4D + UNION_RGB + ((b'label',6,1,0),),
@@ -48,20 +48,32 @@ cdef str _parse_single_dtype(np.dtype dtype):
         return str(shape) + _parse_single_dtype(dtype.subdtype[0])
 
 cdef string _check_dtype_compatible(np.dtype dtype):
-    cdef:
-        tuple builtin_fields
-        tuple builtin_dtypes
-        tuple data_fields
-        tuple data_dtypes
+    cdef int offset
+    cdef bool match_flag
 
     for name, typetuple in _POINT_TYPE_MAPPING.items():
-        builtin_fields = tuple(name.decode('ascii') for name,_,_ in typetuple)
-        builtin_dtypes = tuple(_FIELD_TYPE_MAPPING[typeid][0] for _,typeid,_ in typetuple)
-        data_fields = dtype.names
-        data_dtypes = tuple(_parse_single_dtype(dtype[name]) for name in dtype.names)
-        if builtin_fields == data_fields and builtin_dtypes == data_dtypes:
+        dtype_iter = iter(dtype.names)
+        match_flag = True
+
+        offset = 0
+        for fname, typeid, count, ftpad in typetuple:
+            dtname = next(dtype_iter)
+            if fname != dtname or _FIELD_TYPE_MAPPING[typeid][0] != _parse_single_dtype(dtype[name])\
+                               or offset != dtype.fields[dtname][1]:
+                match_flag = False
+                break
+            if dtype[dtname].subdtype != None:
+                if len(dtype[dtname].subdtype[1]) > 1 or dtype[dtname].subdtype[1][0] != count:
+                    match_flag = False
+                    break
+            else:
+                if count != 1:
+                    match_flag = False
+                    break
+
+        if match_flag:
             return name
-    return b"custom"
+    return b"CUSTOM"
 
 cdef inline bool _is_not_record_array(np.ndarray array):
     # https://github.com/numpy/numpy/blob/master/numpy/core/_dtype.py#L107
@@ -77,13 +89,13 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         Initialize a point cloud
 
         # Parameters
-        - data: point cloud data, can be a PointCloud or a numpy array. If the dimension of input
-            is 3, then it will be considered as dense point cloud with dimensions (height,
-            width, data). The input data will always be copied.
+        - data: point cloud data, can be a PointCloud, a numpy array or list of tuples.
+            If the dimension of input is 3, then it will be considered as dense point cloud
+            with dimensions (height, width, data). The input data will always be copied.
         - point_type: if normal numpy array is given, the type of point should be specified 
             if you are using other PCL components on it. The valid point_types are:
             - Intensity
-            - Lable
+            - Label
             - Normal
             - RGB
             - UV
@@ -98,6 +110,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             - XYZRGBL
             - XYZRGBN (PointXYZRGBNormal)
             - XYZHSV
+            - Custom (Non-PCL point type)
         """
         # pre-declaration
         cdef PCLPointField temp_field
@@ -164,14 +177,18 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                     raise TypeError('Unsupported point type!')
                 else:
                     # field consensus check
-                    if data.shape[-1] != len(_POINT_TYPE_MAPPING[self._ptype]):
-                        raise ValueError('Inconsistent field count!')
                     typeid_list = [typeid for _,typeid,_,_ in _POINT_TYPE_MAPPING[self._ptype]]
                     if typeid_list.count(typeid_list[0]) != len(typeid_list):
-                        raise ValueError('This type of point contains different entry types, input\
-                                          data is misinterpreted!')
+                        raise ValueError('This type of point contains different entry types, input'
+                                         'data will be misinterpreted!')
                     if _parse_single_dtype(data.dtype) != _FIELD_TYPE_MAPPING[typeid_list[0]][0]:
                         raise ValueError('Input data is not consistent with what point type requires: '
+                                         + _FIELD_TYPE_MAPPING[typeid_list[0]][0])
+                    size_list = [_FIELD_TYPE_MAPPING[typeid][1]*count*offset 
+                        for _,typeid,count,offset in _POINT_TYPE_MAPPING[self._ptype]]
+                    if data.strides[-2] != sum(size_list):
+                        raise ValueError('Proper padding data are needed for normal array input.'
+                                         'Please add padding data or convert the input to list to tuples'
                                          + _FIELD_TYPE_MAPPING[typeid_list[0]][0])
 
                 # byteorder intepreting
@@ -196,7 +213,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                     self.ptr().is_dense = True
 
                 # data field interpreting
-                if self._ptype.empty(): # not previously defined
+                if len(self._ptype) == 0: # not previously defined
                     self._ptype = _check_dtype_compatible(data.dtype)
                 self.ptr().point_step = data.strides[-1]
 
@@ -214,7 +231,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                 data = data.astype(ndtype)
 
             # data strides calculation
-            if self._ptype != b"custom":
+            if self._ptype != b"CUSTOM":
                 self.ptr().point_step = 0
                 for name, typeid, count, tpad in _POINT_TYPE_MAPPING[self._ptype]:
                     temp_field = PCLPointField()
@@ -236,15 +253,17 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                         if len(subcount) > 1:
                             raise ValueError("The input array contain complex field shape which is not supported")
                         temp_field.count = subcount[0]
-                        temp_field.datatype = _field_type_map_inv(subtype)
+                        temp_field.datatype = _FIELD_TYPE_MAPPING_INV[_parse_single_dtype(subtype)]
                     else:
                         temp_field.count = 1
-                        temp_field.datatype = _field_type_map_inv(ndtype['formats'][idx])
+                        temp_field.datatype = _FIELD_TYPE_MAPPING_INV[_parse_single_dtype(ndtype['formats'][idx])]
                     self.ptr().fields.push_back(temp_field)
                 self.ptr().point_step = ndtype['itemsize']
                 self.ptr().row_step = self.ptr().point_step * self.ptr().width
 
-            if not _is_not_record_array(data):
+            if _is_not_record_array(data):
+                pass
+            else:
                 assert self.ptr().point_step - data.dtype.itemsize == 0
 
             # data interpreting
@@ -299,7 +318,10 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         In PCL, xyz coordinate is stored in data[4] and the last field is filled with 1
         '''
         def __get__(self):
-            return self.to_ndarray()[['x', 'y', 'z']].view('f4').reshape(len(self), -1)
+            arr_view = self.to_ndarray()
+            start_offset = int(arr_view.dtype.fields['x'][1]/4)
+            arr_offset = arr_view.view('f4')[start_offset:]
+            return np.lib.stride_tricks.as_strided(arr_offset, (len(self),3), (self.ptr().point_step,4))
     property normal:
         '''
         Get normal vectors of the point cloud, data type will be infered from data
@@ -307,7 +329,10 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         In PCL, normals are stored in data_n[4] and the last field is filled with 0
         '''
         def __get__(self):
-            return self.to_ndarray()[['normal_x', 'normal_y', 'normal_z']].view('f4').reshape(len(self), -1)
+            arr_view = self.to_ndarray()
+            start_offset = int(arr_view.dtype.fields['normal_x'][1]/4)
+            arr_offset = arr_view.view('f4')[start_offset:]
+            return np.lib.stride_tricks.as_strided(arr_offset, (len(self),3), (self.ptr().point_step,4))
     property rgb:
         '''
         Get the color field of the pointcloud, the property returns unpacked rgb values
@@ -423,6 +448,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         cdef uint8_t *mem_ptr = self.ptr().data.data()
         cdef uint8_t[:] mem_view = <uint8_t[:self.ptr().data.size()]>mem_ptr
         cdef np.ndarray arr_raw = np.asarray(mem_view)
+        assert not arr_raw.flags['OWNDATA']
 
         cdef str byte_order = '>' if self.ptr().is_bigendian else '<'
         ndtype = {'names':[], 'formats':[], 'offsets':[]}
@@ -434,6 +460,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         dtype = np.dtype(ndtype)
 
         cdef np.ndarray arr_view = arr_raw.view(dtype)
+        assert not arr_view.flags['OWNDATA']
         return arr_view
 
     def to_msg(self):
