@@ -119,3 +119,6 @@ _skbuild/
 
 # VS Code
 .vscode/
+
+# Cython config for PCL
+pcl/pcl_config.pxi

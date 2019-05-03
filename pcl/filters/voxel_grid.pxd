@@ -1,13 +1,19 @@
+include "../pcl_config.pxi"
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
-from pcl._eigen cimport Vector3f, Vector4f, Vector3i
+from pcl._eigen cimport Vector3f, Vector4f, Vector3i, allocator3i
 from pcl._boost cimport shared_ptr
 from pcl.common.point_cloud cimport PointCloud
 from pcl.common.PCLPointCloud2 cimport PCLPointCloud2, PCLPointCloud2ConstPtr
 from pcl.common.pcl_base cimport PCLBase, PCLBase_PCLPointCloud2
 from pcl.common.PointIndices cimport PointIndices, PointIndicesConstPtr
 from pcl.filters.filter cimport Filter, Filter_PCLPointCloud2
+
+IF PCL_VER > 107:
+    ctypedef vector[Vector3i, allocator3i] VoxelGrid_getNeighborCentroidIndices_type
+ELSE:
+    ctypedef vector[Vector3i] VoxelGrid_getNeighborCentroidIndices_type
 
 cdef extern from "pcl/filters/voxel_grid.h" namespace "pcl":
     void getMinMax3D (const PCLPointCloud2ConstPtr &cloud, int x_idx, int y_idx, int z_idx, Vector4f &min_pt, Vector4f &max_pt)
@@ -62,7 +68,7 @@ cdef extern from "pcl/filters/voxel_grid.h" namespace "pcl":
         Vector3i getDivisionMultiplier()
         int getCentroidIndex (float x, float y, float z)
         # XXX: vector[int] getNeighborCentroidIndices(float x, float y, float z, const MatrixXi &relative_coordinates)
-        vector[int] getNeighborCentroidIndices(float x, float y, float z, const vector[Vector3i] &relative_coordinates)
+        vector[int] getNeighborCentroidIndices(float x, float y, float z, const VoxelGrid_getNeighborCentroidIndices_type &relative_coordinates)
         vector[int] getLeafLayout()
         Vector3i getGridCoordinates(float x, float y, float z)
         int getCentroidIndexAt(const Vector3i &ijk)

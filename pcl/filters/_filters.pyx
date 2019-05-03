@@ -3,7 +3,7 @@ from libcpp.vector cimport vector
 from pcl._boost cimport shared_ptr, make_shared
 from pcl._eigen cimport Vector3i, Vector3f
 from pcl.filters.filter cimport Filter_PCLPointCloud2 as cFilter
-from pcl.filters.voxel_grid cimport VoxelGrid_PCLPointCloud2 as cVoxelGrid
+from pcl.filters.voxel_grid cimport VoxelGrid_getNeighborCentroidIndices_type, VoxelGrid_PCLPointCloud2 as cVoxelGrid
 from pcl.PointCloud cimport PointCloud, PCLPointCloud2
 from pcl.common.PCLBase cimport PCLBase, cPCLBase
 
@@ -21,7 +21,7 @@ cdef class Filter(PCLBase):
         return retval
 
 cdef inline cVoxelGrid* VoxelGrid_ptr(VoxelGrid obj):
-    return <cVoxelGrid*>obj._ptr.get()
+    return <cVoxelGrid*>(obj._ptr.get())
 
 cdef class VoxelGrid(Filter):
     def __init__(self):
@@ -71,11 +71,11 @@ cdef class VoxelGrid(Filter):
 
     def getCentroidIndex(self, float x, float y, float z):
         return VoxelGrid_ptr(self).getCentroidIndex(x,y,z)
-    # def getNeighborCentroidIndices(self, float x, float y, float z, relative_coordinates):
-    #     cdef vector[Vector3i] coords
-    #     for row in relative_coordinates:
-    #         coords.push_back(Vector3i(row[0], row[1], row[2]))
-    #     return VoxelGrid_ptr(self).getNeighborCentroidIndices(x, y, z, coords)
+    def getNeighborCentroidIndices(self, float x, float y, float z, relative_coordinates):
+        cdef VoxelGrid_getNeighborCentroidIndices_type coords
+        for row in relative_coordinates:
+            coords.push_back(Vector3i(row[0], row[1], row[2]))
+        return VoxelGrid_ptr(self).getNeighborCentroidIndices(x, y, z, coords)
 
     property LeafLayout:
         def __get__(self):

@@ -12,6 +12,10 @@ include_directories(BEFORE ${PYTHON_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 
+# generate config file
+configure_file(${CMAKE_CURRENT_LIST_DIR}/pcl_config.pxi.in
+    ${CMAKE_CURRENT_LIST_DIR}/pcl_config.pxi)
+
 add_cython_target(PointField CXX)
 add_library(PointField MODULE ${PointField})
 target_link_libraries(PointField ${PCL_LIBRARIES})
