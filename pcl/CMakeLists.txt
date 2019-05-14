@@ -28,6 +28,21 @@ target_link_libraries(PointCloud ${PCL_LIBRARIES})
 python_extension_module(PointCloud)
 install(TARGETS PointCloud LIBRARY DESTINATION pcl)
 
+# add submodules
+macro(add_pcl_module mname)
+    find_package(PCL REQUIRED COMPONENTS ${mname})
+
+    include_directories(${PCL_INCLUDE_DIRS})
+    link_directories(${PCL_LIBRARY_DIRS})
+    add_definitions(${PCL_DEFINITIONS})
+
+    add_cython_target(_${mname} CXX)
+    add_library(_${mname} MODULE ${_${mname}})
+    target_link_libraries(_${mname} ${PCL_LIBRARIES})
+    python_extension_module(_${mname})
+    install(TARGETS _${mname} LIBRARY DESTINATION pcl/${mname})
+endmacro()
+
 add_subdirectory(common)
 add_subdirectory(filters)
 add_subdirectory(io)

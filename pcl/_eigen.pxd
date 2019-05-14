@@ -71,7 +71,7 @@ cdef extern from "Eigen/Eigen" namespace "Eigen" nogil:
     cdef cppclass allocator3i "Eigen::aligned_allocator<Eigen::Vector3i>":
         pass
 
-cdef extern from "_eigen.hpp" nogil:
+cdef extern from "eigen.hpp" nogil:
     cdef T _toEigen[T,U](U*)
     cdef Affine3f _toEigenAffine(float*)
 cdef inline Vector3i toVector3i(ndarray arr):

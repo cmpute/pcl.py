@@ -25,6 +25,11 @@ cdef extern from "pcl/visualization/point_cloud_color_handlers.h" namespace "pcl
 
     cdef cppclass PointCloudColorHandler_PCLPointCloud2 "pcl::visualization::PointCloudColorHandler<pcl::PCLPointCloud2>":
         PointCloudColorHandler_PCLPointCloud2(const PCLPointCloud2ConstPtr &cloud)
+        bool isCapable ()
+        string getName ()
+        string getFieldName ()
+        # XXX: virtual bool getColor (vtkSmartPointer<vtkDataArray> &scalars) const = 0;
+        void setInputCloud (const PCLPointCloud2ConstPtr &cloud)
     cdef cppclass PointCloudColorHandlerRandom_PCLPointCloud2 "pcl::visualization::PointCloudColorHandlerRandom<pcl::PCLPointCloud2>" (PointCloudColorHandler_PCLPointCloud2):
         PointCloudColorHandlerRandom_PCLPointCloud2(const PCLPointCloud2ConstPtr &cloud)
     cdef cppclass PointCloudColorHandlerCustom_PCLPointCloud2 "pcl::visualization::PointCloudColorHandlerCustom<pcl::PCLPointCloud2>" (PointCloudColorHandler_PCLPointCloud2):

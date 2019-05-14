@@ -1,0 +1,1 @@
+add_pcl_module(registration)

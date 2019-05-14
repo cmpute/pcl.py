@@ -12,6 +12,7 @@ from pcl.common.point_types cimport PointXYZ, PointXYZRGB, PointXYZRGBA
 from pcl.PointCloud cimport _POINT_TYPE_MAPPING as pmap
 from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryHandler_PCLPointCloud2, PointCloudGeometryHandlerXYZ_PCLPointCloud2
 from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler_PCLPointCloud2, PointCloudColorHandlerCustom_PCLPointCloud2, PointCloudColorHandlerRGBField_PCLPointCloud2, PointCloudColorHandlerGenericField_PCLPointCloud2
+from pcl.visualization._handlers cimport PointCloudColorHandlerPython
 
 cdef class KeyboardEvent:
     cdef cKeyboardEvent* ptr(self):
