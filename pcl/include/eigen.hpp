@@ -1,5 +1,5 @@
-#ifndef _PYPCL_EIGEN_HPP
-#define _PYPCL_EIGEN_HPP
+#ifndef _PCL_CYTHON_EIGEN_HPP
+#define _PCL_CYTHON_EIGEN_HPP
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -16,4 +16,4 @@ Eigen::Affine3f _toEigenAffine(float *input)
     return ret;
 }
 
-#endif // _PYPCL_EIGEN_HPP
+#endif // _PCL_CYTHON_EIGEN_HPP

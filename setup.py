@@ -6,14 +6,14 @@ except ImportError:
     raise ImportError('scikit-build is required for installing')
 
 setup(
-    name="PyPCL",
+    name="pcl-cython",
     version="0.1.9",
     description="Cython bindings of Point Cloud Library (PCL)",
     long_description='(see project homepage)',
     author='Jacob Zhong',
     author_email='cmpute@gmail.com',
-    url='https://github.com/cmpute/pypcl',
-    download_url='https://github.com/cmpute/pypcl/archive/master.zip',
+    url='https://github.com/cmpute/pcl-cython',
+    download_url='https://github.com/cmpute/pcl-cython/archive/master.zip',
     license='BSD-3-Clause',
     packages=['pcl', 'pcl.common', 'pcl.filters', 'pcl.io', 'pcl.sample_consensus', 'pcl.visualization'],
     package_data={'pcl':['*.pxd', '*/*.pxd', '__init__.pxd', 'include/*']},

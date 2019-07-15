@@ -1,5 +1,5 @@
-#ifndef PYPCL_PYTHON_HANDLER
-#define PYPCL_PYTHON_HANDLER
+#ifndef _PCL_CYTHON_PYTHON_HANDLER
+#define _PCL_CYTHON_PYTHON_HANDLER
 
 #include <pcl/visualization/point_cloud_color_handlers.h>
 
@@ -48,4 +48,4 @@ public:
     }
 };
 
-#endif // PYPCL_PYTHON_HANDLER
+#endif // _PCL_CYTHON_PYTHON_HANDLER
