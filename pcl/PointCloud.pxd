@@ -25,4 +25,4 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
     cdef void infer_ptype(self)
 
     @staticmethod
-    cdef PointCloud wrapp(const shared_ptr[PCLPointCloud2]& data)
+    cdef PointCloud wrap(const shared_ptr[PCLPointCloud2]& data)

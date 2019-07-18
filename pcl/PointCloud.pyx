@@ -518,7 +518,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         self._ptype = b"CUSTOM"
 
     @staticmethod
-    cdef PointCloud wrapp(const shared_ptr[PCLPointCloud2]& data):
+    cdef PointCloud wrap(const shared_ptr[PCLPointCloud2]& data):
         cdef PointCloud obj = PointCloud.__new__(PointCloud)
         obj._ptr = data
         obj._origin = Vector4f.Zero()

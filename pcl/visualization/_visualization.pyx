@@ -1,6 +1,7 @@
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from enum import Enum
+import numpy as np
 from cython.operator cimport dereference as deref
 from pcl._boost cimport shared_ptr, make_shared
 from pcl._eigen cimport Affine3f, toAffine3f
@@ -144,6 +145,15 @@ cdef class AreaPickingEvent:
 cdef void AreaPickingEventCallback(const cAreaPickingEvent &event, void *func):
     (<object>func)(AreaPickingEvent.wrap(event))
 
+cdef (unsigned char*) PointCloudColorHandlerCallback(void *func):
+    cdef unsigned char [::1] arr
+    result = (<object>func)()
+    if isinstance(result, np.ndarray):
+        if result.shape[-1] != 4:
+            raise ValueError("Returned color array should be n*4 shape")
+        arr = result.reshape(-1).astype('u1')
+    return &arr[0]
+
 cdef class Visualizer:
     cdef PCLVisualizer* ptr(self):
         return self._ptr.get()
@@ -234,14 +244,15 @@ cdef class Visualizer:
     cpdef void createViewPortCamera(self, int viewport):
         self.ptr().createViewPortCamera(viewport)
 
-    cpdef void addPointCloud(self, PointCloud cloud, int r=255, int g=255, int b=255, str field=None, str id="cloud", int viewport=0):
+    cpdef void addPointCloud(self, PointCloud cloud, int r=255, int g=255, int b=255, str field=None, color_handler=None, str id="cloud", int viewport=0):
         cdef shared_ptr[PointCloudGeometryHandlerXYZ_PCLPointCloud2] xyz_handler
         cdef shared_ptr[PointCloudColorHandlerRGBField_PCLPointCloud2] rgb_handler
         cdef shared_ptr[PointCloudColorHandlerCustom_PCLPointCloud2] mono_handler
         cdef shared_ptr[PointCloudColorHandlerGenericField_PCLPointCloud2] field_handler
+        cdef shared_ptr[PointCloudColorHandlerPython] python_handler
         cdef bytes cfield
 
-        fieldlist = [name for name,_,_ in pmap[cloud._ptype]]
+        fieldlist = [name for name,_,_,_ in pmap[cloud._ptype]]
         if ('rgb' in fieldlist) or ('rgba' in fieldlist):
             xyz_handler = make_shared[PointCloudGeometryHandlerXYZ_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
             rgb_handler = make_shared[PointCloudColorHandlerRGBField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
@@ -259,6 +270,14 @@ cdef class Visualizer:
                 <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>field_handler,
                 cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
                 "addPointCloud")
+        elif color_handler is not None: # handler should be callable
+            xyz_handler = make_shared[PointCloudGeometryHandlerXYZ_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
+            python_handler = shared_ptr[PointCloudColorHandlerPython](new PointCloudColorHandlerPython(<PCLPointCloud2ConstPtr>cloud._ptr, PointCloudColorHandlerCallback, <void*>color_handler))
+            _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
+                <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
+                <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>python_handler,
+                cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
+                "addPointCloud")
         else:
             xyz_handler = make_shared[PointCloudGeometryHandlerXYZ_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
             mono_handler = make_shared[PointCloudColorHandlerCustom_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr, r, g, b)
@@ -272,7 +291,7 @@ cdef class Visualizer:
         cdef shared_ptr[cPointCloud[PointXYZ]] ccloud_xyz
         cdef shared_ptr[cPointCloud[PointXYZRGBA]] ccloud_rgba
 
-        fieldlist = [name for name,_,_ in pmap[cloud._ptype]]
+        fieldlist = [name for name,_,_,_ in pmap[cloud._ptype]]
         if ('rgb' in fieldlist) or ('rgba' in fieldlist):
             ccloud_rgba = make_shared[cPointCloud[PointXYZRGBA]]()
             fromPCLPointCloud2(deref(cloud._ptr.get()), deref(ccloud_rgba.get()))

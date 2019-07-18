@@ -1,4 +1,4 @@
-# pcl-cython [![Build Status](https://travis-ci.org/cmpute/pcl-cython.svg?branch=master)](https://travis-ci.org/cmpute/pcl-cython) [![Coverage Status](https://coveralls.io/repos/github/cmpute/pcl-cython/badge.svg)](https://coveralls.io/github/cmpute/pcl-cython)
+# pcl.py [![Build Status](https://travis-ci.org/cmpute/pcl.py.svg?branch=master)](https://travis-ci.org/cmpute/pcl.py) [![Coverage Status](https://coveralls.io/repos/github/cmpute/pcl.py/badge.svg)](https://coveralls.io/github/cmpute/pcl.py)
 
 Cython bindings of Point Cloud Library (PCL)
 
@@ -27,7 +27,7 @@ The major classes in this library are `pcl.PointCloud`, `pcl.Visualizer`. Most m
 
 ## Installation
 
-- Installation from PyPI: `pip install pcl-cython`
+- Installation from PyPI: `pip install pcl-py`
 - Installation from source: `python setup.py install`
 - Installation from source in-place: `python setup.py develop`
 
