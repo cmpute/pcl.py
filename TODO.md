@@ -3,7 +3,7 @@
 - [ ] Implement some official test codes
 - [x] Add conversion between numpy array and Eigen objects
 - [ ] Migrate original implementations of pypcl
-- [ ] Fix TODOs in the code
+- [ ] Fix TODOs, XXXs and FIXMEs in the code
 - [ ] Support organized point cloud
 - [ ] Support PCLImage, PolygonMesh, RangeImage
 - [ ] Full support customized point cloud fields

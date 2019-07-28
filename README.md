@@ -37,3 +37,19 @@ The major classes in this library are `pcl.PointCloud`, `pcl.Visualizer`. Most m
 The cython doesn't support a template technique similar to ["covariant"](https://en.wikipedia.org/wiki/Covariance_and_contravariance_(computer_science)) in its template support, so the code which need this technique is not wrapped or header-provided as stated above.
 
 The library is under heavy construction, thus do not use it in productive codes. However, playing with it is totally welcome now, and it will be great to receive your issues, suggestions and pull requests!~
+
+-------------------------
+
+# Usage
+
+```python
+import pcl
+import numpy as np
+
+cloud = pcl.PointCloud([(1,2,3), (4,5,6)])
+centroid = np.mean(cloud.xyz, axis=0)
+```
+
+## Common failure
+`pcl.PointCloud(...).xyz`: This will return uninitialized memory. This is a known issue but I don't know how to fix it...
+`pcl.PointCloud([[1,2,3], [4,5,6]])`: Only list of tuples are accepted for initialization

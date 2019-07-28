@@ -1,6 +1,7 @@
 from libc.stdint cimport uint8_t
 from libcpp cimport bool
 from libcpp.string cimport string
+from cpython.object cimport Py_EQ, Py_NE
 from cython.operator cimport dereference as deref
 import sys
 import numpy as np
@@ -317,6 +318,9 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
 
         # Notes
         In PCL, xyz coordinate is stored in data[4] and the last field is filled with 1
+
+        FIXME: pcl.PointCloud(...).xyz will generate incorrect result!!
+        (while cloud = pcl.PointCloud(...); cloud.xyz will return correct one)
         '''
         def __get__(self):
             cdef np.ndarray arr_view = self.to_ndarray()
@@ -449,12 +453,19 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         else:
             return self.append(item)
 
-    def __eq__(self, PointCloud target):
+    def __richcmp__(self, PointCloud target, int op):
+        cdef bool result
         result = (target.to_ndarray() == self.to_ndarray()).all()
         result &= self.compare_metadata(target)
         result &= target.width == self.width
         result &= target.height == self.height
-        return result
+
+        if op == Py_EQ:
+            return result
+        elif op == Py_NE:
+            return not result
+        else:
+            raise NotImplementedError("Only == and != is supported")
 
     def __array__(self, *_):
         '''support conversion to ndarray'''
