@@ -1,1 +1,1 @@
-from ._registration import *
+from pcl.registration._registration import *

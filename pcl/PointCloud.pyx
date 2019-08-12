@@ -332,7 +332,8 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             cdef list offset_check = [arr_view.dtype.fields['x'][1],
                 arr_view.dtype.fields['y'][1],
                 arr_view.dtype.fields['z'][1]]
-            if offset_check != sorted(offset_check):
+            if arr_view.dtype.fields['y'][1] - arr_view.dtype.fields['x'][1] != arr_view.dtype.fields['x'][0].itemsize\
+                or arr_view.dtype.fields['z'][1] - arr_view.dtype.fields['y'][1] != arr_view.dtype.fields['y'][0].itemsize:
                 raise ValueError("The offsets of x, y, z are not in order and contiguous.")
 
             ndtype = {'names':['xyz'], 'formats':['3f4'],

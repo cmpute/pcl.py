@@ -3,7 +3,7 @@ from pcl.common.PointIndices cimport PointIndices, PointIndicesPtr
 
 cdef class PCLBase:
     def __init__(self):
-        self._ptr = shared_ptr[cPCLBase](NULL)
+        self._ptr = shared_ptr[cPCLBase]()
         self._input = None
         raise NotImplementedError("Abstract class cannot be initialized")
 

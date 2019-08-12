@@ -1,1 +1,1 @@
-from ._visualization import *
+from pcl.visualization._visualization import *

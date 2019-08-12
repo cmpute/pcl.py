@@ -77,4 +77,5 @@ class TestNumpyInitialize(unittest.TestCase):
         cloud = cloud.insert_fields(new_fields, [1,1])
         assert cloud.names == ['x', 'f2', 'f1', 'y', 'z']
         assert len(cloud.to_ndarray()) == 2
-        assert np.all(cloud.xyz == np.array([(1,2,3),(2,3,4)]))
+        with self.assertRaises(ValueError):
+            _ = cloud.xyz

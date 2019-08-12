@@ -10,7 +10,7 @@ from pcl.common.pcl_base cimport PCLBase, PCLBase_PCLPointCloud2
 from pcl.common.PointIndices cimport PointIndices, PointIndicesConstPtr
 from pcl.filters.filter cimport Filter, Filter_PCLPointCloud2
 
-IF PCL_VER > 107:
+IF PCL_VER > 107.2:
     ctypedef vector[Vector3i, allocator3i] VoxelGrid_getNeighborCentroidIndices_type
 ELSE:
     ctypedef vector[Vector3i] VoxelGrid_getNeighborCentroidIndices_type

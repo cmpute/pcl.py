@@ -1,10 +1,10 @@
-from .PointField import *
-from .PointCloud import *
+from pcl.PointField import *
+from pcl.PointCloud import *
 
-from .common import *
-from .filters import *
-from .io import *
-from .visualization import *
+from pcl.common import *
+from pcl.filters import *
+from pcl.io import *
+from pcl.visualization import *
 
 def get_include():
     import pcl, os
