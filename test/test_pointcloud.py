@@ -63,3 +63,18 @@ class TestNumpyInitialize(unittest.TestCase):
         assert np.all(cloud.sensor_orientation == np.array([0,0,0,1]))
         cloud.sensor_orientation = [1, 2, 3, 1]
         assert np.all(cloud.sensor_orientation == np.array([1,2,3,1]))
+
+    def test_field_operations(self):
+        cloud = pcl.PointCloud([(1,2,3),(2,3,4)])
+        new_fields = np.array([(4,5),(6,7)], dtype=[('f1','f4'),('f2','f8')])
+        cloud = cloud.append_fields(new_fields)
+        assert cloud.names == ['x', 'y', 'z', 'f1', 'f2']
+        assert len(cloud.to_ndarray()) == 2
+        assert np.all(cloud.xyz == np.array([(1,2,3),(2,3,4)]))
+
+        cloud = pcl.PointCloud([(1,2,3),(2,3,4)])
+        new_fields = np.array([(4,5),(6,7)], dtype=[('f1','f4'),('f2','f8')])
+        cloud = cloud.insert_fields(new_fields, [1,1])
+        assert cloud.names == ['x', 'f2', 'f1', 'y', 'z']
+        assert len(cloud.to_ndarray()) == 2
+        assert np.all(cloud.xyz == np.array([(1,2,3),(2,3,4)]))

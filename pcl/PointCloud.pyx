@@ -14,7 +14,7 @@ from pcl.common.conversions cimport toPCLPointCloud2, fromPCLPointCloud2
 from pcl.common.point_cloud cimport PointCloud as cPC
 from pcl.PointField cimport PointField, _FIELD_TYPE_MAPPING, _FIELD_TYPE_MAPPING_INV
 
-# (field_name: string, size_type: uint8_t, count: uint32_t, tpadding: uint8_t)
+# Type of each item: (field_name: string, size_type: uint8_t, count: uint32_t, tpadding: uint8_t)
 cdef tuple UNION_POINT4D    = ((b'x',7,1,0),        (b'y',7,1,0),       (b'z',7,1,4))
 cdef tuple UNION_NORMAL4D   = ((b'normal_x',7,1,0), (b'normal_y',7,1,0),(b'normal_z',7,1,4))
 cdef tuple UNION_RGB        = ((b'rgba',6,1,0),)
@@ -112,6 +112,9 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             - XYZRGBN (PointXYZRGBNormal)
             - XYZHSV
             - Custom (Non-PCL point type)
+
+        # Notes
+        If the point_type is recognized as built-in types, paddings will be automatically added
         """
         # pre-declaration
         cdef PCLPointField temp_field
@@ -136,7 +139,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                 raise ValueError('Point type should be specified when normal array is inputed')
             self._ptype = point_type.upper().encode('ascii')
             if <bytes>(self._ptype) not in _POINT_TYPE_MAPPING:
-                raise TypeError('Unsupported point type!')
+                raise TypeError('Unsupported point type! You should input a record array if you want custom type.')
 
             ndtype = {'names':[], 'formats':[], 'offsets':[]}
             offset = 0
@@ -175,7 +178,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                     raise ValueError('Point type should be specified when normal array is inputed')
                 self._ptype = point_type.upper().encode('ascii')
                 if <bytes>(self._ptype) not in _POINT_TYPE_MAPPING:
-                    raise TypeError('Unsupported point type!')
+                    raise TypeError('Unsupported point type! You should input a record array if you want custom type.')
                 else:
                     # field consensus check
                     typeid_list = [typeid for _,typeid,_,_ in _POINT_TYPE_MAPPING[self._ptype]]
@@ -243,8 +246,9 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                     self.ptr().point_step += _FIELD_TYPE_MAPPING[typeid][1] * count + tpad
                 self.ptr().row_step = self.ptr().point_step * self.ptr().width
             else: # only structured array will go into this statement
-                self.ptr().point_step = 0
                 for idx in range(len(data.dtype)):
+                    if ndtype['formats'][idx].type == np.void: # This field is padding field
+                        continue
                     temp_field = PCLPointField()
                     temp_field.name = ndtype['names'][idx].encode('ascii')
                     temp_field.offset = ndtype['offsets'][idx]
@@ -383,12 +387,23 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         def __get__(self):
             return self._ptype.decode("ascii")
 
+    property nptype:
+        def __get__(self):
+            cdef str byte_order = '>' if self.ptr().is_bigendian else '<'
+            cdef dict ndtype = {'names':[], 'formats':[], 'offsets':[]}
+            for field in self.fields:
+                ndtype['names'].append(field.name)
+                ndtype['formats'].append(str(field.count) + byte_order + field.npdtype)
+                ndtype['offsets'].append(field.offset)
+            ndtype['itemsize'] = self.ptr().point_step
+            return np.dtype(ndtype)
+
     def __len__(self):
         return self.ptr().width * self.ptr().height
     def __repr__(self):
         return "<PointCloud of %d points>" % len(self)
     def __reduce__(self):
-        raise NotImplementedError()
+        return type(self), (self.to_ndarray(), self._ptype.decode('ascii'))
     def __iter__(self):
         return iter(self.to_ndarray())
     def __contains__(self, item):
@@ -402,7 +417,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             # indexing by index or field
             newdata = self.to_ndarray()[indices]
             if isinstance(indices, str):
-                raise NotImplementedError("Accessing by field is currently not supported")
+                return PointCloud(newdata)
             else:
                 newptype = self._ptype
         elif len(indices) is 2: # indexing by row and col
@@ -424,15 +439,86 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         else: raise IndexError('too many indices')
 
     def __delitem__(self, indices):
-        raise NotImplementedError("Delete point is currently not supported")
+        raise ValueError("Point cloud is immutable")
 
     def append(self, points):
-        copy = self.to_ndarray().copy()
-        copy = np.append(copy, np.array(points, dtype=copy.dtype))
+        if not isinstance(points, np.ndarray):
+            points = np.array(points, dtype=self.nptype)
+            
+        copy = np.append(self.to_ndarray(), points)
         return PointCloud(copy, self._ptype.decode('ascii'))
 
-    def append_fields(self, fields, data):
-        raise NotImplementedError('Adding field is currently unsupported')
+    def insert(self, points, offsets):
+        if not isinstance(points, np.ndarray):
+            points = np.array(points, dtype=self.nptype)
+        
+        copy = np.insert(self.to_ndarray(), offsets, points)
+        return PointCloud(copy, self._ptype.decode('ascii'))
+
+    def append_fields(self, data):
+        '''
+        Append fields at the end of fields list of the point cloud. The new data should have same shape
+        with the point cloud data and should have field names predefined in record array
+
+        # Parameters
+        data: numpy record array for the new data
+        '''
+        old_names = self.names
+        new_names = data.dtype.names
+        if len(set(old_names).intersection(set(new_names))) > 0:
+            raise TypeError("fields with given names already exist.")
+
+        npdata = self.to_ndarray()
+        ntype = self.nptype.descr + data.dtype.descr
+        ndata = np.empty(npdata.shape, dtype=ntype)
+        
+        for name in old_names:
+            ndata[name] = npdata[name]
+        for name in new_names:
+            ndata[name] = data[name]
+        return PointCloud(ndata)
+
+    def insert_fields(self, data, offsets):
+        '''
+        Insert fields at given offset in the fields list of the cloud
+
+        # Parameters
+        data: numpy record array for the new data
+        offsets: dict or sequence of int
+            The offset where fields are inserted into.
+            The offset is defined with field list rather than raw data bits.
+            Examples:
+            - `{'field1': 2, 'field2': 3}`
+            - `[2, 3]`
+        '''
+        old_names = self.names
+        new_names = data.dtype.names
+        if len(set(old_names).intersection(set(new_names))) > 0:
+            raise TypeError("fields with given names already exist.")
+
+        # Insert fields, support multiple insert at the same time
+        npdata = self.to_ndarray()
+        ntype = [[field] for field in self.nptype.descr]
+        if isinstance(offsets, (list, tuple)):
+            for idx, offset in enumerate(offsets):
+                ntype[offset].append(data.dtype.descr[idx])
+        elif isinstance(offsets, dict):
+            for field in data.dtype.descr:
+                offset = offsets[field[0]]
+                ntype[offset].append(field)
+        
+        temp = [] # flatten nested ntype
+        for flist in ntype:
+            for field in reversed(flist):
+                temp.append(field)
+        ntype = temp
+
+        ndata = np.empty(npdata.shape, dtype=ntype)
+        for name in old_names:
+            ndata[name] = npdata[name]
+        for name in new_names:
+            ndata[name] = data[name]      
+        return PointCloud(ndata)
 
     def __add__(self, item):
         '''
@@ -481,19 +567,11 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         cdef np.ndarray arr_raw = np.asarray(mem_view)
         assert not arr_raw.flags['OWNDATA']
 
-        cdef str byte_order = '>' if self.ptr().is_bigendian else '<'
-        ndtype = {'names':[], 'formats':[], 'offsets':[]}
-        for field in self.fields:
-            if fields != None and not field.name in fields:
-                continue
-            ndtype['names'].append(field.name)
-            ndtype['formats'].append(str(field.count) + byte_order + field.npdtype)
-            ndtype['offsets'].append(field.offset)
-        ndtype['itemsize'] = self.ptr().point_step
-        dtype = np.dtype(ndtype)
-
-        cdef np.ndarray arr_view = arr_raw.view(dtype)
-        assert not arr_view.flags['OWNDATA']
+        if fields is None:
+            ndtype = self.nptype
+        else:
+            ndtype = np.dtype([field for field in self.nptype.descr if field[0] in fields])
+        cdef np.ndarray arr_view = arr_raw.view(ndtype)
         return arr_view
 
     def to_msg(self):
