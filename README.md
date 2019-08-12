@@ -1,4 +1,5 @@
-# pcl.py [![Build Status](https://travis-ci.org/cmpute/pcl.py.svg?branch=master)](https://travis-ci.org/cmpute/pcl.py) [![Coverage Status](https://coveralls.io/repos/github/cmpute/pcl.py/badge.svg)](https://coveralls.io/github/cmpute/pcl.py)
+# pcl.py [![Build Status](https://api.travis-ci.com/cmpute/pcl.py.svg?branch=master)](https://travis-ci.com/cmpute/pcl.py)
+<!-- [![Coverage Status](https://coveralls.io/repos/github/cmpute/pcl.py/badge.svg)](https://coveralls.io/github/cmpute/pcl.py) -->
 
 Cython bindings of Point Cloud Library (PCL)
 
@@ -22,6 +23,7 @@ The major classes in this library are `pcl.PointCloud`, `pcl.Visualizer`. Most m
 ## Compatibility
 - Written in Python 3 & Cython
 - Tested on Python 3.5, Numpy>=1.10 (Temporarily)
+- Tested on PCL 1.8.0, adding more compatibility is pending.
 
 ------------------------
 
@@ -49,6 +51,8 @@ import numpy as np
 cloud = pcl.PointCloud([(1,2,3), (4,5,6)])
 centroid = np.mean(cloud.xyz, axis=0)
 ```
+
+Please check test codes for more usage examples
 
 ## Common failure
 `pcl.PointCloud(...).xyz`: This will return uninitialized memory. This is a known issue but I don't know how to fix it...

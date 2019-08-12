@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
     name="pcl-py",
-    version="0.1.10",
+    version="0.2.0",
     description="Cython bindings of Point Cloud Library (PCL)",
     long_description='(see project homepage)',
     author='Jacob Zhong',
