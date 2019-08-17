@@ -49,11 +49,18 @@ import pcl
 import numpy as np
 
 cloud = pcl.PointCloud([(1,2,3), (4,5,6)])
+# <PointCloud of 2 points>
+
+array = cloud.to_ndarray()
+# array([(1., 2., 3.), (4., 5., 6.)],
+#       dtype={'names':['x','y','z'], 'formats':['<f4','<f4','<f4'], 'offsets':[0,4,8], 'itemsize':16})
+
 centroid = np.mean(cloud.xyz, axis=0)
+# array([2.5, 3.5, 4.5], dtype=float32)
 ```
 
 Please check test codes for more usage examples
 
 ## Common failure
 `pcl.PointCloud(...).xyz`: This will return uninitialized memory. This is a known issue but I don't know how to fix it...
-`pcl.PointCloud([[1,2,3], [4,5,6]])`: Only list of tuples are accepted for initialization
+`pcl.PointCloud([[1,2,3], [4,5,6]])`: Only list of tuples are accepted for initialization, use `pcl.create_xyz` instead
