@@ -79,3 +79,16 @@ class TestNumpyInitialize(unittest.TestCase):
         assert len(cloud.to_ndarray()) == 2
         with self.assertRaises(ValueError):
             _ = cloud.xyz
+
+    def test_creators(self):
+        cloud = pcl.create_xyz([[1,2,3], [4,5,6]])
+        assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
+        assert cloud.ptype == "XYZ"
+
+        cloud = pcl.create_xyzrgb([[1,2,3,1,2,3], [4,5,6,4,5,6]])
+        assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
+        assert cloud.ptype == "XYZRGB" or cloud.ptype == "XYZRGBA" # XYZRGB and XYZRGBA are actually the same
+
+        cloud = pcl.create_xyzrgba([[1,2,3,1,2,3,1], [4,5,6,4,5,6,4]])
+        assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
+        assert cloud.ptype == "XYZRGB" or cloud.ptype == "XYZRGBA"

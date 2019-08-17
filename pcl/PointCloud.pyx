@@ -51,26 +51,33 @@ cdef str _parse_single_dtype(np.dtype dtype):
 cdef string _check_dtype_compatible(np.dtype dtype):
     cdef int offset
     cdef bool match_flag
+    cdef set dtype_names = set(dtype.names)
 
     for name, typetuple in _POINT_TYPE_MAPPING.items():
-        dtype_iter = iter(dtype.names)
-        match_flag = True
+        # Check field count
+        if len(dtype_names) != len(typetuple):
+            continue
 
+        match_flag = True
         offset = 0
-        for fname, typeid, count, ftpad in typetuple:
-            dtname = next(dtype_iter)
-            if fname != dtname or _FIELD_TYPE_MAPPING[typeid][0] != _parse_single_dtype(dtype[name])\
-                               or offset != dtype.fields[dtname][1]:
+        for fname, typeid, count, tpad in typetuple:
+            # Check field name and properties
+            fnamestr = fname.decode('ascii')
+            if fname.decode('ascii') not in dtype_names\
+                or _FIELD_TYPE_MAPPING[typeid][0] != _parse_single_dtype(dtype[fnamestr])\
+                or offset != dtype.fields[fnamestr][1]:
                 match_flag = False
                 break
-            if dtype[dtname].subdtype != None:
-                if len(dtype[dtname].subdtype[1]) > 1 or dtype[dtname].subdtype[1][0] != count:
+            # Check value count in the field
+            if dtype[fnamestr].subdtype != None:
+                if len(dtype[fnamestr].subdtype[1]) > 1 or dtype[fnamestr].subdtype[1][0] != count:
                     match_flag = False
                     break
             else:
                 if count != 1:
                     match_flag = False
                     break
+            offset += _FIELD_TYPE_MAPPING[typeid][1] * count + tpad
 
         if match_flag:
             return name
@@ -141,6 +148,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             if <bytes>(self._ptype) not in _POINT_TYPE_MAPPING:
                 raise TypeError('Unsupported point type! You should input a record array if you want custom type.')
 
+            # Calculate dtype
             ndtype = {'names':[], 'formats':[], 'offsets':[]}
             offset = 0
             byte_order = '>' if sys.byteorder == 'big' else '<'
@@ -159,6 +167,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                 data = data.ascontiguousarray()
 
             # datatype interpreting
+            # TODO: RGB data contains single field vector
             if _is_not_record_array(data): # [normal array]
                 # data shape interpreting
                 if len(data.shape) < 2 or len(data.shape) > 3:
@@ -268,7 +277,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             if _is_not_record_array(data):
                 pass
             else:
-                assert self.ptr().point_step - data.dtype.itemsize == 0
+                assert self.ptr().point_step - data.dtype.itemsize == 0, "Point step not correct"
 
             # data interpreting
             self.ptr().data = data.view('B').ravel()
@@ -566,7 +575,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         cdef uint8_t *mem_ptr = self.ptr().data.data()
         cdef uint8_t[:] mem_view = <uint8_t[:self.ptr().data.size()]>mem_ptr
         cdef np.ndarray arr_raw = np.asarray(mem_view)
-        assert not arr_raw.flags['OWNDATA']
+        assert not arr_raw.flags['OWNDATA'], "The returned array should not be a copy"
 
         if fields is None:
             ndtype = self.nptype
@@ -615,3 +624,63 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         obj._orientation = Quaternionf.Identity()
         obj.infer_ptype()
         return obj
+
+############################ Helper Functions #############################
+
+def create_xyz(data):
+    '''
+    Create PointXYZ point cloud from normal nx3 array, or equivalent list representation
+    '''
+    data = np.array(data, copy=False)
+    if data.shape[-1] != 3:
+        return ValueError("Each point should contain 3 values")
+
+    dt = np.dtype({'names':['x','y','z'], 'formats':['f4','f4','f4'], 'itemsize':16})
+    arr = np.empty(len(data), dtype=dt)
+    arr['x'], arr['y'], arr['z'] = data[:,0], data[:,1], data[:,2]
+    return PointCloud(arr, 'XYZ')
+
+def create_rgb(data):
+    '''
+    Create RGB point cloud from normal nx3 array, or equivalent list representation
+    '''
+    data = np.array(data, copy=False)
+    if data.shape[-1] != 3:
+        return ValueError("Each point should contain 3 values")
+
+    rgb_dt = np.dtype({'names':['b','g','r'], 'formats':['u1','u1','u1'], 'itemsize':16})
+    rgb_arr = np.empty(len(data), dtype=rgb_dt)
+    rgb_arr['r'], rgb_arr['g'], rgb_arr['b'] = data[:,0], data[:,1], data[:,2]
+    return PointCloud(rgb_arr.view('u4'), 'RGB')
+
+def create_xyzrgb(data):
+    '''
+    Create PointXYZRGB point cloud from normal nx6 array, or equivalent list representation
+    '''
+    data = np.array(data, copy=False)
+    if data.shape[-1] != 6:
+        return ValueError("Each point should contain 3 values")
+
+    rgb_dt = np.dtype({'names':['b','g','r'], 'formats':['u1','u1','u1'], 'itemsize':4})
+    rgb_arr = np.empty(len(data), dtype=rgb_dt)
+    rgb_arr['r'], rgb_arr['g'], rgb_arr['b'] = data[:,3], data[:,4], data[:,5]
+    cloud_dt = np.dtype({'names':['x','y','z','rgba'], 'formats':['f4','f4','f4','u4'], 'offsets':[0,4,8,16], 'itemsize':20})
+    cloud_arr = np.empty(len(data), dtype=cloud_dt)
+    cloud_arr['x'], cloud_arr['y'], cloud_arr['z'], cloud_arr['rgba'] = data[:,0], data[:,1], data[:,2], rgb_arr.view('u4')
+    return PointCloud(cloud_arr, 'XYZRGB')
+
+def create_xyzrgba(data):
+    '''
+    Create PointXYZRGBA point cloud from normal nx6 array, or equivalent list representation
+    '''
+    data = np.array(data, copy=False)
+    if data.shape[-1] != 7:
+        return ValueError("Each point should contain 3 values")
+
+    rgba_dt = np.dtype({'names':['b','g','r','a'], 'formats':['u1','u1','u1','u1'], 'itemsize':4})
+    rgba_arr = np.empty(len(data), dtype=rgba_dt)
+    rgba_arr['r'], rgba_arr['g'], rgba_arr['b'], rgba_arr['a'] = data[:,3], data[:,4], data[:,5], data[:,6]
+    cloud_dt = np.dtype({'names':['x','y','z','rgba'], 'formats':['f4','f4','f4','u4'], 'offsets':[0,4,8,16], 'itemsize':20})
+    cloud_arr = np.empty(len(data), dtype=cloud_dt)
+    cloud_arr['x'], cloud_arr['y'], cloud_arr['z'], cloud_arr['rgba'] = data[:,0], data[:,1], data[:,2], rgba_arr.view('u4')
+    return PointCloud(cloud_arr, 'XYZRGBA')
