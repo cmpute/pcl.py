@@ -17,7 +17,8 @@ from pcl.PointField cimport PointField, _FIELD_TYPE_MAPPING, _FIELD_TYPE_MAPPING
 # Type of each item: (field_name: string, size_type: uint8_t, count: uint32_t, tpadding: uint8_t)
 cdef tuple UNION_POINT4D    = ((b'x',7,1,0),        (b'y',7,1,0),       (b'z',7,1,4))
 cdef tuple UNION_NORMAL4D   = ((b'normal_x',7,1,0), (b'normal_y',7,1,0),(b'normal_z',7,1,4))
-cdef tuple UNION_RGB        = ((b'rgba',6,1,0),)
+cdef tuple UNION_RGB        = ((b'rgb',6,1,0),) # RGB is actually stored as RGBA
+cdef tuple UNION_RGBA       = ((b'rgba',6,1,0),)
 
 # Dictionary for built-in point types
 cdef dict _POINT_TYPE_MAPPING = {
@@ -34,7 +35,7 @@ cdef dict _POINT_TYPE_MAPPING = {
     b'XYZL':    UNION_POINT4D + ((b'label',6,1,0),),
     b'XYZN':    UNION_POINT4D + UNION_NORMAL4D + ((b'curvature',7,1,12),),
     b'XYZRGB':  UNION_POINT4D + UNION_RGB,
-    b'XYZRGBA': UNION_POINT4D + UNION_RGB,
+    b'XYZRGBA': UNION_POINT4D + UNION_RGBA,
     b'XYZRGBL': UNION_POINT4D + UNION_RGB + ((b'label',6,1,0),),
     b'XYZRGBN': UNION_POINT4D + UNION_NORMAL4D + UNION_RGB + ((b'curvature',7,1,8),),
     b'XYZHSV':  UNION_POINT4D + ((b'h',7,1,0), (b's',7,1,0), (b'v',7,1,4)),
@@ -377,8 +378,8 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         '''
         def __get__(self):
             # struct definition from PCL
-            cdef np.dtype struct = np.dtype([('b','u1'), ('g','u1'), ('r','u1'), ('a','u1')])
-            return self.to_ndarray()['rgba'].view(struct)[['r', 'g', 'b']]
+            cdef np.dtype struct = np.dtype({'names':['b','g','r'], 'formats':['u1','u1','u1'], 'itemsize':4})
+            return self.to_ndarray()['rgb'].view(struct)[['r', 'g', 'b']]
     property rgba:
         '''
         Get the color field of the pointcloud, the property returns unpacked rgba values
@@ -386,7 +387,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         '''
         def __get__(self):
             cdef np.dtype struct = np.dtype([('b','u1'), ('g','u1'), ('r','u1'), ('a','u1')])
-            return self.to_ndarray()['rgba'].view(struct)
+            return self.to_ndarray()['rgba'].view(struct)[['r', 'g', 'b', 'a']]
     property is_organized:
         '''
         Get whether the point cloud is organized
@@ -664,9 +665,9 @@ def create_xyzrgb(data):
     rgb_dt = np.dtype({'names':['b','g','r'], 'formats':['u1','u1','u1'], 'itemsize':4})
     rgb_arr = np.empty(len(data), dtype=rgb_dt)
     rgb_arr['r'], rgb_arr['g'], rgb_arr['b'] = data[:,3], data[:,4], data[:,5]
-    cloud_dt = np.dtype({'names':['x','y','z','rgba'], 'formats':['f4','f4','f4','u4'], 'offsets':[0,4,8,16], 'itemsize':20})
+    cloud_dt = np.dtype({'names':['x','y','z','rgb'], 'formats':['f4','f4','f4','u4'], 'offsets':[0,4,8,16], 'itemsize':20})
     cloud_arr = np.empty(len(data), dtype=cloud_dt)
-    cloud_arr['x'], cloud_arr['y'], cloud_arr['z'], cloud_arr['rgba'] = data[:,0], data[:,1], data[:,2], rgb_arr.view('u4')
+    cloud_arr['x'], cloud_arr['y'], cloud_arr['z'], cloud_arr['rgb'] = data[:,0], data[:,1], data[:,2], rgb_arr.view('u4')
     return PointCloud(cloud_arr, 'XYZRGB')
 
 def create_xyzrgba(data):

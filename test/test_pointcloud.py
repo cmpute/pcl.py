@@ -48,9 +48,8 @@ class TestNumpyInitialize(unittest.TestCase):
     def test_point_type(self):
         cloud = pcl.PointCloud([(1,2,3,255),(2,3,4,255)], 'xyzrgb')
         assert len(cloud) == 2
-        assert cloud.names == ['x', 'y', 'z', 'rgba']
+        assert cloud.names == ['x', 'y', 'z', 'rgb']
         assert len(cloud.rgb) == 2
-        assert len(cloud.rgba) == 2
 
     def test_origin(self):
         cloud = pcl.PointCloud([(1,2,3),(2,3,4)])
@@ -87,8 +86,8 @@ class TestNumpyInitialize(unittest.TestCase):
 
         cloud = pcl.create_xyzrgb([[1,2,3,1,2,3], [4,5,6,4,5,6]])
         assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
-        assert cloud.ptype == "XYZRGB" or cloud.ptype == "XYZRGBA" # XYZRGB and XYZRGBA are actually the same
+        assert cloud.ptype == "XYZRGB"
 
         cloud = pcl.create_xyzrgba([[1,2,3,1,2,3,1], [4,5,6,4,5,6,4]])
         assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
-        assert cloud.ptype == "XYZRGB" or cloud.ptype == "XYZRGBA"
+        assert cloud.ptype == "XYZRGBA"
