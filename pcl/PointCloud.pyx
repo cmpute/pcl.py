@@ -1,4 +1,5 @@
 from libc.stdint cimport uint8_t
+from libc.stdlib cimport malloc, free
 from libcpp cimport bool
 from libcpp.string cimport string
 from cpython.object cimport Py_EQ, Py_NE
@@ -564,18 +565,35 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         else:
             raise NotImplementedError("Only == and != is supported")
 
-    def __array__(self, *_):
-        '''support conversion to ndarray'''
-        return self.to_ndarray()
     def __getbuffer__(self, Py_buffer *buffer, int flags):
-        raise NotImplementedError()
+        # XXX: holder a counter for the buffers?
+        # XXX: directly return a buffer with structured item format?
+
+        cdef Py_ssize_t *shape = <Py_ssize_t*>malloc(2*sizeof(Py_ssize_t))
+        cdef Py_ssize_t *strides = <Py_ssize_t*>malloc(2*sizeof(Py_ssize_t))
+        shape[0] = self.ptr().width * self.ptr().height
+        shape[1] = self.ptr().point_step
+        strides[0] = self.ptr().point_step
+        strides[1] = 1
+
+        buffer.buf = self.ptr().data.data()
+        buffer.format = 'B'
+        buffer.internal = NULL
+        buffer.itemsize = 1
+        buffer.len = self.ptr().data.size()
+        buffer.ndim = 2
+        buffer.obj = self
+        buffer.readonly = 0
+        buffer.shape = shape
+        buffer.strides = strides
+        buffer.suboffsets = NULL
+
     def __releasebuffer__(self, Py_buffer *buffer):
-        raise NotImplementedError()
+        free(buffer.shape)
+        free(buffer.strides)
 
     def to_ndarray(self, fields=None):
-        cdef uint8_t *mem_ptr = self.ptr().data.data()
-        cdef uint8_t[:] mem_view = <uint8_t[:self.ptr().data.size()]>mem_ptr
-        cdef np.ndarray arr_raw = np.asarray(mem_view)
+        cdef np.ndarray arr_raw = np.asarray(self).ravel()
         assert not arr_raw.flags['OWNDATA'], "The returned array should not be a copy"
 
         if fields is None:

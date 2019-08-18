@@ -62,5 +62,4 @@ centroid = np.mean(cloud.xyz, axis=0)
 Please check test codes for more usage examples
 
 ## Common failure
-`pcl.PointCloud(...).xyz`: This will return uninitialized memory. This is a known issue but I don't know how to fix it...
 `pcl.PointCloud([[1,2,3], [4,5,6]])`: Only list of tuples are accepted for initialization, use `pcl.create_xyz` instead
