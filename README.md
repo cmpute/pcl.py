@@ -62,4 +62,5 @@ centroid = np.mean(cloud.xyz, axis=0)
 Please check test codes for more usage examples
 
 ## Common failure
-`pcl.PointCloud([[1,2,3], [4,5,6]])`: Only list of tuples are accepted for initialization, use `pcl.create_xyz` instead
+- `np.array(pcl.PointCloud([(1,2,3), (4,5,6)]))`: Directly convert to numpy array will return unstructured raw data, use `to_ndarray` instead.
+- `pcl.PointCloud([[1,2,3], [4,5,6]])`: Only list of tuples are accepted for initialization, use `pcl.create_xyz` instead.

@@ -232,7 +232,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                 self.ptr().point_step = data.strides[-1]
 
                 # byteorder intepreting
-                ndtype = {'names':[], 'formats':[], 'offsets':[]}
+                ndtype = dict(names=[], formats=[], offsets=[])
                 for subname in data.dtype.names:
                     subtype, offset = data.dtype.fields[subname]
                     if (subtype.byteorder == '<' and self.ptr().is_bigendian) or\
@@ -347,8 +347,8 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                 or arr_view.dtype.fields['z'][1] - arr_view.dtype.fields['y'][1] != arr_view.dtype.fields['y'][0].itemsize:
                 raise ValueError("The offsets of x, y, z are not in order and contiguous.")
 
-            ndtype = {'names':['xyz'], 'formats':['3f4'],
-                'offsets':[arr_view.dtype.fields['x'][1]], 'itemsize':arr_view.itemsize}
+            ndtype = dict(names=['xyz'], formats=['3f4'],
+                offsets=[arr_view.dtype.fields['x'][1]], itemsize=arr_view.itemsize)
 
             return arr_view.view(ndtype)['xyz']
     property normal:
@@ -366,29 +366,26 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             if offset_check != sorted(offset_check):
                 raise ValueError("The offsets of normal_x, normal_y, normal_z are not in order and contiguous.")
 
-            ndtype = {'names':['normal_xyz'], 'formats':['3f4'],
-                'offsets':[arr_view.dtype.fields['normal_x'][1]], 'itemsize':arr_view.itemsize}
+            ndtype = dict(names=['normal_xyz'], formats=['3f4'],
+                offsets=[arr_view.dtype.fields['normal_x'][1]], itemsize=arr_view.itemsize)
 
             return arr_view.view(ndtype)['normal_xyz']
     property rgb:
         '''
         Get the color field of the pointcloud, the property returns unpacked rgb values
-            (float rgb -> uint r,g,b)
+            (float rgb -> uint b,g,r)
         # Notes
         In PCL, rgb is stored as rgba with a=255
         '''
         def __get__(self):
-            # struct definition from PCL
-            cdef np.dtype struct = np.dtype({'names':['b','g','r'], 'formats':['u1','u1','u1'], 'itemsize':4})
-            return self.to_ndarray()['rgb'].view(struct)[['r', 'g', 'b']]
+            return self.to_ndarray()['rgb'].view('4u1')[:,:3]
     property rgba:
         '''
         Get the color field of the pointcloud, the property returns unpacked rgba values
-            (float rgb -> uint r,g,b,a)
+            (uint32 rgba -> uint b,g,r,a)
         '''
         def __get__(self):
-            cdef np.dtype struct = np.dtype([('b','u1'), ('g','u1'), ('r','u1'), ('a','u1')])
-            return self.to_ndarray()['rgba'].view(struct)[['r', 'g', 'b', 'a']]
+            return self.to_ndarray()['rgba'].view('4u1')
     property is_organized:
         '''
         Get whether the point cloud is organized
@@ -402,7 +399,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
     property nptype:
         def __get__(self):
             cdef str byte_order = '>' if self.ptr().is_bigendian else '<'
-            cdef dict ndtype = {'names':[], 'formats':[], 'offsets':[]}
+            cdef dict ndtype = dict(names=[], formats=[], offsets=[])
             for field in self.fields:
                 ndtype['names'].append(field.name)
                 ndtype['formats'].append(str(field.count) + byte_order + field.npdtype)
@@ -654,7 +651,7 @@ def create_xyz(data):
     if data.shape[-1] != 3:
         return ValueError("Each point should contain 3 values")
 
-    dt = np.dtype({'names':['x','y','z'], 'formats':['f4','f4','f4'], 'itemsize':16})
+    dt = np.dtype(dict(names=['x','y','z'], formats=['f4','f4','f4'], itemsize=16))
     arr = np.empty(len(data), dtype=dt)
     arr['x'], arr['y'], arr['z'] = data[:,0], data[:,1], data[:,2]
     return PointCloud(arr, 'XYZ')
@@ -667,7 +664,7 @@ def create_rgb(data):
     if data.shape[-1] != 3:
         return ValueError("Each point should contain 3 values")
 
-    rgb_dt = np.dtype({'names':['b','g','r'], 'formats':['u1','u1','u1'], 'itemsize':16})
+    rgb_dt = np.dtype(dict(names=['b','g','r'], formats=['u1','u1','u1'], itemsize=16))
     rgb_arr = np.empty(len(data), dtype=rgb_dt)
     rgb_arr['r'], rgb_arr['g'], rgb_arr['b'] = data[:,0], data[:,1], data[:,2]
     return PointCloud(rgb_arr.view('u4'), 'RGB')
@@ -680,10 +677,10 @@ def create_xyzrgb(data):
     if data.shape[-1] != 6:
         return ValueError("Each point should contain 3 values")
 
-    rgb_dt = np.dtype({'names':['b','g','r'], 'formats':['u1','u1','u1'], 'itemsize':4})
+    rgb_dt = np.dtype(dict(names=['b','g','r'], formats=['u1','u1','u1'], itemsize=4))
     rgb_arr = np.empty(len(data), dtype=rgb_dt)
     rgb_arr['r'], rgb_arr['g'], rgb_arr['b'] = data[:,3], data[:,4], data[:,5]
-    cloud_dt = np.dtype({'names':['x','y','z','rgb'], 'formats':['f4','f4','f4','u4'], 'offsets':[0,4,8,16], 'itemsize':20})
+    cloud_dt = np.dtype(dict(names=['x','y','z','rgb'], formats=['f4','f4','f4','u4'], offsets=[0,4,8,16], itemsize=20))
     cloud_arr = np.empty(len(data), dtype=cloud_dt)
     cloud_arr['x'], cloud_arr['y'], cloud_arr['z'], cloud_arr['rgb'] = data[:,0], data[:,1], data[:,2], rgb_arr.view('u4')
     return PointCloud(cloud_arr, 'XYZRGB')
@@ -696,10 +693,10 @@ def create_xyzrgba(data):
     if data.shape[-1] != 7:
         return ValueError("Each point should contain 3 values")
 
-    rgba_dt = np.dtype({'names':['b','g','r','a'], 'formats':['u1','u1','u1','u1'], 'itemsize':4})
+    rgba_dt = np.dtype(dict(names=['b','g','r','a'], formats=['u1','u1','u1','u1'], itemsize=4))
     rgba_arr = np.empty(len(data), dtype=rgba_dt)
     rgba_arr['r'], rgba_arr['g'], rgba_arr['b'], rgba_arr['a'] = data[:,3], data[:,4], data[:,5], data[:,6]
-    cloud_dt = np.dtype({'names':['x','y','z','rgba'], 'formats':['f4','f4','f4','u4'], 'offsets':[0,4,8,16], 'itemsize':20})
+    cloud_dt = np.dtype(dict(names=['x','y','z','rgba'], formats=['f4','f4','f4','u4'], offsets=[0,4,8,16], itemsize=20))
     cloud_arr = np.empty(len(data), dtype=cloud_dt)
     cloud_arr['x'], cloud_arr['y'], cloud_arr['z'], cloud_arr['rgba'] = data[:,0], data[:,1], data[:,2], rgba_arr.view('u4')
     return PointCloud(cloud_arr, 'XYZRGBA')
