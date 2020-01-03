@@ -7,8 +7,9 @@ class TestNumpyInitialize(unittest.TestCase):
         cloud_array = np.array([[1,2,3],[2,3,4]], dtype='f4')
         with self.assertRaises(ValueError):
             cloud = pcl.PointCloud(cloud_array)
+
         # add padding zeros after points
-        cloud_array_pad = np.array([[1,2,3,0],[2,3,4,0]], dtype='f4')
+        cloud_array_pad = np.insert(cloud_array, 3, 0, axis=1)
         cloud = pcl.PointCloud(cloud_array_pad)
         assert len(cloud) == 2
         assert np.allclose(cloud.xyz, cloud_array)

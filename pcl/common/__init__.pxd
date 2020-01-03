@@ -9,4 +9,4 @@ cdef inline _ensure_zero(int value, str func):
 cdef inline _ensure_exist(str path):
     import os.path as osp
     if not osp.exists(path):
-        raise FileNotFoundError("Cannot find file: " + osp.basename(path))
+        raise IOError("Cannot find file: " + osp.basename(path))

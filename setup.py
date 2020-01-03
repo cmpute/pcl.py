@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
     name="pcl-py",
-    version="0.2.0",
+    version="0.2.1",
     description="Cython bindings of Point Cloud Library (PCL)",
     long_description='(see project homepage)',
     author='Jacob Zhong',
@@ -18,7 +18,7 @@ setup(
     packages=['pcl', 'pcl.common', 'pcl.filters', 'pcl.io', 'pcl.visualization'],
     package_data={'pcl':['*.pxd', '*/*.pxd', '__init__.pxd', 'include/*']},
     install_requires=['numpy'],
-    setup_requires=['cython>=0.28', 'scikit-build'],
+    setup_requires=['cython>=0.29', 'scikit-build'],
     extras_require={'test': ['pytest']},
     classifiers=[
         'Programming Language :: C++',

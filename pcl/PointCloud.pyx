@@ -166,7 +166,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             self._ptr = make_shared[PCLPointCloud2]()
             # matrix order detection
             if not data.flags.c_contiguous:
-                data = data.ascontiguousarray()
+                data = np.ascontiguousarray(data)
 
             # datatype interpreting
             # TODO: RGB data contains single field vector
@@ -426,7 +426,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             # indexing by index or field
             newdata = self.to_ndarray()[indices]
             if isinstance(indices, str):
-                return PointCloud(newdata)
+                return newdata # return normal data when accessing by field type
             else:
                 newptype = self._ptype
         elif len(indices) is 2: # indexing by row and col
@@ -700,3 +700,16 @@ def create_xyzrgba(data):
     cloud_arr = np.empty(len(data), dtype=cloud_dt)
     cloud_arr['x'], cloud_arr['y'], cloud_arr['z'], cloud_arr['rgba'] = data[:,0], data[:,1], data[:,2], rgba_arr.view('u4')
     return PointCloud(cloud_arr, 'XYZRGBA')
+
+def create_xyzi(data):
+    '''
+    Create PointXYZI point cloud from normal nx4 array, or equivalent list representation
+    '''
+    data = np.array(data, copy=False)
+    if data.shape[-1] != 4:
+        return ValueError("Each point should contain 4 values")
+
+    dt = np.dtype(dict(names=['x','y','z','intensity'], formats=['f4','f4','f4','f4'], offsets=[0,4,8,16], itemsize=32))
+    arr = np.empty(len(data), dtype=dt)
+    arr['x'], arr['y'], arr['z'], arr['intensity'] = data[:,0], data[:,1], data[:,2], data[:,3]
+    return PointCloud(arr, 'XYZI')
