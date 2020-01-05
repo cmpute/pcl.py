@@ -98,3 +98,6 @@ cdef class Visualizer:
     cpdef void addArrow(self, p1, p2, double r_line=*, double g_line=*, double b_line=*, double r_text=*, double g_text=*, double b_text=*, bool display_length=*, str id=*, int viewport=*)
     cpdef void addSphere(self, center, double radius, double r=*, double g=*, double b=*, str id=*, int viewport=*)
     cpdef void updateSphere(self, center, double radius, double r=*, double g=*, double b=*, str id=*)
+    cpdef void addCube(self, translation, rotation, double width, double height, double depth, str id=*, int viewport=*)
+
+    cpdef void setShapeRenderingProperties(self, property, value, str id, int viewport=*)

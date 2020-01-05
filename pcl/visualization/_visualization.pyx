@@ -4,7 +4,7 @@ from enum import Enum
 import numpy as np
 from cython.operator cimport dereference as deref
 from pcl._boost cimport shared_ptr, make_shared
-from pcl._eigen cimport Affine3f, toAffine3f
+from pcl._eigen cimport Vector3f, Quaternionf, Affine3f, toAffine3f
 from pcl.common cimport _ensure_true
 from pcl.common.conversions cimport fromPCLPointCloud2
 from pcl.common.PCLPointCloud2 cimport PCLPointCloud2, PCLPointCloud2ConstPtr
@@ -14,6 +14,8 @@ from pcl.PointCloud cimport _POINT_TYPE_MAPPING as pmap
 from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryHandler_PCLPointCloud2, PointCloudGeometryHandlerXYZ_PCLPointCloud2
 from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler_PCLPointCloud2, PointCloudColorHandlerCustom_PCLPointCloud2, PointCloudColorHandlerRGBField_PCLPointCloud2, PointCloudColorHandlerGenericField_PCLPointCloud2
 from pcl.visualization._handlers cimport PointCloudColorHandlerPython
+from pcl.visualization.mouse_event_enums cimport Type as cMouseEvent_Type, MouseButton as cMouseEvent_MouseButton
+from pcl.visualization.pcl_visualizer cimport RenderingProperties as cRenderingProperties, RenderingRepresentationProperties as cRenderingRepresentationProperties
 
 cdef class KeyboardEvent:
     cdef cKeyboardEvent* ptr(self):
@@ -45,19 +47,19 @@ cdef void KeyboardEventCallback(const cKeyboardEvent &event, void *func):
     (<object>func)(KeyboardEvent.wrap(event))
 
 class MouseEvent_Type(Enum):
-    MouseMove=1
-    MouseButtonPress=2
-    MouseButtonRelease=3
-    MouseScrollDown=4
-    MouseScrollUp=5
-    MouseDblClick=6
+    MouseMove=cMouseEvent_Type.MouseMove
+    MouseButtonPress=cMouseEvent_Type.MouseButtonPress
+    MouseButtonRelease=cMouseEvent_Type.MouseButtonRelease
+    MouseScrollDown=cMouseEvent_Type.MouseScrollDown
+    MouseScrollUp=cMouseEvent_Type.MouseScrollUp
+    MouseDblClick=cMouseEvent_Type.MouseDblClick
 
 class MouseEvent_MouseButton(Enum):
-    NoButton=0
-    LeftButton=1
-    MiddleButton=2
-    RightButton=3
-    VScroll=4
+    NoButton=cMouseEvent_MouseButton.NoButton
+    LeftButton=cMouseEvent_MouseButton.LeftButton
+    MiddleButton=cMouseEvent_MouseButton.MiddleButton
+    RightButton=cMouseEvent_MouseButton.RightButton
+    VScroll=cMouseEvent_MouseButton.VScroll
 
 cdef class MouseEvent:
     cdef cMouseEvent* ptr(self):
@@ -66,12 +68,12 @@ cdef class MouseEvent:
         def __get__(self):
             return MouseEvent_Type(self.ptr().getType())
         def __set__(self, int value):
-            self.ptr().setType(<cMouseEvent.Type>value)
+            self.ptr().setType(<cMouseEvent_Type>value)
     property Button:
         def __get__(self):
             return MouseEvent_MouseButton(self.ptr().getButton())
         def __set__(self, int value):
-            self.ptr().setButton(<cMouseEvent.MouseButton>value)
+            self.ptr().setButton(<cMouseEvent_MouseButton>value)
     property X:
         def __get__(self):
             return self.ptr().getX()
@@ -153,6 +155,21 @@ cdef (unsigned char*) PointCloudColorHandlerCallback(void *func):
             raise ValueError("Returned color array should be n*4 shape")
         arr = result.reshape(-1).astype('u1')
     return &arr[0]
+
+class RenderingProperties(Enum):
+    PointSize = cRenderingProperties.PCL_VISUALIZER_POINT_SIZE
+    Opacity = cRenderingProperties.PCL_VISUALIZER_OPACITY
+    LineWidth = cRenderingProperties.PCL_VISUALIZER_LINE_WIDTH
+    FontSize = cRenderingProperties.PCL_VISUALIZER_FONT_SIZE
+    Color = cRenderingProperties.PCL_VISUALIZER_COLOR
+    Representation = cRenderingProperties.PCL_VISUALIZER_REPRESENTATION
+    ImmediateRendering = cRenderingProperties.PCL_VISUALIZER_IMMEDIATE_RENDERING
+    Shading = cRenderingProperties.PCL_VISUALIZER_SHADING
+
+class RenderingRepresentationProperties(Enum):
+    Points = cRenderingRepresentationProperties.PCL_VISUALIZER_REPRESENTATION_POINTS
+    WireFrame = cRenderingRepresentationProperties.PCL_VISUALIZER_REPRESENTATION_WIREFRAME
+    Surface = cRenderingRepresentationProperties.PCL_VISUALIZER_REPRESENTATION_SURFACE
 
 cdef class Visualizer:
     cdef PCLVisualizer* ptr(self):
@@ -320,3 +337,20 @@ cdef class Visualizer:
     cpdef void updateSphere(self, center, double radius, double r=0.5, double g=0.5, double b=0.5, str id="sphere"):
         cdef PointXYZ ctr = PointXYZ(center[0], center[1], center[2])
         _ensure_true(self.ptr().updateSphere(ctr, radius, r, g, b, id.encode('ascii')), "updateSphere")
+    cpdef void addCube(self, translation, rotation, double width, double height, double depth, str id="cube", int viewport=0):
+        cdef Vector3f t = Vector3f(translation[0], translation[1], translation[2])
+        cdef Quaternionf r = Quaternionf(rotation[0], rotation[1], rotation[2], rotation[3])
+        _ensure_true(self.ptr().addCube(t, r, width, height, depth, id, viewport), "addCube")
+
+    cpdef void setShapeRenderingProperties(self, property, value, str id, int viewport=0):
+        cdef double real_value
+        if isinstance(property, int):
+            property = RenderingProperties(property)
+        elif isinstance(property, str):
+            property = RenderingProperties[property]
+
+        if property == RenderingProperties.Representation:
+            real_value = <double>(value.value)
+        else:
+            real_value = <double>value
+        _ensure_true(self.ptr().setShapeRenderingProperties(<int>(property.value), real_value, id, viewport), "setShapeRenderingProperties")

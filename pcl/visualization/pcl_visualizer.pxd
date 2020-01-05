@@ -18,6 +18,21 @@ from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryH
 
 # XXX: optional args in extern functions can sometimes generate errors
 cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualization":
+    cdef enum RenderingProperties:
+        PCL_VISUALIZER_POINT_SIZE 	
+        PCL_VISUALIZER_OPACITY
+        PCL_VISUALIZER_LINE_WIDTH
+        PCL_VISUALIZER_FONT_SIZE
+        PCL_VISUALIZER_COLOR
+        PCL_VISUALIZER_REPRESENTATION
+        PCL_VISUALIZER_IMMEDIATE_RENDERING
+        PCL_VISUALIZER_SHADING
+
+    cdef enum RenderingRepresentationProperties:
+        PCL_VISUALIZER_REPRESENTATION_POINTS
+        PCL_VISUALIZER_REPRESENTATION_WIREFRAME
+        PCL_VISUALIZER_REPRESENTATION_SURFACE
+
     cdef cppclass PCLVisualizer:
         PCLVisualizer()
         # PCLVisualizer (const std::string &name = "", const bool create_interactor = true)

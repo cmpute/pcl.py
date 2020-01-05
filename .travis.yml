@@ -35,12 +35,12 @@ branches:
 
 before_install:
   - sudo apt update
-  - sudo apt install -y libpcl-dev
+  - sudo apt install -y libproj-dev libpcl-dev
   - pip install numpy==$NUMPY cython scikit-build
   - if [ "$RUN_COVERAGE" == "yes" ]; then pip install coveralls pytest-cov -q; fi
 
 install:
-  - pip install .
+  - python setup.py develop
 
 script:
   - if [ "$RUN_COVERAGE" == "yes" ]; then
