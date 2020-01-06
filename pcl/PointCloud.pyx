@@ -401,7 +401,10 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             cdef str byte_order = '>' if self.ptr().is_bigendian else '<'
             cdef dict ndtype = dict(names=[], formats=[], offsets=[])
             for field in self.fields:
-                ndtype['names'].append(field.name)
+                if bytes == str:
+                    ndtype['names'].append(field.name.encode('ascii'))
+                else:
+                    ndtype['names'].append(field.name)
                 ndtype['formats'].append(str(field.count) + byte_order + field.npdtype)
                 ndtype['offsets'].append(field.offset)
             ndtype['itemsize'] = self.ptr().point_step

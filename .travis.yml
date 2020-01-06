@@ -7,11 +7,6 @@ matrix:
       python: 2.7
       env: NUMPY=1.11 PCLVER=180
 
-    - name: "Python3.5 + PCL1.7 + Numpy1.11"
-      dist: trusty
-      python: 3.5
-      env: NUMPY=1.11 PCLVER=170 # RUN_COVERAGE=yes, BUILD_DOC=yes
-
     - name: "Python3.6 + PCL1.7 + Numpy1.13"
       dist: xenial
       python: 3.6
@@ -41,9 +36,9 @@ before_install:
   - if [ "$RUN_COVERAGE" == "yes" ]; then
       pip install coveralls pytest-cov -q;
     fi
-  - if [ "$PCLVER" < 180 ]; then
-      pip install libproj-dev;
-      ln -s /usr/lib/x86_64-linux-gnu/libvtkCommonCore-6.3.so /usr/lib/libvtkproj4.so;
+  - if [ "$PCLVER" -lt 180 ]; then
+      sudo apt install -y libproj-dev;
+      sudo ln -s /usr/lib/x86_64-linux-gnu/libvtkCommonCore-6.2.so /usr/lib/libvtkproj4.so;
     fi
 
 install:

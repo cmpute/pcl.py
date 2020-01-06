@@ -22,7 +22,7 @@ The major classes in this library are `pcl.PointCloud`, `pcl.Visualizer`. Most m
 
 ## Compatibility
 - Written in Python 3 & Cython
-- Tested on Python 3.5, Numpy>=1.10 (Temporarily)
+- Requirements: Python 3.5, Numpy>=1.11, Cython>=0.29, scikit-build
 - Tested on PCL 1.8.0, adding more compatibility is pending.
 
 ------------------------
