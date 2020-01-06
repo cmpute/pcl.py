@@ -237,7 +237,7 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         # bool addPlane (const pcl::ModelCoefficients &coefficients, double x, double y, double z, const std::string &id = "plane", int viewport = 0);
         bool addPlane(const ModelCoefficients &coefficients, double x, double y, double z, string &id, int viewport)
         # bool addCircle (const pcl::ModelCoefficients &coefficients, const std::string &id = "circle", int viewport = 0);
-        bool addPlane(const ModelCoefficients &coefficients, const string &id, int viewport)
+        bool addCircle(const ModelCoefficients &coefficients, const string &id, int viewport)
         # bool addCone (const pcl::ModelCoefficients &coefficients, const std::string &id = "cone", int viewport = 0);
         bool addCone(const ModelCoefficients &coefficients, const string &id, int viewport)
         # bool addCube (const pcl::ModelCoefficients &coefficients, const std::string &id = "cube", int viewport = 0);

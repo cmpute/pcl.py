@@ -5,21 +5,22 @@ matrix:
     - name: "Python2.7 + PCL1.8 + Numpy1.11"
       dist: bionic
       python: 2.7
-      env: NUMPY=1.11
+      env: NUMPY=1.11 PCLVER=180
 
-    - name: "Python3.5 + PCL1.6 + Numpy1.11"
+    - name: "Python3.5 + PCL1.7 + Numpy1.11"
+      dist: trusty
       python: 3.5
-      env: NUMPY=1.11 # RUN_COVERAGE=yes, BUILD_DOC=yes
+      env: NUMPY=1.11 PCLVER=170 # RUN_COVERAGE=yes, BUILD_DOC=yes
 
     - name: "Python3.6 + PCL1.7 + Numpy1.13"
       dist: xenial
       python: 3.6
-      env: NUMPY=1.13
+      env: NUMPY=1.13 PCLVER=170
 
     - name: "Python3.7 + PCL1.8 + Numpy1.15"
       dist: bionic
       python: 3.7
-      env: NUMPY=1.15
+      env: NUMPY=1.15 PCLVER=180
 
   # - os: osx
   #   osx_image: xcode10.2  # Python 3.7.2 running on macOS 10.14.3
@@ -35,18 +36,25 @@ branches:
 
 before_install:
   - sudo apt update
-  - sudo apt install -y libproj-dev libpcl-dev
+  - sudo apt install -y libpcl-dev
   - pip install numpy==$NUMPY cython scikit-build
-  - if [ "$RUN_COVERAGE" == "yes" ]; then pip install coveralls pytest-cov -q; fi
+  - if [ "$RUN_COVERAGE" == "yes" ]; then
+      pip install coveralls pytest-cov -q;
+    fi
+  - if [ "$PCLVER" < 180 ]; then
+      pip install libproj-dev;
+      ln -s /usr/lib/x86_64-linux-gnu/libvtkCommonCore-6.3.so /usr/lib/libvtkproj4.so;
+    fi
 
 install:
   - python setup.py develop
 
 script:
+  # visualizer is not available in container
   - if [ "$RUN_COVERAGE" == "yes" ]; then
-      py.test test/ --cov;
+      py.test test/ --ignore test/test_visualizer.py --cov;
     else
-      py.test test/;
+      py.test test/ --ignore test/test_visualizer.py;
     fi
 
 after_success:

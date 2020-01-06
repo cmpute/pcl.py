@@ -6,7 +6,7 @@ cdef extern from "pcl/ModelCoefficients.h" namespace "pcl":
     cdef cppclass ModelCoefficients:
         ModelCoefficients ()
         PCLHeader header
-        vector[int] values
+        vector[float] values
 
 ctypedef shared_ptr[ModelCoefficients] ModelCoefficientsPtr
 ctypedef shared_ptr[const ModelCoefficients] ModelCoefficientsConstPtr

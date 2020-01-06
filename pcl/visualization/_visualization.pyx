@@ -7,6 +7,7 @@ from pcl._boost cimport shared_ptr, make_shared
 from pcl._eigen cimport Vector3f, Quaternionf, Affine3f, toAffine3f
 from pcl.common cimport _ensure_true
 from pcl.common.conversions cimport fromPCLPointCloud2
+from pcl.common.ModelCoefficients cimport ModelCoefficients
 from pcl.common.PCLPointCloud2 cimport PCLPointCloud2, PCLPointCloud2ConstPtr
 from pcl.common.point_cloud cimport PointCloud as cPointCloud
 from pcl.common.point_types cimport PointXYZ, PointXYZRGB, PointXYZRGBA
@@ -337,12 +338,51 @@ cdef class Visualizer:
     cpdef void updateSphere(self, center, double radius, double r=0.5, double g=0.5, double b=0.5, str id="sphere"):
         cdef PointXYZ ctr = PointXYZ(center[0], center[1], center[2])
         _ensure_true(self.ptr().updateSphere(ctr, radius, r, g, b, id.encode('ascii')), "updateSphere")
+    cpdef void addCylinder(self, point_on_axis, axis_direction, double radius, str id="cylinder", int viewport=0):
+        cdef ModelCoefficients mcoeff
+        mcoeff.values.push_back(point_on_axis[0])
+        mcoeff.values.push_back(point_on_axis[1])
+        mcoeff.values.push_back(point_on_axis[2])
+        mcoeff.values.push_back(axis_direction[0])
+        mcoeff.values.push_back(axis_direction[1])
+        mcoeff.values.push_back(axis_direction[2])
+        mcoeff.values.push_back(radius)
+        _ensure_true(self.ptr().addCylinder(mcoeff, id.encode('ascii'), viewport), "addCylinder")
+    cpdef void addPlane(self, coeffs, str id="plane", int viewport=0):
+        '''
+        :param coeffs: the plane coefficients (a, b, c, d with ax+by+cz+d=0)
+        '''
+        cdef ModelCoefficients mcoeff
+        mcoeff.values.push_back(coeffs[0])
+        mcoeff.values.push_back(coeffs[1])
+        mcoeff.values.push_back(coeffs[2])
+        mcoeff.values.push_back(coeffs[3])
+        _ensure_true(self.ptr().addPlane(mcoeff, id.encode('ascii'), viewport), "addPlane")
+    cpdef void addCircle(self, center, double radius, str id="circle", int viewport=0):
+        '''
+        Draw 2D circle on the canvas
+        :param center: 2D center of the circle
+        '''
+        cdef ModelCoefficients mcoeff
+        mcoeff.values.push_back(center[0])
+        mcoeff.values.push_back(center[1])
+        mcoeff.values.push_back(radius)
+        _ensure_true(self.ptr().addCircle(mcoeff, id.encode('ascii'), viewport), "addCircle")
     cpdef void addCube(self, translation, rotation, double width, double height, double depth, str id="cube", int viewport=0):
+        '''
+        :param translation: translation in x,y,z
+        :param rotation: rotation of quaternion form x,y,z,w
+        '''
         cdef Vector3f t = Vector3f(translation[0], translation[1], translation[2])
         cdef Quaternionf r = Quaternionf(rotation[0], rotation[1], rotation[2], rotation[3])
-        _ensure_true(self.ptr().addCube(t, r, width, height, depth, id, viewport), "addCube")
+        _ensure_true(self.ptr().addCube(t, r, width, height, depth, id.encode('ascii'), viewport), "addCube")
 
     cpdef void setShapeRenderingProperties(self, property, value, str id, int viewport=0):
+        '''
+        :param property: property to be set
+        :type property: RenderingProperties
+        :param value: value to set as
+        '''
         cdef double real_value
         if isinstance(property, int):
             property = RenderingProperties(property)
@@ -353,4 +393,4 @@ cdef class Visualizer:
             real_value = <double>(value.value)
         else:
             real_value = <double>value
-        _ensure_true(self.ptr().setShapeRenderingProperties(<int>(property.value), real_value, id, viewport), "setShapeRenderingProperties")
+        _ensure_true(self.ptr().setShapeRenderingProperties(<int>(property.value), real_value, id.encode('ascii'), viewport), "setShapeRenderingProperties")
