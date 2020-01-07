@@ -48,11 +48,11 @@ class TestLoaders(unittest.TestCase):
         viewer.addPointCloud(cloud)
         
         viewer.addLine([-1,-1,-1], [1,1,1])
-        viewer.addArrow([1,-1,-1], [-1,1,1], r_line=0.7, r_text=0.3)
+        viewer.addArrow([1,-1,-1], [-1,1,1], line_color=[0.7,0,0], text_color=[0,3,0,0])
         viewer.addSphere([0,0,0], 1)
 
         viewer.addText("Text", -1, 1, fontsize=100)
-        viewer.addText3D("Text3D", [-1,1,-1], textScale=2)
+        viewer.addText3D("Text3D", [-1,1,-1], text_scale=2)
         
         viewer.spinOnce(time=500)
         viewer.updateSphere([0,0,0], 2)
@@ -67,7 +67,7 @@ class TestLoaders(unittest.TestCase):
         viewer.addPointCloud(cloud, field="y", id="cloud1")
 
         cloud = pcl.PointCloud(np.random.rand(100, 4).astype('f4'))
-        viewer.addPointCloud(cloud, r=200, g=0, b=0, id="cloud2")
+        viewer.addPointCloud(cloud, color=[0.8,0.2,0], id="cloud2")
 
         cloud = pcl.PointCloud(np.random.rand(100, 4).astype('f4'))
         viewer.addPointCloud(cloud, color_handler=lambda: np.random.rand(100, 4)*255, id="cloud3")

@@ -11,6 +11,7 @@ from pcl.common.PolygonMesh cimport PolygonMesh
 from pcl.common.Vertices cimport Vertices
 from pcl.visualization.area_picking_event cimport AreaPickingEvent
 from pcl.visualization.keyboard_event cimport KeyboardEvent
+from pcl.visualization.common cimport Camera
 from pcl.visualization.mouse_event cimport MouseEvent
 from pcl.visualization.point_picking_event cimport PointPickingEvent
 from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler, PointCloudColorHandler_PCLPointCloud2
@@ -18,21 +19,6 @@ from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryH
 
 # XXX: optional args in extern functions can sometimes generate errors
 cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualization":
-    cdef enum RenderingProperties:
-        PCL_VISUALIZER_POINT_SIZE 	
-        PCL_VISUALIZER_OPACITY
-        PCL_VISUALIZER_LINE_WIDTH
-        PCL_VISUALIZER_FONT_SIZE
-        PCL_VISUALIZER_COLOR
-        PCL_VISUALIZER_REPRESENTATION
-        PCL_VISUALIZER_IMMEDIATE_RENDERING
-        PCL_VISUALIZER_SHADING
-
-    cdef enum RenderingRepresentationProperties:
-        PCL_VISUALIZER_REPRESENTATION_POINTS
-        PCL_VISUALIZER_REPRESENTATION_WIREFRAME
-        PCL_VISUALIZER_REPRESENTATION_SURFACE
-
     cdef cppclass PCLVisualizer:
         PCLVisualizer()
         # PCLVisualizer (const std::string &name = "", const bool create_interactor = true)
@@ -260,19 +246,22 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         bool cameraParamsSet ()
         void updateCamera ()
         void resetCamera ()
-        # void resetCameraviewport (const std::string &id = "cloud");
-        void resetCameraviewport (const string &id)
+        # void resetCameraViewpoint (const std::string &id = "cloud");
+        void resetCameraViewpoint (const string &id)
         # void setCameraPosition (double pos_x, double pos_y, double pos_z, double view_x, double view_y, double view_z, double up_x, double up_y, double up_z, int viewport = 0);
         void setCameraPosition (double pos_x, double pos_y, double pos_z, double view_x, double view_y, double view_z, double up_x, double up_y, double up_z, int viewport)
         # void setCameraPosition (double pos_x, double pos_y, double pos_z, double up_x, double up_y, double up_z, int viewport = 0);
         void setCameraPosition (double pos_x, double pos_y, double pos_z, double up_x, double up_y, double up_z, int viewport)
         # void setCameraParameters (const Eigen::Matrix3f &intrinsics, const Eigen::Matrix4f &extrinsics, int viewport = 0);
         void setCameraParameters (const Matrix3f &intrinsics, const Matrix4f &extrinsics, int viewport)
-        # XXX: void setCameraParameters (const Camera &camera, int viewport = 0);
+        # void setCameraParameters (const Camera &camera, int viewport = 0);
+        void setCameraParameters (const Camera &camera, int viewport)
         # void setCameraClipDistances (double near, double far, int viewport = 0);
         void setCameraClipDistances (double near, double far, int viewport)
+        # void setCameraFieldOfView (double fovy, int viewport = 0);
         void setCameraFieldOfView (double fovy, int viewport)
-        # XXX: void getCameras (std::vector<Camera>& cameras);
+        # void getCameras (std::vector<Camera>& cameras);
+        void getCameras(vector[Camera] &cameras)
         # Eigen::Affine3f getViewerPose (int viewport = 0);
         Affine3f getViewerPose (int viewport)
         void saveScreenshot (const string &file)

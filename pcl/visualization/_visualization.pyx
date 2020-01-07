@@ -1,5 +1,7 @@
+from libc.stdlib cimport malloc, free
 from libcpp.vector cimport vector
 from libcpp.string cimport string
+from cpython.string cimport PyString_AsString
 from enum import Enum
 import numpy as np
 from cython.operator cimport dereference as deref
@@ -16,7 +18,7 @@ from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryH
 from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler_PCLPointCloud2, PointCloudColorHandlerCustom_PCLPointCloud2, PointCloudColorHandlerRGBField_PCLPointCloud2, PointCloudColorHandlerGenericField_PCLPointCloud2
 from pcl.visualization._handlers cimport PointCloudColorHandlerPython
 from pcl.visualization.mouse_event_enums cimport Type as cMouseEvent_Type, MouseButton as cMouseEvent_MouseButton
-from pcl.visualization.pcl_visualizer cimport RenderingProperties as cRenderingProperties, RenderingRepresentationProperties as cRenderingRepresentationProperties
+from pcl.visualization.common cimport RenderingProperties as cRenderingProperties, RenderingRepresentationProperties as cRenderingRepresentationProperties
 
 cdef class KeyboardEvent:
     cdef cKeyboardEvent* ptr(self):
@@ -158,10 +160,25 @@ cdef (unsigned char*) PointCloudColorHandlerCallback(void *func):
     return &arr[0]
 
 class RenderingProperties(Enum):
+    '''
+    Point size, integer start from 1
+    '''
     PointSize = cRenderingProperties.PCL_VISUALIZER_POINT_SIZE
+    '''
+    Opacity, 0.0~1.0
+    '''
     Opacity = cRenderingProperties.PCL_VISUALIZER_OPACITY
+    '''
+    Line width, integer start from 1
+    '''
     LineWidth = cRenderingProperties.PCL_VISUALIZER_LINE_WIDTH
+    '''
+    Font size
+    '''
     FontSize = cRenderingProperties.PCL_VISUALIZER_FONT_SIZE
+    '''
+    Color, (R,G,B) tuple with value 0.0~1.0
+    '''
     Color = cRenderingProperties.PCL_VISUALIZER_COLOR
     Representation = cRenderingProperties.PCL_VISUALIZER_REPRESENTATION
     ImmediateRendering = cRenderingProperties.PCL_VISUALIZER_IMMEDIATE_RENDERING
@@ -224,14 +241,14 @@ cdef class Visualizer:
     cpdef void removeAllShapes(self, int viewport=0):
         _ensure_true(self.ptr().removeAllShapes(viewport), 'removeAllShapes')
 
-    cpdef void addText(self, str text, int xpos, int ypos, int fontsize=10, double r=1, double g=1, double b=1, str id="", int viewport=0):
-        _ensure_true(self.ptr().addText(text.encode('ascii'), xpos, ypos, fontsize, r, g, b, id.encode('ascii'), viewport), 'addText')
-    cpdef void updateText(self, str text, int xpos, int ypos, int fontsize=10, double r=1, double g=1, double b=1, str id=""):
-        _ensure_true(self.ptr().updateText(text.encode('ascii'), xpos, ypos, fontsize, r, g, b, id.encode('ascii')), 'updateText')
-    cpdef void addText3D(self, str text, position, double textScale=1, double r=1, double g=1, double b=1, str id="", int viewport=0):
+    cpdef void addText(self, str text, int xpos, int ypos, int fontsize=10, color=[1, 1, 1], str id="", int viewport=0):
+        _ensure_true(self.ptr().addText(text.encode('ascii'), xpos, ypos, fontsize, color[0], color[1], color[2], id.encode('ascii'), viewport), 'addText')
+    cpdef void updateText(self, str text, int xpos, int ypos, int fontsize=10, color=[1, 1, 1], str id=""):
+        _ensure_true(self.ptr().updateText(text.encode('ascii'), xpos, ypos, fontsize, color[0], color[1], color[2], id.encode('ascii')), 'updateText')
+    cpdef void addText3D(self, str text, position, double text_scale=1, color=[1, 1, 1], str id="", int viewport=0):
         '''Note (TODO): This method should be called in the same thread with spin, and viewport seems not to be working'''
         cdef PointXYZ pos = PointXYZ(position[0], position[1], position[2])
-        _ensure_true(self.ptr().addText3D[PointXYZ](text.encode('ascii'), pos, textScale, r, g, b, id.encode('ascii'), viewport), 'addText3D')
+        _ensure_true(self.ptr().addText3D[PointXYZ](text.encode('ascii'), pos, text_scale, color[0], color[1], color[2], id.encode('ascii'), viewport), 'addText3D')
     cpdef void addPointCloudNormals(self, PointCloud cloud, PointCloud normals=None, int level=100, float scale=0.02, str id="cloud", int viewport=0):
         raise NotImplementedError()
     cpdef void addPointCloudPrincipalCurvatures(self, PointCloud cloud, PointCloud normals, PointCloud pcs, int level=100, float scale=1, str id="cloud", int viewport=0):
@@ -262,7 +279,7 @@ cdef class Visualizer:
     cpdef void createViewPortCamera(self, int viewport):
         self.ptr().createViewPortCamera(viewport)
 
-    cpdef void addPointCloud(self, PointCloud cloud, int r=255, int g=255, int b=255, str field=None, color_handler=None, str id="cloud", int viewport=0):
+    cpdef void addPointCloud(self, PointCloud cloud, color=[1, 1, 1], str field=None, color_handler=None, str id="cloud", int viewport=0):
         cdef shared_ptr[PointCloudGeometryHandlerXYZ_PCLPointCloud2] xyz_handler
         cdef shared_ptr[PointCloudColorHandlerRGBField_PCLPointCloud2] rgb_handler
         cdef shared_ptr[PointCloudColorHandlerCustom_PCLPointCloud2] mono_handler
@@ -298,7 +315,8 @@ cdef class Visualizer:
                 "addPointCloud")
         else:
             xyz_handler = make_shared[PointCloudGeometryHandlerXYZ_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
-            mono_handler = make_shared[PointCloudColorHandlerCustom_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr, r, g, b)
+            mono_handler = make_shared[PointCloudColorHandlerCustom_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr,
+                <double>(color[0]), <double>(color[1]), <double>(color[2]))
             _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
                 <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
                 <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>mono_handler,
@@ -321,23 +339,28 @@ cdef class Visualizer:
             _ensure_true(self.ptr().updatePointCloud_XYZ(<const shared_ptr[const cPointCloud[PointXYZ]]>ccloud_xyz,
                 id.encode('ascii')), "updatePointCloud")
 
-    cpdef void addLine(self, p1, p2, double r=0.5, double g=0.5, double b=0.5, str id="line", int viewport=0):
+    cpdef void addLine(self, p1, p2, color=[0.5, 0.5, 0.5], str id="line", int viewport=0):
+        '''
+        :param color: (r,g,b) tuple with value 0.0~1.0
+        '''
         cdef PointXYZ cp1 = PointXYZ(p1[0], p1[1], p1[2])
         cdef PointXYZ cp2 = PointXYZ(p2[0], p2[1], p2[2])
-        _ensure_true(self.ptr().addLine(cp1, cp2, r, g, b, id.encode('ascii'), viewport), "addLine")
-    cpdef void addArrow(self, p1, p2, double r_line=1, double g_line=1, double b_line=1, double r_text=1, double g_text=1, double b_text=1, bool display_length=False, str id="arrow", int viewport=0):
+        _ensure_true(self.ptr().addLine(cp1, cp2, color[0], color[1], color[2], id.encode('ascii'), viewport), "addLine")
+    cpdef void addArrow(self, p1, p2, line_color=[1, 1, 1], text_color=[1, 1, 1], bool display_length=False, str id="arrow", int viewport=0):
         cdef PointXYZ cp1 = PointXYZ(p1[0], p1[1], p1[2])
         cdef PointXYZ cp2 = PointXYZ(p2[0], p2[1], p2[2])
         if display_length:
-            _ensure_true(self.ptr().addArrow(cp1, cp2, r_line, g_line, b_line, display_length, id.encode('ascii'), viewport), "addArrow")
+            _ensure_true(self.ptr().addArrow(cp1, cp2, line_color[0], line_color[1], line_color[2],
+                display_length, id.encode('ascii'), viewport), "addArrow")
         else:
-            _ensure_true(self.ptr().addArrow(cp1, cp2, r_line, g_line, b_line, r_text, g_text, b_text, id.encode('ascii'), viewport), "addArrow")
-    cpdef void addSphere(self, center, double radius, double r=0.5, double g=0.5, double b=0.5, str id="sphere", int viewport=0):
+            _ensure_true(self.ptr().addArrow(cp1, cp2, line_color[0], line_color[1], line_color[2],
+                text_color[0], text_color[1], text_color[2], id.encode('ascii'), viewport), "addArrow")
+    cpdef void addSphere(self, center, double radius, color=[0.5, 0.5, 0.5], str id="sphere", int viewport=0):
         cdef PointXYZ ctr = PointXYZ(center[0], center[1], center[2])
-        _ensure_true(self.ptr().addSphere(ctr, radius, r, g, b, id.encode('ascii'), viewport), "addSphere")
-    cpdef void updateSphere(self, center, double radius, double r=0.5, double g=0.5, double b=0.5, str id="sphere"):
+        _ensure_true(self.ptr().addSphere(ctr, radius, color[0], color[1], color[2], id.encode('ascii'), viewport), "addSphere")
+    cpdef void updateSphere(self, center, double radius, color=[0.5, 0.5, 0.5], str id="sphere"):
         cdef PointXYZ ctr = PointXYZ(center[0], center[1], center[2])
-        _ensure_true(self.ptr().updateSphere(ctr, radius, r, g, b, id.encode('ascii')), "updateSphere")
+        _ensure_true(self.ptr().updateSphere(ctr, radius, color[0], color[1], color[2], id.encode('ascii')), "updateSphere")
     cpdef void addCylinder(self, point_on_axis, axis_direction, double radius, str id="cylinder", int viewport=0):
         cdef ModelCoefficients mcoeff
         mcoeff.values.push_back(point_on_axis[0])
@@ -394,3 +417,39 @@ cdef class Visualizer:
         else:
             real_value = <double>value
         _ensure_true(self.ptr().setShapeRenderingProperties(<int>(property.value), real_value, id.encode('ascii'), viewport), "setShapeRenderingProperties")
+
+    cpdef void initCameraParameters(self):
+        self.ptr().initCameraParameters()
+    cpdef void getCameraParameters(self, list argv):
+        cdef int argc = len(argv)
+        cdef char** array = <char**>malloc(argc * sizeof(char*))
+        for i in range(argc):
+            array[i] = PyString_AsString(argv[i].encode("ascii"))
+        self.ptr().getCameraParameters(argc, array)
+        free(array)
+    cpdef bool cameraParamsSet(self):
+        return self.ptr().cameraParamsSet()
+    cpdef void updateCamera(self):
+        self.ptr().updateCamera()
+    cpdef void resetCamera(self):
+        self.ptr().resetCamera()
+    cpdef void saveScreenshot(self, str file):
+        self.ptr().saveScreenshot(file.encode("ascii"))
+    cpdef void resetCameraViewpoint(self, str id="cloud"):
+        self.ptr().resetCameraViewpoint(id=id.encode("ascii"))
+    cpdef void setCameraPosition(self, position, view_up, focal_point=None, int viewport=0):
+        if not focal_point:
+            self.ptr().setCameraPosition(position[0], position[1], position[2],
+                view_up[0], view_up[1], view_up[2], viewport)
+        else:
+            self.ptr().setCameraPosition(position[0], position[1], position[2],
+                focal_point[0], focal_point[1], focal_point[2],
+                view_up[0], view_up[1], view_up[2], viewport)
+    cpdef void setPosition(self, int x, int y):
+        self.ptr().setPosition(x, y)
+    cpdef void setSize(self, int xw, int yw):
+        self.ptr().setSize(xw, yw)
+    cpdef void setUseVbos(self, bool use_vbox):
+        self.ptr().setUseVbos(use_vbox)
+    cpdef void createInteractor(self):
+        self.ptr().createInteractor()

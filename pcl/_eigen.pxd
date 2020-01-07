@@ -55,6 +55,14 @@ cdef extern from "Eigen/Eigen" namespace "Eigen" nogil:
         @staticmethod
         Matrix4f Zero()
         
+    cdef cppclass Matrix4d:
+        Matrix4d() except +
+        double coeff(int row, int col)
+        double *data()
+        double& element "operator()"(int row, int col)
+        @staticmethod
+        Matrix4d Zero()
+
     cdef cppclass Quaternionf:
         Quaternionf()
         Quaternionf(float w, float x, float y, float z)
@@ -84,5 +92,7 @@ cdef inline Matrix3f toMatrix3f(ndarray arr):
     return _toEigen[Matrix3f, float](<float*>arr.data)
 cdef inline Matrix4f toMatrix4f(ndarray arr):
     return _toEigen[Matrix4f, float](<float*>arr.data)
+cdef inline Matrix4d toMatrix4d(ndarray arr):
+    return _toEigen[Matrix4d, double](<double*>arr.data)
 cdef inline Affine3f toAffine3f(ndarray arr):
     return _toEigenAffine(<float*>arr.data)
