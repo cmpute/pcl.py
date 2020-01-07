@@ -1,7 +1,11 @@
 from libc.stdlib cimport malloc, free
 from libcpp.vector cimport vector
 from libcpp.string cimport string
-from cpython.string cimport PyString_AsString
+from cpython.version cimport PY_MAJOR_VERSION
+if PY_MAJOR_VERSION == 2:
+    from cpython.string cimport PyString_AsString as pystring
+elif PY_MAJOR_VERSION == 3:
+    from cpython.bytes cimport PyBytes_AsString as pystring
 from enum import Enum
 import numpy as np
 from cython.operator cimport dereference as deref
@@ -314,9 +318,13 @@ cdef class Visualizer:
                 cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
                 "addPointCloud")
         else:
+            color_array = np.array(color)
+            if np.all(color_array <= 1):
+                color_array = np.clip(color_array * 256, 0, 255)
+
             xyz_handler = make_shared[PointCloudGeometryHandlerXYZ_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
             mono_handler = make_shared[PointCloudColorHandlerCustom_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr,
-                <double>(color[0]), <double>(color[1]), <double>(color[2]))
+                <int>(color_array[0]), <int>(color_array[1]), <int>(color_array[2]))
             _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
                 <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
                 <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>mono_handler,
@@ -424,7 +432,7 @@ cdef class Visualizer:
         cdef int argc = len(argv)
         cdef char** array = <char**>malloc(argc * sizeof(char*))
         for i in range(argc):
-            array[i] = PyString_AsString(argv[i].encode("ascii"))
+            array[i] = pystring(argv[i].encode("ascii"))
         self.ptr().getCameraParameters(argc, array)
         free(array)
     cpdef bool cameraParamsSet(self):

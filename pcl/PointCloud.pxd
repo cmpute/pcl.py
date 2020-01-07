@@ -1,9 +1,8 @@
 from libcpp.string cimport string
-
+from libcpp cimport bool
 from pcl._boost cimport shared_ptr
 from pcl._eigen cimport Vector4f, Quaternionf
 from pcl.common.PCLPointCloud2 cimport PCLPointCloud2
-from libcpp cimport bool
 from pcl.common.PCLPointField cimport PCLPointField
 
 cdef dict _POINT_TYPE_MAPPING
