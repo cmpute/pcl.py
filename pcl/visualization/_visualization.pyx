@@ -22,7 +22,9 @@ from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryH
 from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler_PCLPointCloud2, PointCloudColorHandlerCustom_PCLPointCloud2, PointCloudColorHandlerRGBField_PCLPointCloud2, PointCloudColorHandlerGenericField_PCLPointCloud2
 from pcl.visualization._handlers cimport PointCloudColorHandlerPython
 from pcl.visualization.mouse_event_enums cimport Type as cMouseEvent_Type, MouseButton as cMouseEvent_MouseButton
-from pcl.visualization.common cimport RenderingProperties as cRenderingProperties, RenderingRepresentationProperties as cRenderingRepresentationProperties
+from pcl.visualization.common cimport RenderingProperties as cRenderingProperties,\
+    RenderingRepresentationProperties as cRenderingRepresentationProperties,\
+    ShadingRepresentationProperties as cShadingRepresentationProperties
 
 cdef class KeyboardEvent:
     cdef cKeyboardEvent* ptr(self):
@@ -192,6 +194,11 @@ class RenderingRepresentationProperties(Enum):
     Points = cRenderingRepresentationProperties.PCL_VISUALIZER_REPRESENTATION_POINTS
     WireFrame = cRenderingRepresentationProperties.PCL_VISUALIZER_REPRESENTATION_WIREFRAME
     Surface = cRenderingRepresentationProperties.PCL_VISUALIZER_REPRESENTATION_SURFACE
+
+class ShadingRepresentationProperties(Enum):
+    Flat = cShadingRepresentationProperties.PCL_VISUALIZER_SHADING_FLAT
+    Gouraud = cShadingRepresentationProperties.PCL_VISUALIZER_SHADING_GOURAUD
+    Phong = cShadingRepresentationProperties.PCL_VISUALIZER_SHADING_PHONG
 
 cdef class Visualizer:
     cdef PCLVisualizer* ptr(self):
@@ -402,7 +409,7 @@ cdef class Visualizer:
     cpdef void addCube(self, translation, rotation, double width, double height, double depth, str id="cube", int viewport=0):
         '''
         :param translation: translation in x,y,z
-        :param rotation: rotation of quaternion form x,y,z,w
+        :param rotation: rotation of quaternion form w,x,y,z
         '''
         cdef Vector3f t = Vector3f(translation[0], translation[1], translation[2])
         cdef Quaternionf r = Quaternionf(rotation[0], rotation[1], rotation[2], rotation[3])
@@ -414,17 +421,25 @@ cdef class Visualizer:
         :type property: RenderingProperties
         :param value: value to set as
         '''
-        cdef double real_value
+        cdef bool result
         if isinstance(property, int):
             property = RenderingProperties(property)
         elif isinstance(property, str):
             property = RenderingProperties[property]
 
-        if property == RenderingProperties.Representation:
-            real_value = <double>(value.value)
+        if property == RenderingProperties.Representation or property == RenderingProperties.Shading:
+            result = self.ptr().setShapeRenderingProperties(<int>(property.value), <double>(value.value), id.encode('ascii'), viewport)
+        elif property == RenderingProperties.Color:
+            result = self.ptr().setShapeRenderingProperties(<int>(property.value), <double>(value[0]), <double>(value[1]), <double>(value[2]), id.encode('ascii'), viewport)
         else:
-            real_value = <double>value
-        _ensure_true(self.ptr().setShapeRenderingProperties(<int>(property.value), real_value, id.encode('ascii'), viewport), "setShapeRenderingProperties")
+            result = self.ptr().setShapeRenderingProperties(<int>(property.value), <double>(value), id.encode('ascii'), viewport)
+        _ensure_true(result, "setShapeRenderingProperties")
+    cpdef void setRepresentationToSurfaceForAllActors(self):
+        self.ptr().setRepresentationToSurfaceForAllActors()
+    cpdef void setRepresentationToPointsForAllActors(self):
+        self.ptr().setRepresentationToPointsForAllActors()
+    cpdef void setRepresentationToWireframeForAllActors(self):
+        self.ptr().setRepresentationToWireframeForAllActors()
 
     cpdef void initCameraParameters(self):
         self.ptr().initCameraParameters()
@@ -441,8 +456,6 @@ cdef class Visualizer:
         self.ptr().updateCamera()
     cpdef void resetCamera(self):
         self.ptr().resetCamera()
-    cpdef void saveScreenshot(self, str file):
-        self.ptr().saveScreenshot(file.encode("ascii"))
     cpdef void resetCameraViewpoint(self, str id="cloud"):
         self.ptr().resetCameraViewpoint(id=id.encode("ascii"))
     cpdef void setCameraPosition(self, position, view_up, focal_point=None, int viewport=0):
@@ -453,6 +466,11 @@ cdef class Visualizer:
             self.ptr().setCameraPosition(position[0], position[1], position[2],
                 focal_point[0], focal_point[1], focal_point[2],
                 view_up[0], view_up[1], view_up[2], viewport)
+    cpdef void setCameraFieldOfView(self, double fovy, int viewport=0):
+        self.ptr().setCameraFieldOfView(fovy, viewport)
+    cpdef void setCameraClipDistances(self, double near, double far, int viewport=0):
+        self.ptr().setCameraClipDistances(near, far, viewport)
+
     cpdef void setPosition(self, int x, int y):
         self.ptr().setPosition(x, y)
     cpdef void setSize(self, int xw, int yw):
@@ -461,3 +479,7 @@ cdef class Visualizer:
         self.ptr().setUseVbos(use_vbox)
     cpdef void createInteractor(self):
         self.ptr().createInteractor()
+    cpdef void saveScreenshot(self, str file):
+        self.ptr().saveScreenshot(file.encode("ascii"))
+    cpdef void setShowFPS(self, bool show_fps):
+        self.ptr().setShowFPS(show_fps)

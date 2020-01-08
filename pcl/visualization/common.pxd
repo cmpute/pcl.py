@@ -17,6 +17,11 @@ cdef extern from "pcl/visualization/common/common.h" namespace "pcl::visualizati
         PCL_VISUALIZER_REPRESENTATION_WIREFRAME
         PCL_VISUALIZER_REPRESENTATION_SURFACE
 
+    cdef enum ShadingRepresentationProperties:
+        PCL_VISUALIZER_SHADING_FLAT
+        PCL_VISUALIZER_SHADING_GOURAUD
+        PCL_VISUALIZER_SHADING_PHONG
+
     cdef cppclass Camera:
         vector[double] focal
         vector[double] pos

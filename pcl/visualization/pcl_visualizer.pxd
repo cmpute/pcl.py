@@ -176,6 +176,8 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         bool setPointCloudSelected (bool selected, const string &id);
         # bool setShapeRenderingProperties (int property, double value, const std::string &id, int viewport = 0);
         bool setShapeRenderingProperties (int property, double value, const string &id, int viewport)
+        # bool setShapeRenderingProperties (int property, double val1, double val2, double val3, const std::string &id, int viewport = 0);
+        bool setShapeRenderingProperties (int property, double val1, double val2, double val3, const string &id, int viewport)
 
         bool wasStopped()
         void resetStoppedFlag()
