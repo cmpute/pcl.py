@@ -299,7 +299,7 @@ cdef class Visualizer:
         cdef bytes cfield
 
         fieldlist = [name for name,_,_,_ in pmap[cloud._ptype]]
-        if ('rgb' in fieldlist) or ('rgba' in fieldlist):
+        if (b'rgb' in fieldlist) or (b'rgba' in fieldlist):
             xyz_handler = make_shared[PointCloudGeometryHandlerXYZ_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
             rgb_handler = make_shared[PointCloudColorHandlerRGBField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
             _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
@@ -343,7 +343,7 @@ cdef class Visualizer:
         cdef shared_ptr[cPointCloud[PointXYZRGBA]] ccloud_rgba
 
         fieldlist = [name for name,_,_,_ in pmap[cloud._ptype]]
-        if ('rgb' in fieldlist) or ('rgba' in fieldlist):
+        if (b'rgb' in fieldlist) or (b'rgba' in fieldlist):
             ccloud_rgba = make_shared[cPointCloud[PointXYZRGBA]]()
             fromPCLPointCloud2(deref(cloud._ptr.get()), deref(ccloud_rgba.get()))
             _ensure_true(self.ptr().updatePointCloud_XYZRGBA(<const shared_ptr[const cPointCloud[PointXYZRGBA]]>ccloud_rgba,
