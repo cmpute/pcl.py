@@ -16,7 +16,8 @@ from pcl.common.conversions cimport fromPCLPointCloud2
 from pcl.common.ModelCoefficients cimport ModelCoefficients
 from pcl.common.PCLPointCloud2 cimport PCLPointCloud2, PCLPointCloud2ConstPtr
 from pcl.common.point_cloud cimport PointCloud as cPointCloud
-from pcl.common.point_types cimport PointXYZ, PointXYZRGB, PointXYZRGBA
+from pcl.common.point_types cimport PointXYZ, PointXYZRGB, PointXYZRGBA, Normal, PointNormal
+from pcl.common.PCLHeader cimport PCLHeader
 from pcl.PointCloud cimport _POINT_TYPE_MAPPING as pmap
 from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryHandler_PCLPointCloud2, PointCloudGeometryHandlerXYZ_PCLPointCloud2
 from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler_PCLPointCloud2, PointCloudColorHandlerCustom_PCLPointCloud2, PointCloudColorHandlerRGBField_PCLPointCloud2, PointCloudColorHandlerGenericField_PCLPointCloud2
@@ -261,7 +262,37 @@ cdef class Visualizer:
         cdef PointXYZ pos = PointXYZ(position[0], position[1], position[2])
         _ensure_true(self.ptr().addText3D[PointXYZ](text.encode('ascii'), pos, text_scale, color[0], color[1], color[2], id.encode('ascii'), viewport), 'addText3D')
     cpdef void addPointCloudNormals(self, PointCloud cloud, PointCloud normals=None, int level=100, float scale=0.02, str id="cloud", int viewport=0):
-        raise NotImplementedError()
+        cdef shared_ptr[cPointCloud[PointXYZ]] ccloud_xyz
+        cdef shared_ptr[cPointCloud[PointXYZRGBA]] ccloud_rgba
+        cdef shared_ptr[cPointCloud[Normal]] ccloud_normal
+        cdef shared_ptr[cPointCloud[PointNormal]] ccloud_pnormal
+
+        if normals is None:
+            ccloud_pnormal = make_shared[cPointCloud[PointNormal]]()
+            fromPCLPointCloud2(deref(cloud._ptr.get()), deref(ccloud_pnormal.get()))
+
+            _ensure_true(self.ptr().addPointCloudNormals[PointNormal](
+                    <const shared_ptr[const cPointCloud[PointNormal]]>ccloud_pnormal,
+                    level, scale, id.encode('ascii'), viewport), "addPointCloudNormals")
+        else:
+            ccloud_normal = make_shared[cPointCloud[Normal]]()
+            fromPCLPointCloud2(deref(normals._ptr.get()), deref(ccloud_normal.get()))
+
+            fieldlist = [name for name,_,_,_ in pmap[cloud._ptype]]
+            if (b'rgb' in fieldlist) or (b'rgba' in fieldlist):
+                ccloud_rgba = make_shared[cPointCloud[PointXYZRGBA]]()
+                fromPCLPointCloud2(deref(cloud._ptr.get()), deref(ccloud_rgba.get()))
+                _ensure_true(self.ptr().addPointCloudNormals_2[PointXYZRGBA, Normal](
+                    <const shared_ptr[const cPointCloud[PointXYZRGBA]]>ccloud_rgba,
+                    <const shared_ptr[const cPointCloud[Normal]]>ccloud_normal,
+                    level, scale, id.encode('ascii'), viewport), "addPointCloudNormals")
+            else:
+                ccloud_xyz = make_shared[cPointCloud[PointXYZ]]()
+                fromPCLPointCloud2(deref(cloud._ptr.get()), deref(ccloud_xyz.get()))
+                _ensure_true(self.ptr().addPointCloudNormals_2[PointXYZ, Normal](
+                    <const shared_ptr[const cPointCloud[PointXYZ]]>ccloud_xyz,
+                    <const shared_ptr[const cPointCloud[Normal]]>ccloud_normal,
+                    level, scale, id.encode('ascii'), viewport), "addPointCloudNormals")
     cpdef void addPointCloudPrincipalCurvatures(self, PointCloud cloud, PointCloud normals, PointCloud pcs, int level=100, float scale=1, str id="cloud", int viewport=0):
         raise NotImplementedError()
     cpdef void addPointCloudIntensityGradients(self, PointCloud cloud, PointCloud gradients, int level=100, double scale=1e-6, str id="cloud", int viewport=0):

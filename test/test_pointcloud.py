@@ -92,3 +92,12 @@ class TestNumpyInitialize(unittest.TestCase):
         cloud = pcl.create_xyzrgba([[1,2,3,1,2,3,1], [4,5,6,4,5,6,4]])
         assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
         assert cloud.ptype == "XYZRGBA"
+
+        cloud = pcl.create_normal([[1,2,3,3], [4,5,6,6]])
+        assert np.all(cloud.normal == np.array([[1,2,3], [4,5,6]]))
+        assert cloud.ptype == "NORMAL"
+
+        cloud = pcl.create_normal([[1,2,3], [4,5,6]])
+        assert np.all(cloud.normal == np.array([[1,2,3], [4,5,6]]))
+        assert np.all(cloud['curvature'] == 0)
+        assert cloud.ptype == "NORMAL"

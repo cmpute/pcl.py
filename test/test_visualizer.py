@@ -74,3 +74,16 @@ class TestLoaders(unittest.TestCase):
 
         viewer.spinOnce(time=2000)
         viewer.close()
+
+    def test_add_normal(self):
+        viewer = pcl.Visualizer()
+
+        cloud_data = np.random.rand(100, 6)
+        cloud_data[:, 3:] = np.clip(cloud_data[:, 3:] * 128 + 128, 0, 256)
+        cloud = pcl.create_xyzrgb(cloud_data)
+        normals = pcl.create_normal(np.random.rand(100, 4))
+        viewer.addPointCloud(cloud)
+        viewer.addPointCloudNormals(cloud, normals, level=2, scale=0.1, id="cloudn")
+
+        viewer.spinOnce(time=2000)
+        viewer.close()

@@ -89,9 +89,9 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         # template <typename PointT> bool addText3D (const std::string &text, const PointT &position, double textScale = 1.0, double r = 1.0, double g = 1.0, double b = 1.0, const std::string &id = "", int viewport = 0);
         bool addText3D[PointT](const string &text, const PointT &position, double textScale, double r, double g, double b, const string &id, int viewport)
         # template <typename PointNT> bool addPointCloudNormals (const typename pcl::PointCloud<PointNT>::ConstPtr &cloud, int level = 100, float scale = 0.02f, const std::string &id = "cloud", int viewport = 0);
-        bool addPointCloudNormals[PointNT](const shared_ptr[PointCloud[PointNT]] &cloud, int level, float scale, const string &id, int viewport)
+        bool addPointCloudNormals[PointNT](const shared_ptr[const PointCloud[PointNT]] &cloud, int level, float scale, const string &id, int viewport)
         # template <typename PointT, typename PointNT> bool addPointCloudNormals (const typename pcl::PointCloud<PointT>::ConstPtr &cloud, const typename pcl::PointCloud<PointNT>::ConstPtr &normals, int level = 100, float scale = 0.02f, const std::string &id = "cloud", int viewport = 0);
-        bool addPointCloudNormals[PointT, PointNT](const shared_ptr[PointCloud[PointT]] &cloud, const shared_ptr[PointCloud[PointNT]] &normals, int level, float scale, const string &id, int viewport)
+        bool addPointCloudNormals_2 "addPointCloudNormals" [PointT, PointNT](const shared_ptr[PointCloud[PointT]] &cloud, const shared_ptr[const PointCloud[PointNT]] &normals, int level, float scale, const string &id, int viewport)
         # bool addPointCloudPrincipalCurvatures (const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud, const pcl::PointCloud<pcl::Normal>::ConstPtr &normals, const pcl::PointCloud<pcl::PrincipalCurvatures>::ConstPtr &pcs, int level = 100, float scale = 1.0f, const std::string &id = "cloud", int viewport = 0);
         bool addPointCloudPrincipalCurvatures(const shared_ptr[const PointCloud[PointXYZ]] &cloud, shared_ptr[const PointCloud[Normal]] &normals, const shared_ptr[const PointCloud[PrincipalCurvatures]] &pcs, int level, float scale, const string &id, int viewport);
 
@@ -148,8 +148,7 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         # bool updatePolygonMesh (const pcl::PolygonMesh &polymesh, const std::string &id = "polygon");
         bool updatePolygonMesh (const PolygonMesh &polymesh, const string &id)
         # bool addPolylineFromPolygonMesh (const pcl::PolygonMesh &polymesh, const std::string &id = "polyline", int viewport = 0);
-        bool addPolylineFromPolygonMesh (const PolygonMesh &polymesh, const string 
-        &id, int viewport)
+        bool addPolylineFromPolygonMesh (const PolygonMesh &polymesh, const string &id, int viewport)
 
         # template <typename PointT> bool addCorrespondences (const typename pcl::PointCloud<PointT>::ConstPtr &source_points, const typename pcl::PointCloud<PointT>::ConstPtr &target_points, const std::vector<int> & correspondences, const std::string &id = "correspondences", int viewport = 0);
         bool addCorrespondences[PointT](const shared_ptr[const PointCloud[PointT]] &source_points, const shared_ptr[const PointCloud[PointT]] &target_points, const vector[int] &correspondences, const string &id, int viewport)

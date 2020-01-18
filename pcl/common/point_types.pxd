@@ -10,6 +10,17 @@ cdef extern from "pcl/point_types.h" namespace "pcl":
 
     cdef cppclass Normal:
         Normal()
+        Normal(float normal_x, float normal_y, float normal_z)
+        float normal_x
+        float normal_y
+        float normal_z
+        float curvature
+
+    cdef cppclass PointNormal:
+        PointNormal()
+        float x
+        float y
+        float z
         float normal_x
         float normal_y
         float normal_z

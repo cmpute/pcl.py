@@ -618,9 +618,10 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         raise NotImplementedError()
 
     cdef void infer_ptype(self):
-        cdef bool field_matched, ptype_matched
+        cdef bool field_matched
+        cdef int ptype_matched
         for ptype in _POINT_TYPE_MAPPING.keys():
-            ptype_matched = True
+            ptype_matched = 0
             for field in self.ptr().fields:
                 field_matched = False
                 for fdef in _POINT_TYPE_MAPPING[ptype]:
@@ -628,9 +629,10 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                         field_matched = True
                         break
                 if not field_matched:
-                    ptype_matched = False
+                    ptype_matched = 0
                     break
-            if ptype_matched:
+                ptype_matched += 1
+            if ptype_matched == len(_POINT_TYPE_MAPPING[ptype]):
                 self._ptype = ptype
                 return
         self._ptype = b"CUSTOM"
@@ -648,7 +650,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
 
 def create_xyz(data):
     '''
-    Create PointXYZ point cloud from normal nx3 array, or equivalent list representation
+    Create PointXYZ point cloud from ordinary nx3 array, or equivalent list representation
     '''
     data = np.array(data, copy=False)
     if data.shape[-1] != 3:
@@ -661,7 +663,7 @@ def create_xyz(data):
 
 def create_rgb(data):
     '''
-    Create RGB point cloud from normal nx3 array, or equivalent list representation
+    Create RGB point cloud from ordinary nx3 array, or equivalent list representation
     '''
     data = np.array(data, copy=False)
     if data.shape[-1] != 3:
@@ -674,7 +676,7 @@ def create_rgb(data):
 
 def create_xyzrgb(data):
     '''
-    Create PointXYZRGB point cloud from normal nx6 array, or equivalent list representation
+    Create PointXYZRGB point cloud from ordinary nx6 array, or equivalent list representation
     '''
     data = np.array(data, copy=False)
     if data.shape[-1] != 6:
@@ -690,7 +692,7 @@ def create_xyzrgb(data):
 
 def create_xyzrgba(data):
     '''
-    Create PointXYZRGBA point cloud from normal nx6 array, or equivalent list representation
+    Create PointXYZRGBA point cloud from ordinary nx6 array, or equivalent list representation
     '''
     data = np.array(data, copy=False)
     if data.shape[-1] != 7:
@@ -706,7 +708,7 @@ def create_xyzrgba(data):
 
 def create_xyzi(data):
     '''
-    Create PointXYZI point cloud from normal nx4 array, or equivalent list representation
+    Create PointXYZI point cloud from ordinary nx4 array, or equivalent list representation
     '''
     data = np.array(data, copy=False)
     if data.shape[-1] != 4:
@@ -716,3 +718,20 @@ def create_xyzi(data):
     arr = np.empty(len(data), dtype=dt)
     arr['x'], arr['y'], arr['z'], arr['intensity'] = data[:,0], data[:,1], data[:,2], data[:,3]
     return PointCloud(arr, 'XYZI')
+
+def create_normal(data):
+    '''
+    Create Normal (point type) point cloud from ordinary nx3 or nx4 array, or equivalent list representation
+    '''
+    data = np.array(data, copy=False)
+    if data.shape[-1] not in [3,4]:
+        return ValueError("Each point should contain 4 values")
+
+    dt = np.dtype(dict(names=['normal_x','normal_y','normal_z','curvature'], formats=['f4','f4','f4','f4'], offsets=[0,4,8,16], itemsize=32))
+    arr = np.empty(len(data), dtype=dt)
+    arr['normal_x'], arr['normal_y'], arr['normal_z'] = data[:,0], data[:,1], data[:,2]
+    if data.shape[-1] == 4:
+        arr['curvature'] = data[:,3]
+    else:
+        arr['curvature'] = 0
+    return PointCloud(arr, 'NORMAL')
