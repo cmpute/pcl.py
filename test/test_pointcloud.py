@@ -101,3 +101,10 @@ class TestNumpyInitialize(unittest.TestCase):
         assert np.all(cloud.normal == np.array([[1,2,3], [4,5,6]]))
         assert np.all(cloud['curvature'] == 0)
         assert cloud.ptype == "NORMAL"
+
+    def test_infer_ptype(self):
+        c1 = pcl.create_xyz(np.random.rand(10, 3))
+        c2 = pcl.create_normal(np.random.rand(10, 3))
+        c3 = c1.append_fields(c2)
+        c3.infer_ptype()
+        assert c3.ptype == 'XYZN'

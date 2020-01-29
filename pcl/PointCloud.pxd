@@ -21,7 +21,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         pred = (target.sensor_origin == self.sensor_origin).all()
         pred &= (target.sensor_orientation == self.sensor_orientation).all()
         return pred
-    cdef void infer_ptype(self)
+    cpdef void infer_ptype(self)
 
     @staticmethod
     cdef PointCloud wrap(const shared_ptr[PCLPointCloud2]& data)

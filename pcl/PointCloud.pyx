@@ -473,8 +473,11 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         with the point cloud data and should have field names predefined in record array
 
         # Parameters
-        data: numpy record array for the new data
+        data: PointCloud object or numpy record array for the new data
         '''
+        if isinstance(data, PointCloud):
+            data = data.to_ndarray()
+
         old_names = self.names
         new_names = data.dtype.names
         if len(set(old_names).intersection(set(new_names))) > 0:
@@ -503,6 +506,9 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             - `{'field1': 2, 'field2': 3}`
             - `[2, 3]`
         '''
+        if isinstance(data, PointCloud):
+            data = data.to_ndarray()
+
         old_names = self.names
         new_names = data.dtype.names
         if len(set(old_names).intersection(set(new_names))) > 0:
@@ -617,7 +623,10 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         '''
         raise NotImplementedError()
 
-    cdef void infer_ptype(self):
+    cpdef void infer_ptype(self):
+        '''
+        Find proper point type for the point cloud data. If no built-in type is found, the point type will be 'CUSTOM'.
+        '''
         cdef bool field_matched
         cdef int ptype_matched
         for ptype in _POINT_TYPE_MAPPING.keys():
