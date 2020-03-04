@@ -370,6 +370,10 @@ cdef class Visualizer:
                 "addPointCloud")
 
     cpdef void updatePointCloud(self, PointCloud cloud, str id="cloud"):
+        '''
+        Note: updatePointCloud has limited functionality compared with addPointCloud,
+            please use addPointCloud and removePointCloud if you want to customize rendering.
+        '''
         cdef shared_ptr[cPointCloud[PointXYZ]] ccloud_xyz
         cdef shared_ptr[cPointCloud[PointXYZRGBA]] ccloud_rgba
 
@@ -465,6 +469,20 @@ cdef class Visualizer:
         else:
             result = self.ptr().setShapeRenderingProperties(<int>(property.value), <double>(value), id.encode('ascii'), viewport)
         _ensure_true(result, "setShapeRenderingProperties")
+    cpdef void setPointCloudRenderingProperties(self, property, value, str id, int viewport=0):
+        cdef bool result
+        if isinstance(property, int):
+            property = RenderingProperties(property)
+        elif isinstance(property, str):
+            property = RenderingProperties[property]
+
+        if property == RenderingProperties.Representation or property == RenderingProperties.Shading:
+            result = self.ptr().setPointCloudRenderingProperties(<int>(property.value), <double>(value.value), id.encode('ascii'), viewport)
+        elif property == RenderingProperties.Color:
+            result = self.ptr().setPointCloudRenderingProperties(<int>(property.value), <double>(value[0]), <double>(value[1]), <double>(value[2]), id.encode('ascii'), viewport)
+        else:
+            result = self.ptr().setPointCloudRenderingProperties(<int>(property.value), <double>(value), id.encode('ascii'), viewport)
+        _ensure_true(result, "setPointCloudRenderingProperties")
     cpdef void setRepresentationToSurfaceForAllActors(self):
         self.ptr().setRepresentationToSurfaceForAllActors()
     cpdef void setRepresentationToPointsForAllActors(self):

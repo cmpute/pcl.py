@@ -133,11 +133,11 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         # inline bool addPointCloud (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud, const std::string &id = "cloud", int viewport = 0)
         bool addPointCloud (const shared_ptr[const PointCloud[PointXYZRGBA]] &cloud, const string &id, int viewport)
         # inline bool updatePointCloud (const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud, const std::string &id = "cloud")
-        bool updatePointCloud_XYZ "updatePointCloud<pcl::PointXYZ>" (const shared_ptr[const PointCloud[PointXYZ]] &cloud, const string &id)
+        bool updatePointCloud_XYZ "updatePointCloud" (const shared_ptr[const PointCloud[PointXYZ]] &cloud, const string &id)
         # inline bool updatePointCloud (const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr &cloud, const std::string &id = "cloud")
-        bool updatePointCloud_XYZRGB "updatePointCloud<pcl::PointXYZRGB>" (const shared_ptr[const PointCloud[PointXYZRGB]] &cloud, const string &id)
+        bool updatePointCloud_XYZRGB "updatePointCloud" (const shared_ptr[const PointCloud[PointXYZRGB]] &cloud, const string &id)
         # inline bool updatePointCloud (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud, const std::string &id = "cloud")
-        bool updatePointCloud_XYZRGBA "updatePointCloud<pcl::PointXYZRGBA>" (const shared_ptr[const PointCloud[PointXYZRGBA]] &cloud, const string &id)
+        bool updatePointCloud_XYZRGBA "updatePointCloud" (const shared_ptr[const PointCloud[PointXYZRGBA]] &cloud, const string &id)
 
         # bool addPolygonMesh (const pcl::PolygonMesh &polymesh, const std::string &id = "polygon", int viewport = 0);
         bool addPolygonMesh(const PolygonMesh &polymesh, const string &id, int viewport)
@@ -164,8 +164,8 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         int getGeometryHandlerIndex (const string &id)
         # bool updateColorHandlerIndex (const std::string &id, int index);
         bool updateColorHandlerIndex (const string &id, int index)
-        # bool setPointCloudRenderingProperties (int property, double val1, double val2, double val3, const std::string &id = "cloud", int viewport = 0);
 
+        # bool setPointCloudRenderingProperties (int property, double val1, double val2, double val3, const std::string &id = "cloud", int viewport = 0);
         bool setPointCloudRenderingProperties (int property, double val1, double val2, double val3, const string &id, int viewport)
         # bool setPointCloudRenderingProperties (int property, double value, const std::string &id = "cloud", int viewport = 0);
         bool setPointCloudRenderingProperties (int property, double value, const string &id, int viewport)

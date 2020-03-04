@@ -104,6 +104,7 @@ cdef class Visualizer:
     cpdef void addCube(self, translation, rotation, double width, double height, double depth, str id=*, int viewport=*)
 
     cpdef void setShapeRenderingProperties(self, property, value, str id, int viewport=*)
+    cpdef void setPointCloudRenderingProperties(self, property, value, str id, int viewport=*)
     cpdef void setRepresentationToSurfaceForAllActors(self)
     cpdef void setRepresentationToPointsForAllActors(self)
     cpdef void setRepresentationToWireframeForAllActors(self)

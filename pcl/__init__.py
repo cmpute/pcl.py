@@ -29,7 +29,8 @@ def create_xyz(data):
 
 def create_rgb(data):
     '''
-    Create RGB point cloud from ordinary nx3 array, or equivalent list representation
+    Create RGB point cloud from ordinary nx3 array, or equivalent list representation.
+    Note that RGB value should be represented in integer of 0~255
     '''
     data = np.array(data, copy=False)
     if data.shape[-1] != 3:
@@ -43,6 +44,7 @@ def create_rgb(data):
 def create_xyzrgb(data):
     '''
     Create PointXYZRGB point cloud from ordinary nx6 array, or equivalent list representation
+    Note that RGB value should be represented in integer of 0~255
     '''
     data = np.array(data, copy=False)
     if data.shape[-1] != 6:
