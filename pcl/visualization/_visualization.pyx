@@ -157,6 +157,21 @@ cdef class AreaPickingEvent:
 cdef void AreaPickingEventCallback(const cAreaPickingEvent &event, void *func):
     (<object>func)(AreaPickingEvent.wrap(event))
 
+cdef class VisualizerInteractorStyle:
+    cdef PCLVisualizerInteractorStyle* ptr(self):
+        return self._ptr.Get()
+
+    property CameraFile:
+        def __get__(self): 
+            return self.ptr().getCameraFile().decode('ascii')
+        def __set__(self, value):
+            self.ptr().setCameraFile(value.encode('ascii'))
+
+    cpdef void saveCameraParameters(self, str file):
+        self.ptr().saveCameraParameters(file.encode('ascii'))
+    cpdef void loadCameraParameters(self, str file):
+        self.ptr().loadCameraParameters(file.encode('ascii'))
+
 cdef (unsigned char*) PointCloudColorHandlerCallback(void *func):
     cdef unsigned char [::1] arr
     result = (<object>func)()
@@ -532,3 +547,8 @@ cdef class Visualizer:
         self.ptr().saveScreenshot(file.encode("ascii"))
     cpdef void setShowFPS(self, bool show_fps):
         self.ptr().setShowFPS(show_fps)
+
+    cpdef VisualizerInteractorStyle getInteractorStyle(self):
+        cdef VisualizerInteractorStyle result = VisualizerInteractorStyle()
+        result._ptr = self.ptr().getInteractorStyle()
+        return result

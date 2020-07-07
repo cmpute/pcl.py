@@ -3,6 +3,7 @@ from libcpp.string cimport string
 from libcpp.vector cimport vector
 from pcl._boost cimport connection, shared_ptr
 from pcl._eigen cimport Affine3f, Matrix3f, Matrix4f, Vector3f, Vector4f, Quaternionf
+from pcl._vtk cimport vtkSmartPointer
 from pcl.common.ModelCoefficients cimport ModelCoefficients
 from pcl.common.point_types cimport PointXYZ, PointXYZRGB, PointXYZRGBA, Normal, PrincipalCurvatures
 from pcl.common.point_cloud cimport PointCloud
@@ -13,6 +14,7 @@ from pcl.visualization.area_picking_event cimport AreaPickingEvent
 from pcl.visualization.keyboard_event cimport KeyboardEvent
 from pcl.visualization.common cimport Camera
 from pcl.visualization.mouse_event cimport MouseEvent
+from pcl.visualization.interactor_style cimport PCLVisualizerInteractorStyle
 from pcl.visualization.point_picking_event cimport PointPickingEvent
 from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler, PointCloudColorHandler_PCLPointCloud2
 from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryHandler, PointCloudGeometryHandler_PCLPointCloud2
@@ -278,7 +280,7 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
 
         # XXX: void setupInteractor (vtkRenderWindowInteractor *iren, vtkRenderWindow *win);
         # XXX: void setupInteractor (vtkRenderWindowInteractor *iren, vtkRenderWindow *win, vtkInteractorStyle *style);
-        # XXX: inline vtkSmartPointer<PCLVisualizerInteractorStyle> getInteractorStyle ()
+        vtkSmartPointer[PCLVisualizerInteractorStyle] getInteractorStyle()
 
 ctypedef shared_ptr[PCLVisualizer] PCLVisualizerPtr
 ctypedef shared_ptr[const PCLVisualizer] PCLVisualizerConstPtr

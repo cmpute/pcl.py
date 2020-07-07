@@ -1,11 +1,13 @@
 from libcpp cimport bool
 cimport numpy as np
 from pcl._boost cimport shared_ptr
+from pcl._vtk cimport vtkSmartPointer
 from pcl.PointCloud cimport PointCloud
 from pcl.visualization.pcl_visualizer cimport PCLVisualizer
 from pcl.visualization.area_picking_event cimport AreaPickingEvent as cAreaPickingEvent
 from pcl.visualization.keyboard_event cimport KeyboardEvent as cKeyboardEvent
 from pcl.visualization.mouse_event cimport MouseEvent as cMouseEvent
+from pcl.visualization.interactor_style cimport PCLVisualizerInteractorStyle
 from pcl.visualization.point_picking_event cimport PointPickingEvent as cPointPickingEvent
 
 cdef class KeyboardEvent:
@@ -41,6 +43,13 @@ cdef class AreaPickingEvent:
 
     @staticmethod
     cdef AreaPickingEvent wrap(const cAreaPickingEvent& data)
+
+cdef class VisualizerInteractorStyle:
+    cdef vtkSmartPointer[PCLVisualizerInteractorStyle] _ptr
+    cdef PCLVisualizerInteractorStyle* ptr(self)
+
+    cpdef void saveCameraParameters(self, str file)
+    cpdef void loadCameraParameters(self, str file)
 
 cdef class Visualizer:
     cdef shared_ptr[PCLVisualizer] _ptr
@@ -125,3 +134,5 @@ cdef class Visualizer:
     cpdef void createInteractor(self)
     cpdef void saveScreenshot(self, str file)
     cpdef void setShowFPS(self, bool show_fps)
+
+    cpdef VisualizerInteractorStyle getInteractorStyle(self)
