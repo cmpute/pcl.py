@@ -414,7 +414,7 @@ cdef class Visualizer:
     cpdef void addArrow(self, p1, p2, line_color=[1, 1, 1], text_color=[1, 1, 1], bool display_length=False, str id="arrow", int viewport=0):
         cdef PointXYZ cp1 = PointXYZ(p1[0], p1[1], p1[2])
         cdef PointXYZ cp2 = PointXYZ(p2[0], p2[1], p2[2])
-        if display_length:
+        if not display_length:
             _ensure_true(self.ptr().addArrow(cp1, cp2, line_color[0], line_color[1], line_color[2],
                 display_length, id.encode('ascii'), viewport), "addArrow")
         else:
