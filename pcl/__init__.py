@@ -20,7 +20,7 @@ def create_xyz(data):
     '''
     data = np.array(data, copy=False)
     if data.shape[-1] != 3:
-        return ValueError("Each point should contain 3 values")
+        raise ValueError("Each point should contain 3 values")
 
     dt = np.dtype(dict(names=['x','y','z'], formats=['f4','f4','f4'], itemsize=16))
     arr = np.empty(len(data), dtype=dt)
@@ -34,7 +34,7 @@ def create_rgb(data):
     '''
     data = np.array(data, copy=False)
     if data.shape[-1] != 3:
-        return ValueError("Each point should contain 3 values")
+        raise ValueError("Each point should contain 3 values")
 
     rgb_dt = np.dtype(dict(names=['b','g','r'], formats=['u1','u1','u1'], itemsize=16))
     rgb_arr = np.empty(len(data), dtype=rgb_dt)
@@ -48,7 +48,7 @@ def create_xyzrgb(data):
     '''
     data = np.array(data, copy=False)
     if data.shape[-1] != 6:
-        return ValueError("Each point should contain 3 values")
+        raise ValueError("Each point should contain 3 values")
 
     rgb_dt = np.dtype(dict(names=['b','g','r'], formats=['u1','u1','u1'], itemsize=4))
     rgb_arr = np.empty(len(data), dtype=rgb_dt)
@@ -64,7 +64,7 @@ def create_xyzrgba(data):
     '''
     data = np.array(data, copy=False)
     if data.shape[-1] != 7:
-        return ValueError("Each point should contain 3 values")
+        raise ValueError("Each point should contain 3 values")
 
     rgba_dt = np.dtype(dict(names=['b','g','r','a'], formats=['u1','u1','u1','u1'], itemsize=4))
     rgba_arr = np.empty(len(data), dtype=rgba_dt)
@@ -80,7 +80,7 @@ def create_xyzi(data):
     '''
     data = np.array(data, copy=False)
     if data.shape[-1] != 4:
-        return ValueError("Each point should contain 4 values")
+        raise ValueError("Each point should contain 4 values")
 
     dt = np.dtype(dict(names=['x','y','z','intensity'], formats=['f4','f4','f4','f4'], offsets=[0,4,8,16], itemsize=32))
     arr = np.empty(len(data), dtype=dt)
@@ -93,7 +93,7 @@ def create_normal(data):
     '''
     data = np.array(data, copy=False)
     if data.shape[-1] not in [3,4]:
-        return ValueError("Each point should contain 4 values")
+        raise ValueError("Each point should contain 4 values")
 
     dt = np.dtype(dict(names=['normal_x','normal_y','normal_z','curvature'], formats=['f4','f4','f4','f4'], offsets=[0,4,8,16], itemsize=32))
     arr = np.empty(len(data), dtype=dt)
