@@ -28,16 +28,18 @@ cdef dict _POINT_TYPE_MAPPING = {
     b'LABEL':   ((b'label',6,1,0),),
     b'NORMAL':  UNION_NORMAL4D + ((b'curvature',7,1,12),),
     b'RGB':     UNION_RGB,
+    b'SURFEL':  UNION_POINT4D + UNION_NORMAL4D + UNION_RGB + ((b'radius',7,1,0), (b'confidence',7,1,12), (b'curvature',7,1,0)),
     b'UV':      ((b'u',7,1,0), (b'v',7,1,0)),
     b'XY':      ((b'x',7,1,0), (b'y',7,1,0)),
     b'XYZ':     UNION_POINT4D,
     b'XYZI':    UNION_POINT4D + ((b'intensity',7,1,12),),
     b'XYZIN':   UNION_POINT4D + UNION_NORMAL4D + ((b'intensity',7,1,0), (b'curvature',7,1,8)),
-    b'XYZL':    UNION_POINT4D + ((b'label',6,1,0),),
+    b'XYZL':    UNION_POINT4D + ((b'label',6,1,12),),
+    b'XYZLN':    UNION_POINT4D + UNION_NORMAL4D + ((b'label',6,1,0), (b'curvature',7,1,8)),
     b'XYZN':    UNION_POINT4D + UNION_NORMAL4D + ((b'curvature',7,1,12),),
-    b'XYZRGB':  UNION_POINT4D + UNION_RGB,
-    b'XYZRGBA': UNION_POINT4D + UNION_RGBA,
-    b'XYZRGBL': UNION_POINT4D + UNION_RGB + ((b'label',6,1,0),),
+    b'XYZRGB':  UNION_POINT4D + ((b'rgb',6,1,12),), # UNION_RGB
+    b'XYZRGBA': UNION_POINT4D + ((b'rgba',6,1,12),), # UNION_RGBA
+    b'XYZRGBL': UNION_POINT4D + UNION_RGB + ((b'label',6,1,8),),
     b'XYZRGBN': UNION_POINT4D + UNION_NORMAL4D + UNION_RGB + ((b'curvature',7,1,8),),
     b'XYZHSV':  UNION_POINT4D + ((b'h',7,1,0), (b's',7,1,0), (b'v',7,1,4)),
 }
@@ -108,12 +110,14 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             - Label
             - Normal
             - RGB
+            - Surfel
             - UV
             - XY
             - XYZ
             - XYZI
             - XYZIN (PointXYZINormal)
             - XYZL
+            - XYZLN (PointXYZLNormal)
             - XYZN (PointNormal)
             - XYZRGB
             - XYZRGBA
@@ -373,7 +377,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
     property rgb:
         '''
         Get the color field of the pointcloud, the property returns unpacked rgb values
-            (float rgb -> uint b,g,r)
+            (float rgb -> uint8 b,g,r)
         # Notes
         In PCL, rgb is stored as rgba with a=255
         '''
@@ -382,7 +386,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
     property rgba:
         '''
         Get the color field of the pointcloud, the property returns unpacked rgba values
-            (uint32 rgba -> uint b,g,r,a)
+            (uint32 rgba -> uint8 b,g,r,a)
         '''
         def __get__(self):
             return self.to_ndarray()['rgba'].view('4u1')
@@ -405,7 +409,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                     ndtype['names'].append(field.name.encode('ascii'))
                 else:
                     ndtype['names'].append(field.name)
-                ndtype['formats'].append(str(field.count) + byte_order + field.npdtype)
+                ndtype['formats'].append(byte_order + field.npdesc)
                 ndtype['offsets'].append(field.offset)
             ndtype['itemsize'] = self.ptr().point_step
             return np.dtype(ndtype)

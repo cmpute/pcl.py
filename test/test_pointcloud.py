@@ -85,6 +85,14 @@ class TestNumpyInitialize(unittest.TestCase):
         assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
         assert cloud.ptype == "XYZ"
 
+        cloud = pcl.create_xyzi([[1,2,3,1], [4,5,6,4]])
+        assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
+        assert cloud.ptype == "XYZI"
+
+        cloud = pcl.create_xyzl([[1,2,3,1], [4,5,6,4]])
+        assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
+        assert cloud.ptype == "XYZL"
+
         cloud = pcl.create_xyzrgb([[1,2,3,1,2,3], [4,5,6,4,5,6]])
         assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
         assert cloud.ptype == "XYZRGB"
@@ -92,6 +100,10 @@ class TestNumpyInitialize(unittest.TestCase):
         cloud = pcl.create_xyzrgba([[1,2,3,1,2,3,1], [4,5,6,4,5,6,4]])
         assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
         assert cloud.ptype == "XYZRGBA"
+
+        cloud = pcl.create_xyzrgbl([[1,2,3,1,2,3,1], [4,5,6,4,5,6,4]])
+        assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
+        assert cloud.ptype == "XYZRGBL"
 
         cloud = pcl.create_normal([[1,2,3,3], [4,5,6,6]])
         assert np.all(cloud.normal == np.array([[1,2,3], [4,5,6]]))

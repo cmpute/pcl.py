@@ -38,8 +38,10 @@ cdef class PointField:
         def __get__(self): return self.base.datatype
         # def __set__(self, unsigned char value): self.base.datatype = value
 
-    property npdtype:
-        def __get__(self): return _FIELD_TYPE_MAPPING[self.base.datatype][0]
+    property npdesc:
+        def __get__(self):
+            return str(self.base.count) if self.base.count > 1 else '' \
+                + _FIELD_TYPE_MAPPING[self.base.datatype][0]
 
     def __repr__(self):
         return "<PointField {0} : {1}>".format(self.name, self.npdtype)
