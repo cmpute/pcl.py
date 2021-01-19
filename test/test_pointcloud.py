@@ -2,7 +2,7 @@ import pcl
 import numpy as np
 import unittest
 
-class TestNumpyInitialize(unittest.TestCase):
+class TestPointCloud(unittest.TestCase):
     def test_normal_init(self):
         cloud_array = np.array([[1,2,3],[2,3,4]], dtype='f4')
         with self.assertRaises(ValueError):

@@ -22,6 +22,10 @@ cdef extern from "pcl/visualization/point_cloud_color_handlers.h" namespace "pcl
         pass
     cdef cppclass PointCloudColorHandlerGenericField[PointT](PointCloudColorHandler[PointT]):
         pass
+    cdef cppclass PointCloudColorHandlerRGBAField[PointT](PointCloudColorHandler[PointT]):
+        pass
+    cdef cppclass PointCloudColorHandlerLabelField[PointT](PointCloudColorHandler[PointT]):
+        pass
 
     cdef cppclass PointCloudColorHandler_PCLPointCloud2 "pcl::visualization::PointCloudColorHandler<pcl::PCLPointCloud2>":
         PointCloudColorHandler_PCLPointCloud2(const PCLPointCloud2ConstPtr &cloud)
@@ -40,5 +44,9 @@ cdef extern from "pcl/visualization/point_cloud_color_handlers.h" namespace "pcl
         PointCloudColorHandlerHSVField_PCLPointCloud2(const PCLPointCloud2ConstPtr &cloud)
     cdef cppclass PointCloudColorHandlerGenericField_PCLPointCloud2 "pcl::visualization::PointCloudColorHandlerGenericField<pcl::PCLPointCloud2>" (PointCloudColorHandler_PCLPointCloud2):
         PointCloudColorHandlerGenericField_PCLPointCloud2(const PCLPointCloud2ConstPtr &cloud, const string &field_name)
+    cdef cppclass PointCloudColorHandlerRGBAField_PCLPointCloud2 "pcl::visualization::PointCloudColorHandlerRGBAField<pcl::PCLPointCloud2>" (PointCloudColorHandler_PCLPointCloud2):
+        PointCloudColorHandlerRGBAField_PCLPointCloud2(const PCLPointCloud2ConstPtr &cloud)
+    cdef cppclass PointCloudColorHandlerLabelField_PCLPointCloud2 "pcl::visualization::PointCloudColorHandlerLabelField<pcl::PCLPointCloud2>" (PointCloudColorHandler_PCLPointCloud2):
+        PointCloudColorHandlerLabelField_PCLPointCloud2(const PCLPointCloud2ConstPtr &cloud, const bool static_mapping)
     
     # TODO: Add details for the handlers

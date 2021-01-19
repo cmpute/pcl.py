@@ -23,7 +23,9 @@ def _check_point_size(data, size):
 def _parse_rgb(data, offset):
     rgb_dt = np.dtype(dict(names=['b','g','r'], formats=['u1','u1','u1'], itemsize=4))
     rgb_arr = np.empty(len(data), dtype=rgb_dt)
-    rgb_arr['r'], rgb_arr['g'], rgb_arr['b'] = data[:,offset], data[:,offset+1], data[:,offset+2]
+    rgb_arr['r'] = data[:,offset].copy() # copy to prevent double free problem
+    rgb_arr['g'] = data[:,offset+1].copy()
+    rgb_arr['b'] = data[:,offset+2].copy()
     return rgb_arr.view('u4')
 
 def create_xyz(data):

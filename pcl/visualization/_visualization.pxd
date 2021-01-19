@@ -99,8 +99,7 @@ cdef class Visualizer:
     cpdef int createViewPort(self, double xmin, double ymin, double xmax, double ymax)
     cpdef void createViewPortCamera(self, int viewport)
 
-    # TODO: support custom handlers
-    cpdef void addPointCloud(self, PointCloud cloud, color=*, str field=*, color_handler=*, str id=*, int viewport=*)
+    cpdef void addPointCloud(self, PointCloud cloud, color=*, str field=*, color_handler=*, bint static_mapping=*, str id=*, int viewport=*)
     cpdef void updatePointCloud(self, PointCloud cloud, str id=*)
 
     cpdef void addLine(self, p1, p2, color=*, str id=*, int viewport=*)

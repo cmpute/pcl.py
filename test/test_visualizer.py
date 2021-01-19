@@ -2,8 +2,8 @@ import unittest
 import numpy as np
 import pcl
 
-class TestLoaders(unittest.TestCase):
-    def test_load_pointcloud(self):
+class TestVisualizer():
+    def test_add_pointcloud(self):
         cloud1 = pcl.PointCloud(np.random.rand(100, 4).astype('f4'))
         cloud2 = pcl.PointCloud(np.random.rand(100, 4).astype('f4'))
         
@@ -72,6 +72,21 @@ class TestLoaders(unittest.TestCase):
         cloud = pcl.PointCloud(np.random.rand(100, 4).astype('f4'))
         viewer.addPointCloud(cloud, color_handler=lambda: np.random.rand(100, 4)*255, id="cloud3")
 
+        cloud = np.random.rand(100, 4).astype('f4')
+        cloud[:, 3] *= 20 # create label fields
+        cloud = pcl.create_xyzl(cloud)
+        viewer.addPointCloud(cloud, field="label", id="cloud4")
+
+        cloud = np.random.rand(100, 6).astype('f4')
+        cloud[:, 3:6] *= 256 # create rgb fields
+        cloud = pcl.create_xyzrgb(cloud)
+        viewer.addPointCloud(cloud, field="rgb", id="cloud5")
+
+        cloud = np.random.rand(100, 7).astype('f4')
+        cloud[:, 3:7] *= 256 # create rgb fields
+        cloud = pcl.create_xyzrgba(cloud)
+        viewer.addPointCloud(cloud, field="rgba", id="cloud6")
+
         viewer.spinOnce(time=2000)
         viewer.close()
 
@@ -87,3 +102,6 @@ class TestLoaders(unittest.TestCase):
 
         viewer.spinOnce(time=2000)
         viewer.close()
+
+if __name__ == "__main__":
+    TestVisualizer().test_color_handlers()
