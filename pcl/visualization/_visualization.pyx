@@ -53,6 +53,22 @@ cdef class KeyboardEvent:
         obj._ptr = make_shared[cKeyboardEvent](data)
         return obj
 
+    def __str__(self):
+        desc = self.KeySym
+        if self.ptr().keyDown():
+            desc += " down"
+        if self.ptr().keyUp():
+            desc += " up"
+        if self.ptr().isAltPressed():
+            desc = "Alt+" + desc
+        if self.ptr().isCtrlPressed():
+            desc = "Ctrl+" + desc
+        if self.ptr().isShiftPressed():
+            desc = "Shift+" + desc
+        return desc
+    def __repr__(self):
+        return "<KeyboardEvent " + str(self) + ">"
+
 cdef void KeyboardEventCallback(const cKeyboardEvent &event, void *func):
     (<object>func)(KeyboardEvent.wrap(event))
 
@@ -103,6 +119,34 @@ cdef class MouseEvent:
         obj._ptr = make_shared[cMouseEvent](data)
         return obj
 
+    def __str__(self):
+        desc = "x=%d, y=%d" % (self.ptr().getX(), self.ptr().getY())
+        if self.Type == MouseEvent_Type.MouseMove:
+            desc = "Move " + desc
+        elif self.Type == MouseEvent_Type.MouseButtonPress:
+            desc = "Press " + self.Button.name + " " + desc
+        elif self.Type == MouseEvent_Type.MouseButtonRelease:
+            desc = "Release " + self.Button.name + " " + desc
+        elif self.Type == MouseEvent_Type.MouseScrollDown:
+            desc = "Scroll down " + desc
+        elif self.Type == MouseEvent_Type.MouseScrollUp:
+            desc = "Scroll up " + desc
+        elif self.Type == MouseEvent_Type.MouseDblClick:
+            desc = "Double click " + self.Button.name + " " + desc
+
+        if self.KeyboardModifiers > 0:
+            mod = "w/"
+            if self.KeyboardModifiers & 1:
+                mod += " Alt"
+            if self.KeyboardModifiers & 2:
+                mod += " Ctrl"
+            if self.KeyboardModifiers & 4:
+                mod += " Shift"
+            desc += " (" + mod + ")"
+        return desc
+    def __repr__(self):
+        return "<MouseEvent " + str(self) + ">"
+
 cdef void MouseEventCallback(const cMouseEvent &event, void *func):
     (<object>func)(MouseEvent.wrap(event))
 
@@ -135,6 +179,11 @@ cdef class PointPickingEvent:
         obj._ptr = make_shared[cPointPickingEvent](data)
         return obj
 
+    def __str__(self):
+        return "Picked x=%.3f y=%.3f z=%.3f" % self.Point
+    def __repr__(self):
+        return "<PointPickingEvent " + str(self) + ">"
+
 cdef void PointPickingEventCallback(const cPointPickingEvent &event, void *func):
     (<object>func)(PointPickingEvent.wrap(event))
 
@@ -153,6 +202,11 @@ cdef class AreaPickingEvent:
         cdef AreaPickingEvent obj = AreaPickingEvent.__new__(AreaPickingEvent)
         obj._ptr = make_shared[cAreaPickingEvent](data)
         return obj
+
+    def __str__(self):
+        return "Picked indices " + str(self.PointsIndices)
+    def __repr__(self):
+        return "<AreaPickingEvent " + str(self) + ">"
 
 cdef void AreaPickingEventCallback(const cAreaPickingEvent &event, void *func):
     (<object>func)(AreaPickingEvent.wrap(event))
@@ -222,61 +276,61 @@ cdef class Visualizer:
     def __init__(self, str name="", bool create_interactor=True):
         self._ptr = make_shared[PCLVisualizer](<bytes>(name.encode('ascii')), create_interactor)
 
-    cpdef void setFullScreen(self, bool mode):
+    cpdef void setFullScreen(self, bool mode) except*:
         self.ptr().setFullScreen(mode)
-    cpdef void setWindowName(self, str name):
+    cpdef void setWindowName(self, str name) except*:
         self.ptr().setWindowName(name.encode('ascii'))
-    cpdef void setWindowBorders(self, bool mode):
+    cpdef void setWindowBorders(self, bool mode) except*:
         self.ptr().setWindowBorders(mode)
-    cpdef void setBackgroundColor(self, double r, double g, double b, int viewport=0):
+    cpdef void setBackgroundColor(self, double r, double g, double b, int viewport=0) except*:
         self.ptr().setBackgroundColor(r, g, b, viewport)
 
-    cpdef void registerKeyboardCallback(self, callback):
+    cpdef void registerKeyboardCallback(self, callback) except*:
         self.ptr().registerKeyboardCallback(KeyboardEventCallback, <void*>callback)
-    cpdef void registerMouseCallback(self, callback):
+    cpdef void registerMouseCallback(self, callback) except*:
         self.ptr().registerMouseCallback(MouseEventCallback, <void*>callback)
-    cpdef void registerPointPickingCallback(self, callback):
+    cpdef void registerPointPickingCallback(self, callback) except*:
         self.ptr().registerPointPickingCallback(PointPickingEventCallback, <void*>callback)
-    cpdef void registerAreaPickingCallback(self, callback):
+    cpdef void registerAreaPickingCallback(self, callback) except*:
         self.ptr().registerAreaPickingCallback(AreaPickingEventCallback, <void*>callback)
 
-    cpdef void spin(self):
+    cpdef void spin(self) except*:
         self.ptr().spin()
-    cpdef void spinOnce(self, int time=1, bool force_redraw=False):
+    cpdef void spinOnce(self, int time=1, bool force_redraw=False) except*:
         self.ptr().spinOnce(time, force_redraw)
 
-    cpdef void addCoordinateSystem(self, double scale=1, float x=0, float y=0, float z=0, np.ndarray t=None, int viewport=0):
+    cpdef void addCoordinateSystem(self, double scale=1, float x=0, float y=0, float z=0, np.ndarray t=None, int viewport=0) except*:
         cdef Affine3f ct
         if t is not None:
             ct = toAffine3f(t)
             self.ptr().addCoordinateSystem(scale, ct, viewport)
         else:
             self.ptr().addCoordinateSystem(scale, x, y, z, viewport)
-    cpdef void removeCoordinateSystem(self, int viewport=0):
+    cpdef void removeCoordinateSystem(self, int viewport=0) except*:
         _ensure_true(self.ptr().removeCoordinateSystem(viewport), 'removeCoordinateSystem')
 
-    cpdef void removePointCloud(self, str id="cloud", int viewport=0):
+    cpdef void removePointCloud(self, str id="cloud", int viewport=0) except*:
         _ensure_true(self.ptr().removePointCloud(id.encode('ascii'), viewport), 'removePointCloud')
-    cpdef void removePolygonMesh(self, str id="polygon", int viewport=0):
+    cpdef void removePolygonMesh(self, str id="polygon", int viewport=0) except*:
         _ensure_true(self.ptr().removePolygonMesh(id.encode('ascii'), viewport), 'removePolygonMesh')
-    cpdef void removeShape(self, str id="cloud", int viewport=0):
+    cpdef void removeShape(self, str id="cloud", int viewport=0) except*:
         _ensure_true(self.ptr().removeShape(id.encode('ascii'), viewport), 'removeShape')
-    cpdef void removeText3D(self, str id="cloud", int viewport=0):
+    cpdef void removeText3D(self, str id="cloud", int viewport=0) except*:
         _ensure_true(self.ptr().removeText3D(id.encode('ascii'), viewport), 'removeText3D')
-    cpdef void removeAllPointClouds(self, int viewport=0):
+    cpdef void removeAllPointClouds(self, int viewport=0) except*:
         _ensure_true(self.ptr().removeAllPointClouds(viewport), 'removeAllPointClouds')
-    cpdef void removeAllShapes(self, int viewport=0):
+    cpdef void removeAllShapes(self, int viewport=0) except*:
         _ensure_true(self.ptr().removeAllShapes(viewport), 'removeAllShapes')
 
-    cpdef void addText(self, str text, int xpos, int ypos, int fontsize=10, color=[1, 1, 1], str id="", int viewport=0):
+    cpdef void addText(self, str text, int xpos, int ypos, int fontsize=10, color=[1, 1, 1], str id="", int viewport=0) except*:
         _ensure_true(self.ptr().addText(text.encode('ascii'), xpos, ypos, fontsize, color[0], color[1], color[2], id.encode('ascii'), viewport), 'addText')
-    cpdef void updateText(self, str text, int xpos, int ypos, int fontsize=10, color=[1, 1, 1], str id=""):
+    cpdef void updateText(self, str text, int xpos, int ypos, int fontsize=10, color=[1, 1, 1], str id="") except*:
         _ensure_true(self.ptr().updateText(text.encode('ascii'), xpos, ypos, fontsize, color[0], color[1], color[2], id.encode('ascii')), 'updateText')
-    cpdef void addText3D(self, str text, position, double text_scale=1, color=[1, 1, 1], str id="", int viewport=0):
+    cpdef void addText3D(self, str text, position, double text_scale=1, color=[1, 1, 1], str id="", int viewport=0) except*:
         '''Note (TODO): This method should be called in the same thread with spin, and viewport seems not to be working'''
         cdef PointXYZ pos = PointXYZ(position[0], position[1], position[2])
         _ensure_true(self.ptr().addText3D[PointXYZ](text.encode('ascii'), pos, text_scale, color[0], color[1], color[2], id.encode('ascii'), viewport), 'addText3D')
-    cpdef void addPointCloudNormals(self, PointCloud cloud, PointCloud normals=None, int level=100, float scale=0.02, str id="cloud", int viewport=0):
+    cpdef void addPointCloudNormals(self, PointCloud cloud, PointCloud normals=None, int level=100, float scale=0.02, str id="cloud", int viewport=0) except*:
         cdef shared_ptr[cPointCloud[PointXYZ]] ccloud_xyz
         cdef shared_ptr[cPointCloud[PointXYZRGBA]] ccloud_rgba
         cdef shared_ptr[cPointCloud[Normal]] ccloud_normal
@@ -308,35 +362,35 @@ cdef class Visualizer:
                     <const shared_ptr[const cPointCloud[PointXYZ]]>ccloud_xyz,
                     <const shared_ptr[const cPointCloud[Normal]]>ccloud_normal,
                     level, scale, id.encode('ascii'), viewport), "addPointCloudNormals")
-    cpdef void addPointCloudPrincipalCurvatures(self, PointCloud cloud, PointCloud normals, PointCloud pcs, int level=100, float scale=1, str id="cloud", int viewport=0):
+    cpdef void addPointCloudPrincipalCurvatures(self, PointCloud cloud, PointCloud normals, PointCloud pcs, int level=100, float scale=1, str id="cloud", int viewport=0) except*:
         raise NotImplementedError()
-    cpdef void addPointCloudIntensityGradients(self, PointCloud cloud, PointCloud gradients, int level=100, double scale=1e-6, str id="cloud", int viewport=0):
-        raise NotImplementedError()
-
-    cpdef void addCorrespondences(self, PointCloud source_points, PointCloud target_points, correspondences, str id="correspondences", int viewport=0):
-        raise NotImplementedError()
-    cpdef void removeCorrespondences (self, str id="correspondences", int viewport=0):
+    cpdef void addPointCloudIntensityGradients(self, PointCloud cloud, PointCloud gradients, int level=100, double scale=1e-6, str id="cloud", int viewport=0) except*:
         raise NotImplementedError()
 
-    cpdef void updateShapePose(self, str id, np.ndarray pose):
+    cpdef void addCorrespondences(self, PointCloud source_points, PointCloud target_points, correspondences, str id="correspondences", int viewport=0) except*:
+        raise NotImplementedError()
+    cpdef void removeCorrespondences (self, str id="correspondences", int viewport=0) except*:
+        raise NotImplementedError()
+
+    cpdef void updateShapePose(self, str id, np.ndarray pose) except*:
         _ensure_true(self.ptr().updateShapePose(id, toAffine3f(pose)), 'updateShapePose')
-    cpdef void updatePointCloudPose(self, str id, np.ndarray pose):
+    cpdef void updatePointCloudPose(self, str id, np.ndarray pose) except*:
         _ensure_true(self.ptr().updatePointCloudPose(id, toAffine3f(pose)), 'updatePointCloudPose')
 
-    cpdef bool wasStopped(self):
+    cpdef bool wasStopped(self) except*:
         return self.ptr().wasStopped()
-    cpdef void resetStoppedFlag(self):
+    cpdef void resetStoppedFlag(self) except*:
         self.ptr().resetStoppedFlag()
-    cpdef void close(self):
+    cpdef void close(self) except*:
         self.ptr().close()
-    cpdef int createViewPort(self, double xmin, double ymin, double xmax, double ymax):
+    cpdef int createViewPort(self, double xmin, double ymin, double xmax, double ymax) except*:
         cdef int retval = 0
         self.ptr().createViewPort(xmin, ymin, xmax, ymax, retval)
         return retval
-    cpdef void createViewPortCamera(self, int viewport):
+    cpdef void createViewPortCamera(self, int viewport) except*:
         self.ptr().createViewPortCamera(viewport)
 
-    cpdef void addPointCloud(self, PointCloud cloud, color=[1, 1, 1], str field=None, color_handler=None, bint static_mapping=True, str id="cloud", int viewport=0):
+    cpdef void addPointCloud(self, PointCloud cloud, color=[1, 1, 1], str field=None, color_handler=None, bint static_mapping=True, str id="cloud", int viewport=0) except*:
         cdef shared_ptr[PointCloudGeometryHandlerXYZ_PCLPointCloud2] xyz_handler =\
             make_shared[PointCloudGeometryHandlerXYZ_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
 
@@ -398,8 +452,8 @@ cdef class Visualizer:
                 "addPointCloud")
         else:
             color_array = np.array(color)
-            if np.all(color_array < 1):
-                color_array = (color_array * 256).astype(np.uint8)
+            if np.all(color_array <= 1):
+                color_array = np.clip(color_array * 256, 0, 255)
 
             mono_handler = make_shared[PointCloudColorHandlerCustom_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr,
                 <int>(color_array[0]), <int>(color_array[1]), <int>(color_array[2]))
@@ -409,7 +463,7 @@ cdef class Visualizer:
                 cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
                 "addPointCloud")
 
-    cpdef void updatePointCloud(self, PointCloud cloud, str id="cloud"):
+    cpdef void updatePointCloud(self, PointCloud cloud, str id="cloud") except*:
         '''
         Note: updatePointCloud has limited functionality compared with addPointCloud,
             please use addPointCloud and removePointCloud if you want to customize rendering.
@@ -429,14 +483,14 @@ cdef class Visualizer:
             _ensure_true(self.ptr().updatePointCloud_XYZ(<const shared_ptr[const cPointCloud[PointXYZ]]>ccloud_xyz,
                 id.encode('ascii')), "updatePointCloud")
 
-    cpdef void addLine(self, p1, p2, color=[0.5, 0.5, 0.5], str id="line", int viewport=0):
+    cpdef void addLine(self, p1, p2, color=[0.5, 0.5, 0.5], str id="line", int viewport=0) except*:
         '''
         :param color: (r,g,b) tuple with value 0.0~1.0
         '''
         cdef PointXYZ cp1 = PointXYZ(p1[0], p1[1], p1[2])
         cdef PointXYZ cp2 = PointXYZ(p2[0], p2[1], p2[2])
         _ensure_true(self.ptr().addLine(cp1, cp2, color[0], color[1], color[2], id.encode('ascii'), viewport), "addLine")
-    cpdef void addArrow(self, p1, p2, line_color=[1, 1, 1], text_color=[1, 1, 1], bool display_length=False, str id="arrow", int viewport=0):
+    cpdef void addArrow(self, p1, p2, line_color=[1, 1, 1], text_color=[1, 1, 1], bool display_length=False, str id="arrow", int viewport=0) except*:
         cdef PointXYZ cp1 = PointXYZ(p1[0], p1[1], p1[2])
         cdef PointXYZ cp2 = PointXYZ(p2[0], p2[1], p2[2])
         if not display_length:
@@ -445,13 +499,13 @@ cdef class Visualizer:
         else:
             _ensure_true(self.ptr().addArrow(cp1, cp2, line_color[0], line_color[1], line_color[2],
                 text_color[0], text_color[1], text_color[2], id.encode('ascii'), viewport), "addArrow")
-    cpdef void addSphere(self, center, double radius, color=[0.5, 0.5, 0.5], str id="sphere", int viewport=0):
+    cpdef void addSphere(self, center, double radius, color=[0.5, 0.5, 0.5], str id="sphere", int viewport=0) except*:
         cdef PointXYZ ctr = PointXYZ(center[0], center[1], center[2])
         _ensure_true(self.ptr().addSphere(ctr, radius, color[0], color[1], color[2], id.encode('ascii'), viewport), "addSphere")
-    cpdef void updateSphere(self, center, double radius, color=[0.5, 0.5, 0.5], str id="sphere"):
+    cpdef void updateSphere(self, center, double radius, color=[0.5, 0.5, 0.5], str id="sphere") except*:
         cdef PointXYZ ctr = PointXYZ(center[0], center[1], center[2])
         _ensure_true(self.ptr().updateSphere(ctr, radius, color[0], color[1], color[2], id.encode('ascii')), "updateSphere")
-    cpdef void addCylinder(self, point_on_axis, axis_direction, double radius, str id="cylinder", int viewport=0):
+    cpdef void addCylinder(self, point_on_axis, axis_direction, double radius, str id="cylinder", int viewport=0) except*:
         cdef ModelCoefficients mcoeff
         mcoeff.values.push_back(point_on_axis[0])
         mcoeff.values.push_back(point_on_axis[1])
@@ -461,7 +515,7 @@ cdef class Visualizer:
         mcoeff.values.push_back(axis_direction[2])
         mcoeff.values.push_back(radius)
         _ensure_true(self.ptr().addCylinder(mcoeff, id.encode('ascii'), viewport), "addCylinder")
-    cpdef void addPlane(self, coeffs, str id="plane", int viewport=0):
+    cpdef void addPlane(self, coeffs, str id="plane", int viewport=0) except*:
         '''
         :param coeffs: the plane coefficients (a, b, c, d with ax+by+cz+d=0)
         '''
@@ -471,7 +525,7 @@ cdef class Visualizer:
         mcoeff.values.push_back(coeffs[2])
         mcoeff.values.push_back(coeffs[3])
         _ensure_true(self.ptr().addPlane(mcoeff, id.encode('ascii'), viewport), "addPlane")
-    cpdef void addCircle(self, center, double radius, str id="circle", int viewport=0):
+    cpdef void addCircle(self, center, double radius, str id="circle", int viewport=0) except*:
         '''
         Draw 2D circle on the canvas
         :param center: 2D center of the circle
@@ -481,7 +535,7 @@ cdef class Visualizer:
         mcoeff.values.push_back(center[1])
         mcoeff.values.push_back(radius)
         _ensure_true(self.ptr().addCircle(mcoeff, id.encode('ascii'), viewport), "addCircle")
-    cpdef void addCube(self, translation, rotation, double width, double height, double depth, str id="cube", int viewport=0):
+    cpdef void addCube(self, translation, rotation, double width, double height, double depth, str id="cube", int viewport=0) except*:
         '''
         :param translation: translation in x,y,z
         :param rotation: rotation of quaternion form w,x,y,z
@@ -490,7 +544,7 @@ cdef class Visualizer:
         cdef Quaternionf r = Quaternionf(rotation[0], rotation[1], rotation[2], rotation[3])
         _ensure_true(self.ptr().addCube(t, r, width, height, depth, id.encode('ascii'), viewport), "addCube")
 
-    cpdef void setShapeRenderingProperties(self, property, value, str id, int viewport=0):
+    cpdef void setShapeRenderingProperties(self, property, value, str id, int viewport=0) except*:
         '''
         :param property: property to be set
         :type property: RenderingProperties
@@ -509,7 +563,7 @@ cdef class Visualizer:
         else:
             result = self.ptr().setShapeRenderingProperties(<int>(property.value), <double>(value), id.encode('ascii'), viewport)
         _ensure_true(result, "setShapeRenderingProperties")
-    cpdef void setPointCloudRenderingProperties(self, property, value, str id, int viewport=0):
+    cpdef void setPointCloudRenderingProperties(self, property, value, str id, int viewport=0) except*:
         cdef bool result
         if isinstance(property, int):
             property = RenderingProperties(property)
@@ -523,31 +577,31 @@ cdef class Visualizer:
         else:
             result = self.ptr().setPointCloudRenderingProperties(<int>(property.value), <double>(value), id.encode('ascii'), viewport)
         _ensure_true(result, "setPointCloudRenderingProperties")
-    cpdef void setRepresentationToSurfaceForAllActors(self):
+    cpdef void setRepresentationToSurfaceForAllActors(self) except*:
         self.ptr().setRepresentationToSurfaceForAllActors()
-    cpdef void setRepresentationToPointsForAllActors(self):
+    cpdef void setRepresentationToPointsForAllActors(self) except*:
         self.ptr().setRepresentationToPointsForAllActors()
-    cpdef void setRepresentationToWireframeForAllActors(self):
+    cpdef void setRepresentationToWireframeForAllActors(self) except*:
         self.ptr().setRepresentationToWireframeForAllActors()
 
-    cpdef void initCameraParameters(self):
+    cpdef void initCameraParameters(self) except*:
         self.ptr().initCameraParameters()
-    cpdef void getCameraParameters(self, list argv):
+    cpdef void getCameraParameters(self, list argv) except*:
         cdef int argc = len(argv)
         cdef char** array = <char**>malloc(argc * sizeof(char*))
         for i in range(argc):
             array[i] = pystring(argv[i].encode("ascii"))
         self.ptr().getCameraParameters(argc, array)
         free(array)
-    cpdef bool cameraParamsSet(self):
+    cpdef bool cameraParamsSet(self) except*:
         return self.ptr().cameraParamsSet()
-    cpdef void updateCamera(self):
+    cpdef void updateCamera(self) except*:
         self.ptr().updateCamera()
-    cpdef void resetCamera(self):
+    cpdef void resetCamera(self) except*:
         self.ptr().resetCamera()
-    cpdef void resetCameraViewpoint(self, str id="cloud"):
+    cpdef void resetCameraViewpoint(self, str id="cloud") except*:
         self.ptr().resetCameraViewpoint(id=id.encode("ascii"))
-    cpdef void setCameraPosition(self, position, view_up, focal_point=None, int viewport=0):
+    cpdef void setCameraPosition(self, position, view_up, focal_point=None, int viewport=0) except*:
         if not focal_point:
             self.ptr().setCameraPosition(position[0], position[1], position[2],
                 view_up[0], view_up[1], view_up[2], viewport)
@@ -555,22 +609,22 @@ cdef class Visualizer:
             self.ptr().setCameraPosition(position[0], position[1], position[2],
                 focal_point[0], focal_point[1], focal_point[2],
                 view_up[0], view_up[1], view_up[2], viewport)
-    cpdef void setCameraFieldOfView(self, double fovy, int viewport=0):
+    cpdef void setCameraFieldOfView(self, double fovy, int viewport=0) except*:
         self.ptr().setCameraFieldOfView(fovy, viewport)
-    cpdef void setCameraClipDistances(self, double near, double far, int viewport=0):
+    cpdef void setCameraClipDistances(self, double near, double far, int viewport=0) except*:
         self.ptr().setCameraClipDistances(near, far, viewport)
 
-    cpdef void setPosition(self, int x, int y):
+    cpdef void setPosition(self, int x, int y) except*:
         self.ptr().setPosition(x, y)
-    cpdef void setSize(self, int xw, int yw):
+    cpdef void setSize(self, int xw, int yw) except*:
         self.ptr().setSize(xw, yw)
-    cpdef void setUseVbos(self, bool use_vbox):
+    cpdef void setUseVbos(self, bool use_vbox) except*:
         self.ptr().setUseVbos(use_vbox)
-    cpdef void createInteractor(self):
+    cpdef void createInteractor(self) except*:
         self.ptr().createInteractor()
-    cpdef void saveScreenshot(self, str file):
+    cpdef void saveScreenshot(self, str file) except*:
         self.ptr().saveScreenshot(file.encode("ascii"))
-    cpdef void setShowFPS(self, bool show_fps):
+    cpdef void setShowFPS(self, bool show_fps) except*:
         self.ptr().setShowFPS(show_fps)
 
     cpdef VisualizerInteractorStyle getInteractorStyle(self):

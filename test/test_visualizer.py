@@ -22,16 +22,16 @@ class TestVisualizer():
 
     def test_add_callback(self):
         def key_callback(event):
-            print(event.KeyCode, event.KeySym)
+            print(event)
         def mouse_callback(event):
-            print(event.X, event.Y, event.Type, event.Button)
+            print(event)
         def picking_callback(event):
-            print(event.Point, event.PointIndex)
+            print(event)
         def area_callback(event):
-            print(event.PointsIndices)
+            print(event)
 
         cloud = pcl.PointCloud(np.random.rand(100, 4).astype('f4'))
-        viewer = pcl.Visualizer()
+        viewer = pcl.Visualizer("Testing mouse and key events")
         viewer.addPointCloud(cloud)
         viewer.registerKeyboardCallback(key_callback)
         viewer.registerMouseCallback(mouse_callback)
@@ -104,4 +104,4 @@ class TestVisualizer():
         viewer.close()
 
 if __name__ == "__main__":
-    TestVisualizer().test_color_handlers()
+    TestVisualizer().test_add_callback()
