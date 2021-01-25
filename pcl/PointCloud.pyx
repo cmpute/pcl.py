@@ -427,32 +427,49 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         return item in self.to_ndarray()
 
     def __getitem__(self, indices):
-        if not isinstance(indices, tuple) and not isinstance(indices, list):
-            if isinstance(indices, int):
-                indices = slice(indices, indices+1) # access one point will return np.void type
-            # indexing by index or field
+        if isinstance(indices, np.ndarray):
+            if len(indices.shape) > 1:
+                raise NotImplementedError("Organized cloud is currently not supported")
             newdata = self.to_ndarray()[indices]
-            if isinstance(indices, str):
-                return newdata # return normal data when accessing by field type
+        elif isinstance(indices, list):
+            if len(indices) == 0:
+                if self._ptype == b"CUSTOM":
+                    raise IndexError("Cannot instantiate point cloud with 0 points of custom type!")
+                else:
+                    return PointCloud([], point_type=self._ptype.decode('ascii'))
+            if isinstance(indices[0], str):
+                # indexing by field
+                return self.to_ndarray()[indices]
+            elif isinstance(indices[0], (list, tuple, np.ndarray)):
+                raise NotImplementedError("Organized cloud is currently not supported")
             else:
-                newptype = self._ptype
-        elif len(indices) is 2: # indexing by row and col
-            raise NotImplementedError("Organized cloud is currently not supported")
+                # indexing by index
+                newdata = self.to_ndarray()[indices]
+        elif isinstance(indices, int):
+            indices = slice(indices, indices+1) # access one point will return np.void type
+            newdata = self.to_ndarray()[indices]
+        elif isinstance(indices, slice):
+            newdata = self.to_ndarray()[indices]
+        elif isinstance(indices, str):
+            return self.to_ndarray()[indices]
         else:
-            raise IndexError('too many indices')
+            raise IndexError("Valid kinds of index for accesing point cloud are (list of) slices, indices or fields"
+                             " (given indexing type is %s)" % str(type(indices)))
 
-        cloud = PointCloud(newdata, point_type=newptype.decode('ascii'))
+        cloud = PointCloud(newdata, point_type=self._ptype.decode('ascii'))
         cloud._origin = self._origin
         cloud._orientation = self._orientation
         return cloud
 
     def __setitem__(self, indices, value):
-        if not isinstance(indices, tuple) and not isinstance(indices, list):
-            # indexing by index or field or multiple fields
-            self.to_ndarray()[indices] = value
-        elif len(indices) is 2:
+        if (isinstance(indices, np.ndarray) and len(indices.shape) > 1) or\
+           (isinstance(indices, list) and isinstance(indices[0], (list, tuple, np.ndarray))):
             raise NotImplementedError("Organized cloud is currently not supported")
-        else: raise IndexError('too many indices')
+        elif not isinstance(indices, (list, int, str, slice, np.ndarray)):
+            raise IndexError("Valid kinds of index for accesing point cloud are (list of) slices, indices or fields"
+                             " (given indexing type is %s)" % str(type(indices)))
+        else:
+            self.to_ndarray()[indices] = value
 
     def __delitem__(self, indices):
         raise ValueError("Point cloud is immutable")

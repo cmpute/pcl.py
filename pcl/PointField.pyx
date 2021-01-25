@@ -40,8 +40,8 @@ cdef class PointField:
 
     property npdesc:
         def __get__(self):
-            return str(self.base.count) if self.base.count > 1 else '' \
-                + _FIELD_TYPE_MAPPING[self.base.datatype][0]
+            count_str = ("(%d,)" % self.base.count) if self.base.count > 1 else ''
+            return count_str + _FIELD_TYPE_MAPPING[self.base.datatype][0]
 
     def __repr__(self):
         return "<PointField {0} : {1}>".format(self.name, self.npdtype)

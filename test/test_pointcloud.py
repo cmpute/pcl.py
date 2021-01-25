@@ -1,8 +1,7 @@
 import pcl
 import numpy as np
-import unittest
 
-class TestPointCloud(unittest.TestCase):
+class TestPointCloud():
     def test_normal_init(self):
         cloud_array = np.array([[1,2,3],[2,3,4]], dtype='f4')
         with self.assertRaises(ValueError):
@@ -120,3 +119,41 @@ class TestPointCloud(unittest.TestCase):
         c3 = c1.append_fields(c2)
         c3.infer_ptype()
         assert c3.ptype == 'XYZN'
+
+    def test_indexing(self):
+        cloud = pcl.create_xyz(np.random.rand(10, 3))
+
+        # test getitem
+        subcloud = cloud[0]
+        assert isinstance(subcloud, pcl.PointCloud)
+        assert len(subcloud) == 1
+        subcloud = cloud[:2]
+        assert isinstance(subcloud, pcl.PointCloud)
+        assert len(subcloud) == 2
+        subcloud = cloud[[1,2]]
+        assert isinstance(subcloud, pcl.PointCloud)
+        assert len(subcloud) == 2
+        subcloud = cloud[np.array([1,2])]
+        assert isinstance(subcloud, pcl.PointCloud)
+        assert len(subcloud) == 2
+        subcloud = cloud['x']
+        assert isinstance(subcloud, np.ndarray)
+        assert len(subcloud) == 10
+        subcloud = cloud[['x', 'y']]
+        assert isinstance(subcloud, np.ndarray)
+        assert len(subcloud) == 10
+
+        # test set
+        cloud[0] = (1,2,3)
+        assert cloud[0]['x'] == 1.
+        cloud[:2] = [(2,3,4),(3,4,5)]
+        assert cloud[0]['x'] == 2.
+        assert cloud[1]['x'] == 3.
+        cloud[[1,2]] = [(4,5,6),(5,6,7)]
+        assert cloud[1]['x'] == 4.
+        assert cloud[2]['x'] == 5.
+        cloud['x'] = np.arange(10)
+        assert cloud[0]['x'] == 0
+
+if __name__ == "__main__":
+    TestPointCloud().test_indexing()
