@@ -27,7 +27,7 @@ cdef dict _POINT_TYPE_MAPPING = {
     b'INTENSITY': ((b'intensity',7,1,0),),
     b'LABEL':   ((b'label',6,1,0),),
     b'NORMAL':  UNION_NORMAL4D + ((b'curvature',7,1,12),),
-    b'RGB':     UNION_RGB,
+    b'RGB':     UNION_RGBA, # RGB point contains the field 'rgba'
     b'SURFEL':  UNION_POINT4D + UNION_NORMAL4D + UNION_RGB + ((b'radius',7,1,0), (b'confidence',7,1,12), (b'curvature',7,1,0)),
     b'UV':      ((b'u',7,1,0), (b'v',7,1,0)),
     b'XY':      ((b'x',7,1,0), (b'y',7,1,0)),
@@ -35,7 +35,7 @@ cdef dict _POINT_TYPE_MAPPING = {
     b'XYZI':    UNION_POINT4D + ((b'intensity',7,1,12),),
     b'XYZIN':   UNION_POINT4D + UNION_NORMAL4D + ((b'intensity',7,1,0), (b'curvature',7,1,8)),
     b'XYZL':    UNION_POINT4D + ((b'label',6,1,12),),
-    b'XYZLN':    UNION_POINT4D + UNION_NORMAL4D + ((b'label',6,1,0), (b'curvature',7,1,8)),
+    b'XYZLN':   UNION_POINT4D + UNION_NORMAL4D + ((b'label',6,1,0), (b'curvature',7,1,8)),
     b'XYZN':    UNION_POINT4D + UNION_NORMAL4D + ((b'curvature',7,1,12),),
     b'XYZRGB':  UNION_POINT4D + ((b'rgb',6,1,12),), # UNION_RGB
     b'XYZRGBA': UNION_POINT4D + ((b'rgba',6,1,12),), # UNION_RGBA
@@ -150,6 +150,9 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         if isinstance(data, (list, tuple)):
             if point_type == None:
                 raise ValueError('Point type should be specified when normal array is inputed')
+            if 'rgb' in point_type.lower():
+                raise ValueError("Please use record array as input when containing RGB data.")
+
             self._ptype = point_type.upper().encode('ascii')
             if <bytes>(self._ptype) not in _POINT_TYPE_MAPPING:
                 raise TypeError('Unsupported point type! You should input a record array if you want custom type.')
@@ -173,13 +176,13 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                 data = np.ascontiguousarray(data)
 
             # datatype interpreting
-            # TODO: RGB data contains single field vector
             if _is_not_record_array(data): # [normal array]
+
                 # data shape interpreting
-                if len(data.shape) < 2 or len(data.shape) > 3:
+                if data.ndim < 2 or data.ndim > 3:
                     raise ValueError("Unrecognized input data shape")
 
-                if len(data.shape) == 2:
+                if data.ndim == 2:
                     self.ptr().height = 1
                     self.ptr().width = data.shape[0]
                     self.ptr().is_dense = False
@@ -218,10 +221,10 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
 
             else: # [record array]
                 # data shape interpreting
-                if len(data.shape) < 1 or len(data.shape) > 2:
+                if data.ndim < 1 or data.ndim > 2:
                     raise ValueError("Unrecognized input data shape")
 
-                if len(data.shape) == 1:
+                if data.ndim == 1:
                     self.ptr().height = 1
                     self.ptr().width = data.shape[0]
                     self.ptr().is_dense = False
@@ -337,9 +340,6 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
 
         # Notes
         In PCL, xyz coordinate is stored in data[4] and the last field is filled with 1
-
-        FIXME: pcl.PointCloud(...).xyz will generate incorrect result!!
-        (while cloud = pcl.PointCloud(...); cloud.xyz will return correct one)
         '''
         def __get__(self):
             cdef np.ndarray arr_view = self.to_ndarray()
@@ -355,6 +355,19 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                 offsets=[arr_view.dtype.fields['x'][1]], itemsize=arr_view.itemsize)
 
             return arr_view.view(ndtype)['xyz']
+
+        def __set__(self, values):
+            cdef np.ndarray arr = np.asarray(values)
+            if arr.ndim == 1:
+                arr = arr.reshape(-1, 3)
+            if len(arr) != len(self):
+                raise ValueError("Input xyz array should have Nx3 values!")
+
+            cdef np.ndarray arr_view = self.to_ndarray()
+            arr_view['x'] = arr[:, 0]
+            arr_view['y'] = arr[:, 1]
+            arr_view['z'] = arr[:, 2]
+
     property normal:
         '''
         Get normal vectors of the point cloud, data type will be infered from data
@@ -374,22 +387,64 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                 offsets=[arr_view.dtype.fields['normal_x'][1]], itemsize=arr_view.itemsize)
 
             return arr_view.view(ndtype)['normal_xyz']
+
+        def __set__(self, values):
+            cdef np.ndarray arr = np.asarray(values)
+            if arr.ndim == 1:
+                arr = arr.reshape(-1, 3)
+            if len(arr) != len(self):
+                raise ValueError("Input normal array should have Nx3 values!")
+
+            cdef np.ndarray arr_view = self.to_ndarray()
+            arr_view['normal_x'] = arr[:, 0]
+            arr_view['normal_y'] = arr[:, 1]
+            arr_view['normal_z'] = arr[:, 2]
+
     property rgb:
         '''
         Get the color field of the pointcloud, the property returns unpacked rgb values
-            (float rgb -> uint8 b,g,r)
+            (float rgb -> uint8 r,g,b)
         # Notes
         In PCL, rgb is stored as rgba with a=255
         '''
         def __get__(self):
-            return self.to_ndarray()['rgb'].view('4u1')[:,:3]
-    property rgba:
+            return self.to_ndarray()['rgb'].view('4u1')[:, 2::-1]
+
+        def __set__(self, values):
+            cdef np.ndarray arr = np.asarray(values)
+            if arr.ndim == 1:
+                arr = arr.reshape(-1, 3)
+            if len(arr) != len(self):
+                raise ValueError("Input rgb array should have Nx3 values!")
+
+            rgb_dt = np.dtype(dict(names=['b','g','r'], formats=['u1','u1','u1'], itemsize=4))
+            cdef np.ndarray arr_view = self.to_ndarray()['rgb'].view(rgb_dt)
+            arr_view['r'] = arr[:, 0]
+            arr_view['g'] = arr[:, 1]
+            arr_view['b'] = arr[:, 2]
+
+    property argb:
         '''
-        Get the color field of the pointcloud, the property returns unpacked rgba values
-            (uint32 rgba -> uint8 b,g,r,a)
+        Get the color field of the pointcloud, the property returns unpacked argb values
+            (uint32 argb -> uint8 a,r,g,b)
         '''
         def __get__(self):
-            return self.to_ndarray()['rgba'].view('4u1')
+            return self.to_ndarray()['rgba'].view('4u1')[:, ::-1]
+
+        def __set__(self, values):
+            cdef np.ndarray arr = np.asarray(values)
+            if arr.ndim == 1:
+                arr = arr.reshape(-1, 4)
+            if len(arr) != len(self):
+                raise ValueError("Input argb array should have Nx4 values!")
+
+            rgba_dt = np.dtype(dict(names=['b','g','r','a'], formats=['u1','u1','u1','u1'], itemsize=4))
+            cdef np.ndarray arr_view = self.to_ndarray()['rgba'].view(rgba_dt)
+            arr_view['a'] = arr[:, 0]
+            arr_view['r'] = arr[:, 1]
+            arr_view['g'] = arr[:, 2]
+            arr_view['b'] = arr[:, 3]
+
     property is_organized:
         '''
         Get whether the point cloud is organized
@@ -428,7 +483,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
 
     def __getitem__(self, indices):
         if isinstance(indices, np.ndarray):
-            if len(indices.shape) > 1:
+            if indices.ndim > 1:
                 raise NotImplementedError("Organized cloud is currently not supported")
             newdata = self.to_ndarray()[indices]
         elif isinstance(indices, list):
@@ -462,7 +517,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         return cloud
 
     def __setitem__(self, indices, value):
-        if (isinstance(indices, np.ndarray) and len(indices.shape) > 1) or\
+        if (isinstance(indices, np.ndarray) and indices.ndim > 1) or \
            (isinstance(indices, list) and isinstance(indices[0], (list, tuple, np.ndarray))):
             raise NotImplementedError("Organized cloud is currently not supported")
         elif not isinstance(indices, (list, int, str, slice, np.ndarray)):

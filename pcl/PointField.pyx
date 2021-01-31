@@ -44,7 +44,7 @@ cdef class PointField:
             return count_str + _FIELD_TYPE_MAPPING[self.base.datatype][0]
 
     def __repr__(self):
-        return "<PointField {0} : {1}>".format(self.name, self.npdtype)
+        return "<PointField {0}: {1}>".format(self.name, self.npdesc)
 
     def to_msg(self):
         if not ros_exist: raise ros_error

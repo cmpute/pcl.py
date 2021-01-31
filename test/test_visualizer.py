@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import pcl
 
-class TestVisualizer():
+class TestVisualizer(unittest.TestCase):
     def test_add_pointcloud(self):
         cloud1 = pcl.PointCloud(np.random.rand(100, 4).astype('f4'))
         cloud2 = pcl.PointCloud(np.random.rand(100, 4).astype('f4'))

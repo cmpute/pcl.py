@@ -1,7 +1,8 @@
 import pcl
 import numpy as np
+import unittest
 
-class TestPointCloud():
+class TestPointCloud(unittest.TestCase):
     def test_normal_init(self):
         cloud_array = np.array([[1,2,3],[2,3,4]], dtype='f4')
         with self.assertRaises(ValueError):
@@ -45,11 +46,9 @@ class TestPointCloud():
         assert np.any(cloud.xyz != cloud_array)
         assert np.all(copy.xyz == cloud_array)
 
-    def test_point_type(self):
-        cloud = pcl.PointCloud([(1,2,3,255),(2,3,4,255)], 'xyzrgb')
-        assert len(cloud) == 2
-        assert cloud.names == ['x', 'y', 'z', 'rgb']
-        assert len(cloud.rgb) == 2
+    def test_rgb_type(self):
+        with self.assertRaises(ValueError):
+            cloud = pcl.PointCloud([(1,2,3,255),(2,3,4,255)], 'xyzrgb')
 
     def test_origin(self):
         cloud = pcl.PointCloud([(1,2,3),(2,3,4)])
@@ -80,6 +79,11 @@ class TestPointCloud():
             _ = cloud.xyz
 
     def test_creators(self):
+        # RGB points actually contains the rgba field
+        cloud = pcl.create_rgb([[10, 20, 30, 30], [40, 50, 60, 60]])
+        assert np.all(cloud.argb == np.array([[30, 10, 20, 30], [60, 40, 50, 60]]))
+        assert cloud.ptype == "RGB"
+
         cloud = pcl.create_xyz([[1,2,3], [4,5,6]])
         assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
         assert cloud.ptype == "XYZ"
@@ -106,6 +110,7 @@ class TestPointCloud():
 
         cloud = pcl.create_normal([[1,2,3,3], [4,5,6,6]])
         assert np.all(cloud.normal == np.array([[1,2,3], [4,5,6]]))
+        assert np.all(cloud['curvature'] == [3, 6])
         assert cloud.ptype == "NORMAL"
 
         cloud = pcl.create_normal([[1,2,3], [4,5,6]])
@@ -113,12 +118,54 @@ class TestPointCloud():
         assert np.all(cloud['curvature'] == 0)
         assert cloud.ptype == "NORMAL"
 
+        cloud = pcl.create_xyzn([[1,2,3,1,2,3,1], [4,5,6,4,5,6,4]])
+        assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
+        assert np.all(cloud.normal == np.array([[1,2,3], [4,5,6]]))
+        assert np.all(cloud['curvature'] == [1, 4])
+        assert cloud.ptype == "XYZN"
+
+        cloud = pcl.create_xyzn([[1,2,3,1,2,3], [4,5,6,4,5,6]])
+        assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
+        assert np.all(cloud.normal == np.array([[1,2,3], [4,5,6]]))
+        assert np.all(cloud['curvature'] == 0)
+        assert cloud.ptype == "XYZN"
+
+        cloud = pcl.create_xyzrgbn([[1,2,3,1,2,3,1,2,3,1], [4,5,6,4,5,6,4,5,6,4]])
+        assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
+        assert np.all(cloud.normal == np.array([[1,2,3], [4,5,6]]))
+        assert np.all(cloud['curvature'] == [1, 4])
+        assert cloud.ptype == "XYZRGBN"
+        
+        cloud = pcl.create_xyzrgbn([[1,2,3,1,2,3,1,2,3], [4,5,6,4,5,6,4,5,6]])
+        assert np.all(cloud.xyz == np.array([[1,2,3], [4,5,6]]))
+        assert np.all(cloud.normal == np.array([[1,2,3], [4,5,6]]))
+        assert np.all(cloud['curvature'] == 0)
+        assert cloud.ptype == "XYZRGBN"
+
     def test_infer_ptype(self):
         c1 = pcl.create_xyz(np.random.rand(10, 3))
         c2 = pcl.create_normal(np.random.rand(10, 3))
         c3 = c1.append_fields(c2)
         c3.infer_ptype()
         assert c3.ptype == 'XYZN'
+
+    def test_predefined_accessors(self):
+        cloud = pcl.create_xyzrgbn([[1,2,3,1,2,3,1,2,3,1], [4,5,6,4,5,6,4,5,6,4]])
+        assert np.all(cloud.xyz == [[1,2,3], [4,5,6]])
+        assert np.all(cloud.normal == [[1,2,3], [4,5,6]])
+        assert np.all(cloud.rgb == [[1,2,3], [4,5,6]])
+
+        cloud.xyz = [[2,3,4], [2,3,4]]
+        assert(np.all(cloud.xyz == [[2,3,4], [2,3,4]]))
+        cloud.normal = [[3,4,5], [3,4,5]]
+        assert(np.all(cloud.normal == [[3,4,5], [3,4,5]]))
+        cloud.rgb = [[0,1,2], [0,1,2]]
+        assert(np.all(cloud.rgb == [[0,1,2], [0,1,2]]))
+
+        cloud = pcl.create_rgb([[1,2,3,4], [1,2,3,4]])
+        assert np.all(cloud.argb == [[4,1,2,3], [4,1,2,3]])
+        cloud.argb = [[1,2,3,4], [1,2,3,4]]
+        assert np.all(cloud.argb == [[1,2,3,4], [1,2,3,4]])
 
     def test_indexing(self):
         cloud = pcl.create_xyz(np.random.rand(10, 3))
@@ -154,6 +201,3 @@ class TestPointCloud():
         assert cloud[2]['x'] == 5.
         cloud['x'] = np.arange(10)
         assert cloud[0]['x'] == 0
-
-if __name__ == "__main__":
-    TestPointCloud().test_indexing()
