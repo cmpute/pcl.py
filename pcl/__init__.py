@@ -23,7 +23,7 @@ def _check_point_size(data, size):
 def _parse_rgb(data, offset):
     rgb_dt = np.dtype(dict(names=['b','g','r'], formats=['u1','u1','u1'], itemsize=4))
     rgb_arr = np.empty(len(data), dtype=rgb_dt)
-    rgb_arr['r'] = data[:,offset]
+    rgb_arr['r'] = data[:,offset].copy() # FIXME: this copy() can prevent segfault in visualizer
     rgb_arr['g'] = data[:,offset+1]
     rgb_arr['b'] = data[:,offset+2]
     return rgb_arr.view('u4')
@@ -31,7 +31,7 @@ def _parse_rgb(data, offset):
 def _parse_rgba(data, offset):
     rgba_dt = np.dtype(dict(names=['b','g','r','a'], formats=['u1','u1','u1','u1'], itemsize=4))
     rgba_arr = np.empty(len(data), dtype=rgba_dt)
-    rgba_arr['r'] = data[:,offset]
+    rgba_arr['r'] = data[:,offset].copy() # FIXME: this copy() can prevent segfault in visualizer
     rgba_arr['g'] = data[:,offset+1]
     rgba_arr['b'] = data[:,offset+2]
     rgba_arr['a'] = data[:,offset+3]
