@@ -76,7 +76,7 @@ cdef extern from "Eigen/Eigen" namespace "Eigen" nogil:
         @staticmethod
         Affine3f Identity()
 
-    cdef cppclass allocator3i "Eigen::aligned_allocator<Eigen::Vector3i>":
+    cdef cppclass align_allocator[T]:
         pass
 
 cdef extern from "eigen.hpp" nogil:

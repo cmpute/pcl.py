@@ -1,3 +1,4 @@
+include "../pcl_config.pxi"
 from libc.stdlib cimport malloc, free
 from libcpp.vector cimport vector
 from libcpp.string cimport string
@@ -20,12 +21,17 @@ from pcl.common.point_types cimport PointXYZ, PointXYZRGB, PointXYZRGBA, Normal,
 from pcl.common.PCLHeader cimport PCLHeader
 from pcl.PointCloud cimport _POINT_TYPE_MAPPING as pmap
 from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryHandler_PCLPointCloud2, PointCloudGeometryHandlerXYZ_PCLPointCloud2
-from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler_PCLPointCloud2, PointCloudColorHandlerCustom_PCLPointCloud2, PointCloudColorHandlerRGBField_PCLPointCloud2, PointCloudColorHandlerGenericField_PCLPointCloud2, PointCloudColorHandlerRGBAField_PCLPointCloud2, PointCloudColorHandlerLabelField_PCLPointCloud2
+from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler_PCLPointCloud2, PointCloudColorHandlerCustom_PCLPointCloud2, PointCloudColorHandlerRGBField_PCLPointCloud2, PointCloudColorHandlerGenericField_PCLPointCloud2
 from pcl.visualization._handlers cimport PointCloudColorHandlerPython
 from pcl.visualization.mouse_event_enums cimport Type as cMouseEvent_Type, MouseButton as cMouseEvent_MouseButton
 from pcl.visualization.common cimport RenderingProperties as cRenderingProperties,\
     RenderingRepresentationProperties as cRenderingRepresentationProperties,\
     ShadingRepresentationProperties as cShadingRepresentationProperties
+
+IF PCL_VER >= 10800:
+    include "_visualization.10800.pxi"
+ELSE:
+    include "_visualization.default.pxi"
 
 cdef class KeyboardEvent:
     cdef cKeyboardEvent* ptr(self):
@@ -397,8 +403,6 @@ cdef class Visualizer:
         cdef shared_ptr[PointCloudColorHandlerRGBField_PCLPointCloud2] rgb_handler
         cdef shared_ptr[PointCloudColorHandlerCustom_PCLPointCloud2] mono_handler
         cdef shared_ptr[PointCloudColorHandlerGenericField_PCLPointCloud2] field_handler
-        cdef shared_ptr[PointCloudColorHandlerLabelField_PCLPointCloud2] label_handler
-        cdef shared_ptr[PointCloudColorHandlerRGBAField_PCLPointCloud2] rgba_handler
         cdef shared_ptr[PointCloudColorHandlerPython] python_handler
         cdef bytes cfield
 
@@ -408,46 +412,36 @@ cdef class Visualizer:
                 break
             if name == b'rgb':
                 field = 'rgb'
-            if name == b'rgba':
+            if name == b'rgba' and PCL_VER >= 10800:
                 field = 'rgba'
-            if name == b'label':
+            if name == b'label' and PCL_VER >= 10800:
                 field = 'label'
 
         # call underlying function
-        if field == 'rgb':
+        if color_handler is not None: # handler should be callable
+            python_handler = shared_ptr[PointCloudColorHandlerPython](new PointCloudColorHandlerPython(<PCLPointCloud2ConstPtr>cloud._ptr, PointCloudColorHandlerCallback, <void*>color_handler))
+            _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
+                <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
+                <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>python_handler,
+                cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
+                "addPointCloud")
+        elif field == 'rgb':
             rgb_handler = make_shared[PointCloudColorHandlerRGBField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
             _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
                 <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
                 <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>rgb_handler,
                 cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
                 "addPointCloud")
-        elif field == 'rgba':
-            rgba_handler = make_shared[PointCloudColorHandlerRGBAField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
-            _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
-                <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
-                <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>rgba_handler,
-                cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
-                "addPointCloud")
-        elif field == 'label':
-            label_handler = make_shared[PointCloudColorHandlerLabelField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr, static_mapping)
-            _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
-                <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
-                <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>label_handler,
-                cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
-                "addPointCloud")
+        elif field == 'rgba' and PCL_VER >= 10800:
+            addPointCloud_RGBAField(self.ptr(), cloud, xyz_handler, id, viewport)
+        elif field == 'label' and PCL_VER >= 10800:
+            addPointCloud_LabelField(self.ptr(), cloud, xyz_handler, static_mapping, id, viewport)
         elif field is not None:
             cfield = field.encode('ascii')
             field_handler = make_shared[PointCloudColorHandlerGenericField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr, cfield)
             _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
                 <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
                 <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>field_handler,
-                cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
-                "addPointCloud")
-        elif color_handler is not None: # handler should be callable
-            python_handler = shared_ptr[PointCloudColorHandlerPython](new PointCloudColorHandlerPython(<PCLPointCloud2ConstPtr>cloud._ptr, PointCloudColorHandlerCallback, <void*>color_handler))
-            _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
-                <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
-                <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>python_handler,
                 cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
                 "addPointCloud")
         else:
