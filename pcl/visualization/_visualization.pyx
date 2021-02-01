@@ -24,9 +24,7 @@ from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryH
 from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler_PCLPointCloud2, PointCloudColorHandlerCustom_PCLPointCloud2, PointCloudColorHandlerRGBField_PCLPointCloud2, PointCloudColorHandlerGenericField_PCLPointCloud2
 from pcl.visualization._handlers cimport PointCloudColorHandlerPython
 from pcl.visualization.mouse_event_enums cimport Type as cMouseEvent_Type, MouseButton as cMouseEvent_MouseButton
-from pcl.visualization.common cimport RenderingProperties as cRenderingProperties,\
-    RenderingRepresentationProperties as cRenderingRepresentationProperties,\
-    ShadingRepresentationProperties as cShadingRepresentationProperties
+from pcl.visualization.common cimport RenderingProperties as cRenderingProperties, RenderingRepresentationProperties as cRenderingRepresentationProperties, ShadingRepresentationProperties as cShadingRepresentationProperties
 from pcl.visualization.pcl_visualizer cimport PCLVisualizer_D
 
 IF PCL_VER >= 10800:
