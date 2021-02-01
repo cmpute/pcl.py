@@ -431,10 +431,11 @@ cdef class Visualizer:
                 break
             if name == b'rgb':
                 field = 'rgb'
-            if name == b'rgba' and PCL_VER >= 10800:
-                field = 'rgba'
-            if name == b'label' and PCL_VER >= 10800:
-                field = 'label'
+            if PCL_VER >= 10800:
+                if name == b'rgba':
+                    field = 'rgba'
+                if name == b'label':
+                    field = 'label'
 
         # call underlying function
         if color_handler is not None: # handler should be callable
@@ -451,20 +452,22 @@ cdef class Visualizer:
                 <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>rgb_handler,
                 cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
                 "addPointCloud")
-        elif field == 'rgba' and PCL_VER >= 10800:
-            rgba_handler = make_shared[PointCloudColorHandlerRGBAField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
-            _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
-                <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
-                <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>rgba_handler,
-                cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
-                "addPointCloud")
-        elif field == 'label' and PCL_VER >= 10800:
-            label_handler = make_shared[PointCloudColorHandlerLabelField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr, static_mapping)
-            _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
-                <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
-                <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>label_handler,
-                cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
-                "addPointCloud")
+        elif field == 'rgba':
+            IF PCL_VER >= 10800:
+                rgba_handler = make_shared[PointCloudColorHandlerRGBAField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
+                _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
+                    <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
+                    <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>rgba_handler,
+                    cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
+                    "addPointCloud")
+        elif field == 'label':
+            IF PCL_VER >= 10800:
+                label_handler = make_shared[PointCloudColorHandlerLabelField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr, static_mapping)
+                _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
+                    <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
+                    <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>label_handler,
+                    cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
+                    "addPointCloud")
         elif field is not None:
             cfield = field.encode('ascii')
             field_handler = make_shared[PointCloudColorHandlerGenericField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr, cfield)
