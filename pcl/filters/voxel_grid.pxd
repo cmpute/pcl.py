@@ -2,7 +2,7 @@ include "../pcl_config.pxi"
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
-from pcl._eigen cimport Vector3f, Vector4f, Vector3i, align_allocator
+from pcl._eigen cimport Vector3f, Vector4f, Vector3i, aligned_allocator
 from pcl._boost cimport shared_ptr
 from pcl.common.point_cloud cimport PointCloud
 from pcl.common.PCLPointCloud2 cimport PCLPointCloud2, PCLPointCloud2ConstPtr
@@ -12,7 +12,7 @@ from pcl.filters.filter cimport Filter, Filter_PCLPointCloud2
 
 IF PCL_VER >= 10800:
     # https://github.com/PointCloudLibrary/pcl/commit/d78270ab50b550d89d1e9d4890f4700cf44071f1
-    ctypedef vector[Vector3i, align_allocator[Vector3i]] VoxelGrid_getNeighborCentroidIndices_type
+    ctypedef vector[Vector3i, aligned_allocator[Vector3i]] VoxelGrid_getNeighborCentroidIndices_type
 ELSE:
     ctypedef vector[Vector3i] VoxelGrid_getNeighborCentroidIndices_type
 
