@@ -27,11 +27,13 @@ from pcl.visualization.mouse_event_enums cimport Type as cMouseEvent_Type, Mouse
 from pcl.visualization.common cimport RenderingProperties as cRenderingProperties,\
     RenderingRepresentationProperties as cRenderingRepresentationProperties,\
     ShadingRepresentationProperties as cShadingRepresentationProperties
+from pcl.visualization.pcl_visualizer cimport PCLVisualizer_D
 
 IF PCL_VER >= 10800:
-    include "_visualization.10800.pxi"
+    from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandlerRGBAField_PCLPointCloud2, PointCloudColorHandlerLabelField_PCLPointCloud2
 ELSE:
-    include "_visualization.default.pxi"
+    ctypedef PointCloudColorHandler_PCLPointCloud2 PointCloudColorHandlerRGBAField_PCLPointCloud2
+    ctypedef PointCloudColorHandler_PCLPointCloud2 PointCloudColorHandlerLabelField_PCLPointCloud2
 
 cdef class KeyboardEvent:
     cdef inline cKeyboardEvent* ptr(self):
@@ -305,15 +307,32 @@ cdef class Visualizer:
     cpdef void spinOnce(self, int time=1, bool force_redraw=False) except*:
         self.ptr().spinOnce(time, force_redraw)
 
-    cpdef void addCoordinateSystem(self, double scale=1, float x=0, float y=0, float z=0, np.ndarray t=None, int viewport=0) except*:
+    cpdef void addCoordinateSystem(self, double scale=1, float x=0, float y=0, float z=0, np.ndarray t=None, str id="reference", int viewport=0) except*:
         cdef Affine3f ct
-        if t is not None:
-            ct = toAffine3f(t)
-            self.ptr().addCoordinateSystem(scale, ct, viewport)
-        else:
-            self.ptr().addCoordinateSystem(scale, x, y, z, viewport)
-    cpdef void removeCoordinateSystem(self, int viewport=0) except*:
-        _ensure_true(self.ptr().removeCoordinateSystem(viewport), 'removeCoordinateSystem')
+        cdef PCLVisualizer_D* ptr = <PCLVisualizer_D*> self.ptr()
+        IF PCL_VER > 10702:
+            if t is not None:
+                ct = toAffine3f(t)
+                ptr.addCoordinateSystem(scale, ct, id.encode('ascii'), viewport)
+            else:
+                ptr.addCoordinateSystem(scale, x, y, z, id.encode('ascii'), viewport)
+        ELSE:
+            if id != "reference":
+                raise NotImplementedError("Only supported in PCL 1.7.2 and higher")
+            if t is not None:
+                ct = toAffine3f(t)
+                ptr.addCoordinateSystem(scale, ct, viewport)
+            else:
+                ptr.addCoordinateSystem(scale, x, y, z, viewport)
+
+    cpdef void removeCoordinateSystem(self, str id="reference", int viewport=0) except*:
+        cdef PCLVisualizer_D* ptr = <PCLVisualizer_D*> self.ptr()
+        IF PCL_VER > 10702:
+            _ensure_true(ptr.removeCoordinateSystem(id.encode('ascii'), viewport), 'removeCoordinateSystem')
+        ELSE:
+            if id != "reference":
+                raise NotImplementedError("Only supported in PCL 1.7.2 and higher")
+            _ensure_true(ptr.removeCoordinateSystem(viewport), 'removeCoordinateSystem')
 
     cpdef void removePointCloud(self, str id="cloud", int viewport=0) except*:
         _ensure_true(self.ptr().removePointCloud(id.encode('ascii'), viewport), 'removePointCloud')
@@ -403,6 +422,8 @@ cdef class Visualizer:
         cdef shared_ptr[PointCloudColorHandlerRGBField_PCLPointCloud2] rgb_handler
         cdef shared_ptr[PointCloudColorHandlerCustom_PCLPointCloud2] mono_handler
         cdef shared_ptr[PointCloudColorHandlerGenericField_PCLPointCloud2] field_handler
+        cdef shared_ptr[PointCloudColorHandlerRGBAField_PCLPointCloud2] rgba_handler
+        cdef shared_ptr[PointCloudColorHandlerLabelField_PCLPointCloud2] label_handler
         cdef shared_ptr[PointCloudColorHandlerPython] python_handler
         cdef bytes cfield
 
@@ -433,9 +454,19 @@ cdef class Visualizer:
                 cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
                 "addPointCloud")
         elif field == 'rgba' and PCL_VER >= 10800:
-            addPointCloud_RGBAField(self.ptr(), cloud, xyz_handler, id, viewport)
+            rgba_handler = make_shared[PointCloudColorHandlerRGBAField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
+            _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
+                <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
+                <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>rgba_handler,
+                cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
+                "addPointCloud")
         elif field == 'label' and PCL_VER >= 10800:
-            addPointCloud_LabelField(self.ptr(), cloud, xyz_handler, static_mapping, id, viewport)
+            label_handler = make_shared[PointCloudColorHandlerLabelField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr, static_mapping)
+            _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
+                <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
+                <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>label_handler,
+                cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
+                "addPointCloud")
         elif field is not None:
             cfield = field.encode('ascii')
             field_handler = make_shared[PointCloudColorHandlerGenericField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr, cfield)

@@ -1,3 +1,4 @@
+include "../pcl_config.pxi"
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
@@ -19,7 +20,6 @@ from pcl.visualization.point_picking_event cimport PointPickingEvent
 from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler, PointCloudColorHandler_PCLPointCloud2
 from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryHandler, PointCloudGeometryHandler_PCLPointCloud2
 
-# XXX: optional args in extern functions can sometimes generate errors
 cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualization":
     cdef cppclass PCLVisualizer:
         PCLVisualizer()
@@ -46,15 +46,6 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
 
         # XXX: void addOrientationMarkerWidgetAxes(vtkRenderWindowInteractor* interactor)
         void removeOrientationMarkerWidgetAxes ()
-
-        # void addCoordinateSystem (double scale = 1.0, int viewport = 0);
-        void addCoordinateSystem(double scale, int viewport)
-        # void addCoordinateSystem (double scale, float x, float y, float z, int viewport = 0);
-        void addCoordinateSystem(double scale, float x, float y, float z, int viewport)
-        # void addCoordinateSystem (double scale, const Eigen::Affine3f& t, int viewport = 0);
-        void addCoordinateSystem(double scale, const Affine3f &t, int viewport)
-        # bool removeCoordinateSystem (int viewport = 0);
-        bool removeCoordinateSystem(int viewport)
 
         # bool removePointCloud (const std::string &id = "cloud", int viewport = 0);
         bool removePointCloud(const string &id, int viewport)
@@ -284,3 +275,11 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
 
 ctypedef shared_ptr[PCLVisualizer] PCLVisualizerPtr
 ctypedef shared_ptr[const PCLVisualizer] PCLVisualizerConstPtr
+
+# define partial class for version-specific definitions
+IF PCL_VER > 10702:
+    include "pcl_visualizer.10702.pxi"
+    ctypedef PCLVisualizer_10702 PCLVisualizer_D
+ELSE:
+    include "pcl_visualizer.default.pxi"
+    ctypedef PCLVisualizer_default PCLVisualizer_D

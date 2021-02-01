@@ -10,7 +10,7 @@ cdef extern from "pcl/filters/filter.h" namespace "pcl":
         void getRemovedIndices(PointIndices &pi)
         void filter(PointCloud[PointT] &output)
 
-    cdef cppclass Filter_PCLPointCloud2 "pcl::Filter<pcl::PCLPointCloud2>"(PCLBase_PCLPointCloud2):
+    cdef cppclass Filter_PCLPointCloud2 "pcl::Filter<pcl::PCLPointCloud2> "(PCLBase_PCLPointCloud2):
         Filter_PCLPointCloud2()
         const PointIndicesConstPtr getRemovedIndices()
         void getRemovedIndices(PointIndices &pi)

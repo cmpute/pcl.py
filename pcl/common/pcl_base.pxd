@@ -14,7 +14,7 @@ cdef extern from "pcl/pcl_base.h" namespace "pcl":
         void setIndices(size_t row_start, size_t col_start, size_t nb_rows, size_t nb_cols)
         const PointIndicesPtr getIndices()
 
-    cdef cppclass PCLBase_PCLPointCloud2 "pcl::PCLBase<pcl::PCLPointCloud2>":
+    cdef cppclass PCLBase_PCLPointCloud2 " pcl::PCLBase<pcl::PCLPointCloud2> ":
         PCLBase_PCLPointCloud2()
         void setInputCloud(const PCLPointCloud2ConstPtr &cloud)
         const PCLPointCloud2ConstPtr getInputCloud()

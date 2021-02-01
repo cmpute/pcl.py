@@ -52,7 +52,7 @@ cdef extern from "pcl/filters/voxel_grid.h" namespace "pcl":
         void getFilterLimitsNegative (bool &limit_negative)
         bool getFilterLimitsNegative ()
 
-    cdef cppclass VoxelGrid_PCLPointCloud2 "pcl::VoxelGrid<pcl::PCLPointCloud2>"(Filter_PCLPointCloud2):
+    cdef cppclass VoxelGrid_PCLPointCloud2 "pcl::VoxelGrid<pcl::PCLPointCloud2> "(Filter_PCLPointCloud2):
         VoxelGrid_PCLPointCloud2()
         void setLeafSize(const Vector4f &leaf_size)
         void setLeafSize(float lx, float ly, float lz)

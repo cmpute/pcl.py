@@ -70,8 +70,8 @@ cdef class Visualizer:
     cpdef void spin(self) except*
     cpdef void spinOnce(self, int time=*, bool force_redraw=*) except*
 
-    cpdef void addCoordinateSystem(self, double scale=*, float x=*, float y=*, float z=*, np.ndarray t=*, int viewport=*) except*
-    cpdef void removeCoordinateSystem(self, int viewport=*) except*
+    cpdef void addCoordinateSystem(self, double scale=*, float x=*, float y=*, float z=*, np.ndarray t=*, str id=*, int viewport=*) except*
+    cpdef void removeCoordinateSystem(self, str id=*, int viewport=*) except*
 
     cpdef void removePointCloud(self, str id=*, int viewport=*) except*
     cpdef void removePolygonMesh(self, str id=*, int viewport=*) except*
