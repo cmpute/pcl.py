@@ -1,0 +1,48 @@
+package:
+  name: "pcl.py"
+  version: "0.2.9"
+
+source:
+  path: ..
+
+build:
+  number: 0
+  string: "py{{ py }}_{{ PKG_BUILDNUM }}_pcl{{ pcl }}"
+  script:
+    - {{ PYTHON }} -m pip install . -vv
+
+requirements:
+  channels:
+    - conda-forge
+  build:
+    - {{ compiler('cxx') }}
+    - cmake
+    - ninja  # [win]
+    - make  # [unix]
+  host:
+    - python {{ python }}
+    - pip
+    - pcl {{ pcl }}
+    - boost-cpp
+    - eigen
+    - cmake
+    - numpy>=1.14
+    - scikit-build
+    - cython
+  run:
+    - python {{ python }}
+    - pcl {{ pcl }}
+    - boost-cpp
+    - numpy>=1.14
+
+test:
+  requires:
+    - pytest
+  imports:
+    - pcl
+  commands:
+    - pytest test/
+
+about:
+  home: https://github.com/cmpute/pcl.py
+  summary: Templated python inferface for Point Cloud Library (PCL) based on Cython

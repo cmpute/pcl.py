@@ -34,7 +34,7 @@ ELSE:
     include "_visualization.default.pxi"
 
 cdef class KeyboardEvent:
-    cdef cKeyboardEvent* ptr(self):
+    cdef inline cKeyboardEvent* ptr(self):
         return self._ptr.get()
     cpdef bool isAltPressed(self):
         return self.ptr().isAltPressed()
@@ -94,7 +94,7 @@ class MouseEvent_MouseButton(Enum):
     VScroll=cMouseEvent_MouseButton.VScroll
 
 cdef class MouseEvent:
-    cdef cMouseEvent* ptr(self):
+    cdef inline cMouseEvent* ptr(self):
         return self._ptr.get()
     property Type:
         def __get__(self):
@@ -157,7 +157,7 @@ cdef void MouseEventCallback(const cMouseEvent &event, void *func):
     (<object>func)(MouseEvent.wrap(event))
 
 cdef class PointPickingEvent:
-    cdef cPointPickingEvent* ptr(self):
+    cdef inline cPointPickingEvent* ptr(self):
         return self._ptr.get()
 
     property Point:
@@ -194,7 +194,7 @@ cdef void PointPickingEventCallback(const cPointPickingEvent &event, void *func)
     (<object>func)(PointPickingEvent.wrap(event))
 
 cdef class AreaPickingEvent:
-    cdef cAreaPickingEvent* ptr(self):
+    cdef inline cAreaPickingEvent* ptr(self):
         return self._ptr.get()
 
     property PointsIndices:
@@ -218,7 +218,7 @@ cdef void AreaPickingEventCallback(const cAreaPickingEvent &event, void *func):
     (<object>func)(AreaPickingEvent.wrap(event))
 
 cdef class VisualizerInteractorStyle:
-    cdef PCLVisualizerInteractorStyle* ptr(self):
+    cdef inline PCLVisualizerInteractorStyle* ptr(self):
         return self._ptr.Get()
 
     property CameraFile:
@@ -277,7 +277,7 @@ class ShadingRepresentationProperties(Enum):
     Phong = cShadingRepresentationProperties.PCL_VISUALIZER_SHADING_PHONG
 
 cdef class Visualizer:
-    cdef PCLVisualizer* ptr(self):
+    cdef inline PCLVisualizer* ptr(self):
         return self._ptr.get()
     def __init__(self, str name="", bool create_interactor=True):
         self._ptr = make_shared[PCLVisualizer](<bytes>(name.encode('ascii')), create_interactor)

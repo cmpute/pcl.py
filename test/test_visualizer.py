@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 import pcl
 
+@pytest.mark.skipif(not pcl.visualization.available, reason="PCL visualization not built")
 class TestVisualizer(unittest.TestCase):
     def test_add_pointcloud(self):
         cloud1 = pcl.PointCloud(np.random.rand(100, 4).astype('f4'))

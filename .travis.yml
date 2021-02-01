@@ -17,6 +17,11 @@ matrix:
       python: 3.7
       env: NUMPY=1.15 PCLVER=180
 
+    - name: "Python3.8 + PCL1.10 + Numpy1.17"
+      dist: focal
+      python: 3.8
+      env: NUMPY=1.17 PCLVER=1100
+
   # - os: osx
   #   osx_image: xcode10.2  # Python 3.7.2 running on macOS 10.14.3
   #   language: shell

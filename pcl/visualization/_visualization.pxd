@@ -12,7 +12,7 @@ from pcl.visualization.point_picking_event cimport PointPickingEvent as cPointPi
 
 cdef class KeyboardEvent:
     cdef shared_ptr[cKeyboardEvent] _ptr
-    cdef cKeyboardEvent* ptr(self)
+    cdef inline cKeyboardEvent* ptr(self)
 
     cpdef bool isAltPressed(self)
     cpdef bool isCtrlPressed(self)
@@ -25,28 +25,28 @@ cdef class KeyboardEvent:
 
 cdef class MouseEvent:
     cdef shared_ptr[cMouseEvent] _ptr
-    cdef cMouseEvent* ptr(self)
+    cdef inline cMouseEvent* ptr(self)
 
     @staticmethod
     cdef MouseEvent wrap(const cMouseEvent& data)
 
 cdef class PointPickingEvent:
     cdef shared_ptr[cPointPickingEvent] _ptr
-    cdef cPointPickingEvent* ptr(self)
+    cdef inline cPointPickingEvent* ptr(self)
 
     @staticmethod
     cdef PointPickingEvent wrap(const cPointPickingEvent& data)
 
 cdef class AreaPickingEvent:
     cdef shared_ptr[cAreaPickingEvent] _ptr
-    cdef cAreaPickingEvent* ptr(self)
+    cdef inline cAreaPickingEvent* ptr(self)
 
     @staticmethod
     cdef AreaPickingEvent wrap(const cAreaPickingEvent& data)
 
 cdef class VisualizerInteractorStyle:
     cdef vtkSmartPointer[PCLVisualizerInteractorStyle] _ptr
-    cdef PCLVisualizerInteractorStyle* ptr(self)
+    cdef inline PCLVisualizerInteractorStyle* ptr(self)
 
     cpdef void saveCameraParameters(self, str file)
     cpdef void loadCameraParameters(self, str file)
@@ -54,7 +54,7 @@ cdef class VisualizerInteractorStyle:
 cdef class Visualizer:
     cdef shared_ptr[PCLVisualizer] _ptr
     cdef object __weakref__
-    cdef PCLVisualizer* ptr(self)
+    cdef inline PCLVisualizer* ptr(self)
 
     cpdef void setFullScreen(self, bool mode) except*
     cpdef void setWindowName(self, str name) except*
