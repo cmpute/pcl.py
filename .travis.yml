@@ -45,7 +45,7 @@ branches:
     - master
 
 before_install:
-  - sudo apt update --allow-unauthenticated
+  - sudo apt update || true
   - sudo apt install -y libpcl-dev
   - pip install numpy==$NUMPY cython scikit-build
   - if [ "$RUN_COVERAGE" == "yes" ]; then
