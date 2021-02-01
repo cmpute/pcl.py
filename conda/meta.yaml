@@ -23,7 +23,7 @@ requirements:
     - python {{ python }}
     - pip
     - pcl {{ pcl }}
-    - boost-cpp
+    # - boost-cpp
     - eigen
     - cmake
     - numpy>=1.14
@@ -32,7 +32,7 @@ requirements:
   run:
     - python {{ python }}
     - pcl {{ pcl }}
-    - boost-cpp
+    - {{ pin_compatible('boost-cpp', max_pin='x.x.x') }}
     - numpy>=1.14
 
 test:

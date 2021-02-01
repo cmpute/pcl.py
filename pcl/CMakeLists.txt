@@ -1,5 +1,4 @@
 find_package(PCL REQUIRED COMPONENTS common)
-set(CMAKE_CXX_STANDARD 11)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
