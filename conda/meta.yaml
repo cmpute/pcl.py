@@ -48,3 +48,9 @@ test:
 about:
   home: https://github.com/cmpute/pcl.py
   summary: Templated python inferface for Point Cloud Library (PCL) based on Cython
+  dev_url: https://github.com/cmpute/pcl.py
+  doc_url: https://github.com/cmpute/pcl.py
+  home: https://github.com/cmpute/pcl.py
+  license: BSD 3-Clause
+  license_family: BSD
+  license_file: LICENSE

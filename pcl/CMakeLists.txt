@@ -1,11 +1,12 @@
-if (DEFINED ENV{CONDA_BUILD}) # these flags are fixes for building in conda only
+find_package(PCL REQUIRED COMPONENTS common)
+
+if (DEFINED ENV{CONDA_BUILD} AND ${PCL_VERSION} VERSION_LESS 1.9)
+  # these flags are fixes for building in conda only
   add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
   set(CMAKE_CXX_STANDARD 98)
 else ()
   set(CMAKE_CXX_STANDARD 11)
 endif ()
-
-find_package(PCL REQUIRED COMPONENTS common)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
