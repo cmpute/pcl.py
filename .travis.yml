@@ -2,11 +2,6 @@ language: python
 
 matrix:
   include:
-    - name: "Python2.7 + PCL1.6 + Numpy1.11"
-      dist: trusty
-      python: 2.7
-      env: NUMPY=1.11 PCLVER=160
-
     - name: "Python2.7 + PCL1.7 + Numpy1.13"
       dist: xenial
       python: 2.7

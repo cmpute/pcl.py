@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 import pcl
+import pytest
 
 @pytest.mark.skipif(not pcl.visualization.available, reason="PCL visualization not built")
 class TestVisualizer(unittest.TestCase):

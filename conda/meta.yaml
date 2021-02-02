@@ -36,6 +36,8 @@ requirements:
     - numpy>=1.14
 
 test:
+  source_files:
+    - test/
   requires:
     - pytest
   imports:
