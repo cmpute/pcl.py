@@ -1,9 +1,8 @@
 include "pcl_config.pxi"
 from libcpp cimport bool
 
-# https://github.com/PointCloudLibrary/pcl/commit/22961c834c6697ab1ff9cfabe4860766c12237e5
-# https://github.com/PointCloudLibrary/pcl/commit/8259d96aa62362f245d9a139cf3df69af39b5470
-IF PCL_VER >= 11000:
+# https://github.com/PointCloudLibrary/pcl/commit/11f5cd08750bf5422087b4036eb784fde686e47e
+IF PCL_VER >= 11100:
     from libcpp.memory cimport shared_ptr, make_shared
 ELSE:
     cdef extern from "boost/smart_ptr/shared_ptr.hpp" namespace "boost" nogil:

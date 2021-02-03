@@ -33,11 +33,6 @@ jobs:
     - name: Install PCL
       run: |
         sudo apt install -y libpcl-dev
-        # Fix possible linking error
-        # if [ "$PCLVER" -lt 180 ]; then
-        #   sudo apt install -y libproj-dev;
-        #   sudo ln -s /usr/lib/x86_64-linux-gnu/libvtkCommonCore-6.2.so /usr/lib/libvtkproj4.so;
-        # fi
     - name: Install dependencies
       run: |
         python -m pip install numpy==${{ matrix.numpy-version }}
