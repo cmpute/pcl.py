@@ -9,7 +9,8 @@ build:
   number: 0
   string: "py{{ py }}_{{ PKG_BUILDNUM }}_pcl{{ pcl }}"
   script:
-    - {{ PYTHON }} -m pip install . -vv
+    - {{ PYTHON }} -m pip install . -vv # [unix]
+    - {{ PYTHON }} setup.py install -v # [win]
 
 requirements:
   channels:

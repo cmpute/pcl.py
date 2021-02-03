@@ -10,8 +10,8 @@ from pcl.common.pcl_base cimport PCLBase, PCLBase_PCLPointCloud2
 from pcl.common.PointIndices cimport PointIndices, PointIndicesConstPtr
 from pcl.filters.filter cimport Filter, Filter_PCLPointCloud2
 
+# https://github.com/PointCloudLibrary/pcl/commit/d78270ab50b550d89d1e9d4890f4700cf44071f1
 IF PCL_VER >= 10800:
-    # https://github.com/PointCloudLibrary/pcl/commit/d78270ab50b550d89d1e9d4890f4700cf44071f1
     ctypedef vector[Vector3i, aligned_allocator[Vector3i]] VoxelGrid_getNeighborCentroidIndices_type
 ELSE:
     ctypedef vector[Vector3i] VoxelGrid_getNeighborCentroidIndices_type

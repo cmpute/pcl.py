@@ -1,0 +1,49 @@
+name: Publish Python Package to Anaconda
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-linux:
+    name: Build Linux packages
+    # runs-on: ubuntu-latest
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Add conda to system path
+      run: |
+        # $CONDA is an environment variable pointing to the root of the miniconda directory
+        echo $CONDA/bin >> $GITHUB_PATH
+    - name: Install conda dependencies
+      run: |
+        conda install -y conda-build conda-verify anaconda-client
+    - name: Build conda packages
+      working-directory: ./conda
+      run: |
+        conda build -c conda-forge --output-folder . .
+    - name: Upload to Anaconda
+      run: |
+        ls ./conda/linux-64
+        anaconda -v -t ${{ secrets.ANACONDA_TOKEN }} upload -l main ./conda/linux-64/*.tar.bz2
+
+  build-windows:
+    name: Build Windows packages
+    runs-on: windows-2016
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Add conda to system path
+      uses: s-weigand/setup-conda@v1
+    - name: Install conda dependencies
+      run: |
+        conda install -y conda-build conda-verify anaconda-client
+    - name: Build conda packages
+      working-directory: ./conda
+      run: |
+        conda build -c conda-forge --output-folder . .
+    - name: Upload to Anaconda
+      run: |
+        ls ./conda/win-64
+        anaconda -v -t ${{ secrets.ANACONDA_TOKEN }} upload -l main ./conda/win-64/*.tar.bz2

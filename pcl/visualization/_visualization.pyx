@@ -308,6 +308,7 @@ cdef class Visualizer:
     cpdef void addCoordinateSystem(self, double scale=1, float x=0, float y=0, float z=0, np.ndarray t=None, str id="reference", int viewport=0) except*:
         cdef Affine3f ct
         cdef PCLVisualizer_D* ptr = <PCLVisualizer_D*> self.ptr()
+        # https://github.com/PointCloudLibrary/pcl/commit/7aa16403799f26df2e857c360970caacb41be3dc
         IF PCL_VER > 10702:
             if t is not None:
                 ct = toAffine3f(t)
@@ -325,6 +326,7 @@ cdef class Visualizer:
 
     cpdef void removeCoordinateSystem(self, str id="reference", int viewport=0) except*:
         cdef PCLVisualizer_D* ptr = <PCLVisualizer_D*> self.ptr()
+        # https://github.com/PointCloudLibrary/pcl/commit/7aa16403799f26df2e857c360970caacb41be3dc
         IF PCL_VER > 10702:
             _ensure_true(ptr.removeCoordinateSystem(id.encode('ascii'), viewport), 'removeCoordinateSystem')
         ELSE:
@@ -431,6 +433,7 @@ cdef class Visualizer:
                 break
             if name == b'rgb':
                 field = 'rgb'
+            # https://github.com/PointCloudLibrary/pcl/commit/84467503f4d65366ccb66f2f1e169acda465ee65
             if PCL_VER >= 10800:
                 if name == b'rgba':
                     field = 'rgba'
@@ -453,6 +456,7 @@ cdef class Visualizer:
                 cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
                 "addPointCloud")
         elif field == 'rgba':
+            # https://github.com/PointCloudLibrary/pcl/commit/84467503f4d65366ccb66f2f1e169acda465ee65
             IF PCL_VER >= 10800:
                 rgba_handler = make_shared[PointCloudColorHandlerRGBAField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
                 _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
@@ -461,6 +465,7 @@ cdef class Visualizer:
                     cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
                     "addPointCloud")
         elif field == 'label':
+            # https://github.com/PointCloudLibrary/pcl/commit/84467503f4d65366ccb66f2f1e169acda465ee65
             IF PCL_VER >= 10800:
                 label_handler = make_shared[PointCloudColorHandlerLabelField_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr, static_mapping)
                 _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,

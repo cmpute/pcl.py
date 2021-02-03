@@ -1,4 +1,6 @@
-# pcl.py [![Build Status](https://api.travis-ci.com/cmpute/pcl.py.svg?branch=master)](https://travis-ci.com/cmpute/pcl.py)
+# pcl.py
+[![Build Status](https://api.travis-ci.com/cmpute/pcl.py.svg?branch=master)](https://travis-ci.com/cmpute/pcl.py)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pcl.py?style=flat-square)](https://pypi.org/project/pcl.py)
 <!-- [![Coverage Status](https://coveralls.io/repos/github/cmpute/pcl.py/badge.svg)](https://coveralls.io/github/cmpute/pcl.py) -->
 
 Cython bindings of Point Cloud Library (PCL)

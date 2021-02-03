@@ -2,6 +2,7 @@ include "pcl_config.pxi"
 from libcpp cimport bool
 
 # https://github.com/PointCloudLibrary/pcl/commit/22961c834c6697ab1ff9cfabe4860766c12237e5
+# https://github.com/PointCloudLibrary/pcl/commit/8259d96aa62362f245d9a139cf3df69af39b5470
 IF PCL_VER >= 11000:
     from libcpp.memory cimport shared_ptr, make_shared
 ELSE:
