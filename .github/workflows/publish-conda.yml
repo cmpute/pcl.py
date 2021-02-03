@@ -22,11 +22,11 @@ jobs:
     - name: Build conda packages
       working-directory: ./conda
       run: |
-        conda build -c conda-forge --output-folder . .
+        conda build -c conda-forge --output-folder /build .
     - name: Upload to Anaconda
       run: |
-        ls ./conda/linux-64
-        anaconda -v -t ${{ secrets.ANACONDA_TOKEN }} upload -l main ./conda/linux-64/*.tar.bz2
+        ls /build/linux-64
+        anaconda -v -t ${{ secrets.ANACONDA_TOKEN }} upload -l main /build/linux-64/*.tar.bz2
 
   build-windows:
     name: Build Windows packages
@@ -42,8 +42,8 @@ jobs:
     - name: Build conda packages
       working-directory: ./conda
       run: |
-        conda build -c conda-forge --output-folder . .
+        conda build -c conda-forge --output-folder C:/build .
     - name: Upload to Anaconda
       run: |
-        ls ./conda/win-64
-        anaconda -v -t ${{ secrets.ANACONDA_TOKEN }} upload -l main ./conda/win-64/*.tar.bz2
+        ls C:/build/win-64
+        anaconda -v -t ${{ secrets.ANACONDA_TOKEN }} upload -l main C:/build/win-64/*.tar.bz2

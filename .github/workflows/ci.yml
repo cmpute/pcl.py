@@ -1,0 +1,51 @@
+name: Build and Test
+
+on: [push, pull_request]
+
+jobs:
+  build-n-test-linux:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-16.04
+            python-version: 3.6
+            numpy-version: 1.13
+          - os: ubuntu-18.04
+            python-version: 3.7
+            numpy-version: 1.15
+          - os: ubuntu-20.04
+            python-version: 3.8
+            numpy-version: 1.19
+          - os: ubuntu-16.04
+            python-version: 2.7
+            numpy-version: 1.13
+          - os: ubuntu-18.04
+            python-version: 2.7
+            numpy-version: 1.15
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install PCL
+      run: |
+        sudo apt install -y libpcl-dev
+        # Fix possible linking error
+        # if [ "$PCLVER" -lt 180 ]; then
+        #   sudo apt install -y libproj-dev;
+        #   sudo ln -s /usr/lib/x86_64-linux-gnu/libvtkCommonCore-6.2.so /usr/lib/libvtkproj4.so;
+        # fi
+    - name: Install dependencies
+      run: |
+        python -m pip install numpy==${{ matrix.numpy-version }}
+        python -m pip install -U cython scikit-build pytest
+    - name: Build package
+      run: |
+        python setup.py develop
+    - name: Test with pytest
+      run: |
+        # visualizer is not available in container
+        pytest test/ --ignore test/test_visualizer.py
