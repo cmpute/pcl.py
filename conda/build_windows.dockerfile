@@ -3,7 +3,8 @@ FROM mcr.microsoft.com/windows:20H2
 COPY . C:/pcl.py
 WORKDIR C:/pcl.py/conda
 
-RUN powershell -PassThru install_miniconda.ps1
+RUN powershell -noprofile -executionpolicy bypass -file install_miniconda.ps1
+RUN setx path '%path%;C:/Miniconda/condabin'
 
-RUN C:/miniconda/bin/conda.exe install -y conda-build
-RUN C:/miniconda/bin/conda.exe build -c conda-forge .
+RUN conda install -y conda-build
+RUN conda build -c conda-forge .
