@@ -232,14 +232,28 @@ cdef class VisualizerInteractorStyle:
     cpdef void loadCameraParameters(self, str file):
         self.ptr().loadCameraParameters(file.encode('ascii'))
 
-cdef (unsigned char*) PointCloudColorHandlerCallback(void *func):
-    cdef unsigned char [::1] arr
-    result = (<object>func)()
-    if isinstance(result, np.ndarray):
-        if result.shape[-1] != 4:
-            raise ValueError("Returned color array should be n*4 shape")
-        arr = result.reshape(-1).astype('u1')
-    return &arr[0]
+cdef int PointCloudColorHandlerCallback(object func, unsigned char* arr):
+    cdef unsigned char [::1] arr_view
+    cdef unsigned char [:] result_arr
+    try:
+        result = func()
+        if isinstance(result, (list, tuple)):
+            result = np.asarray(result)
+        elif isinstance(result, np.ndarray):
+            pass
+        else:
+            return 2
+        if len(result.shape) != 2 or result.shape[1] != 4:
+            return -1
+
+        arr_view = <unsigned char[:4*len(result)]>arr
+        result_arr = result.reshape(-1).astype('u1')
+        arr_view[:] = result_arr
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return -3
+    return 0
 
 class RenderingProperties(Enum):
     '''
@@ -442,7 +456,7 @@ cdef class Visualizer:
 
         # call underlying function
         if color_handler is not None: # handler should be callable
-            python_handler = shared_ptr[PointCloudColorHandlerPython](new PointCloudColorHandlerPython(<PCLPointCloud2ConstPtr>cloud._ptr, PointCloudColorHandlerCallback, <void*>color_handler))
+            python_handler = shared_ptr[PointCloudColorHandlerPython](new PointCloudColorHandlerPython(<PCLPointCloud2ConstPtr>cloud._ptr, PointCloudColorHandlerCallback, color_handler))
             _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
                 <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
                 <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>python_handler,
