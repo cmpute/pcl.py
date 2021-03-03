@@ -3,6 +3,15 @@
 
 #include <pcl/visualization/point_cloud_color_handlers.h>
 #include <Python.h>
+#include "pcl/pcl_config.h"
+
+#if PCL_VER >= 11100
+    #include <memory>
+    #define ccast std::const_pointer_cast
+#else
+    #include <boost/shared_ptr.hpp>
+    #define ccast boost::const_pointer_cast
+#endif
 
 class PointCloudColorHandlerPython : public pcl::visualization::PointCloudColorHandler<pcl::PCLPointCloud2>
 {
@@ -12,16 +21,13 @@ class PointCloudColorHandlerPython : public pcl::visualization::PointCloudColorH
     typedef pcl::visualization::PointCloudColorHandler<pcl::PCLPointCloud2> Base;
 
 private:
-    // Python function should return n*4 array (RGBA)
-    int (*func_handler_)(PyObject*, unsigned char*);
+    // Python function should fill data in format of unsigned char
+    int (*func_handler_)(PyObject*, PointCloudPtr, unsigned char*);
     PyObject* func_object_;
 
 public:
-    typedef boost::shared_ptr<PointCloudColorHandlerPython> Ptr;
-    typedef boost::shared_ptr<const PointCloudColorHandlerPython> ConstPtr;
-
     PointCloudColorHandlerPython (const PointCloudConstPtr &cloud,
-        int (*func_handler)(PyObject*, unsigned char*),
+        int (*func_handler)(PyObject*, PointCloudPtr, unsigned char*),
         PyObject* func_object) :
         PointCloudColorHandler<pcl::PCLPointCloud2> (cloud),
         func_handler_(func_handler),
@@ -48,7 +54,7 @@ public:
 
         vtkIdType nr_points = cloud_->width * cloud_->height;
         unsigned char* colors = new unsigned char[nr_points * 4];
-        int ret = func_handler_(func_object_, colors);
+        int ret = func_handler_(func_object_, ccast<PointCloud, const PointCloud>(cloud_), colors);
 
         if (ret == -1)
         {

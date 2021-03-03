@@ -15,11 +15,11 @@ from pcl._eigen cimport Vector3f, Quaternionf, Affine3f, toAffine3f
 from pcl.common cimport _ensure_true
 from pcl.common.conversions cimport fromPCLPointCloud2
 from pcl.common.ModelCoefficients cimport ModelCoefficients
-from pcl.common.PCLPointCloud2 cimport PCLPointCloud2, PCLPointCloud2ConstPtr
+from pcl.common.PCLPointCloud2 cimport PCLPointCloud2, PCLPointCloud2Ptr, PCLPointCloud2ConstPtr
 from pcl.common.point_cloud cimport PointCloud as cPointCloud
 from pcl.common.point_types cimport PointXYZ, PointXYZRGB, PointXYZRGBA, Normal, PointNormal
 from pcl.common.PCLHeader cimport PCLHeader
-from pcl.PointCloud cimport _POINT_TYPE_MAPPING as pmap
+from pcl.PointCloud cimport PointCloud, _POINT_TYPE_MAPPING as pmap
 from pcl.visualization.point_cloud_geometry_handlers cimport PointCloudGeometryHandler_PCLPointCloud2, PointCloudGeometryHandlerXYZ_PCLPointCloud2
 from pcl.visualization.point_cloud_color_handlers cimport PointCloudColorHandler_PCLPointCloud2, PointCloudColorHandlerCustom_PCLPointCloud2, PointCloudColorHandlerRGBField_PCLPointCloud2, PointCloudColorHandlerGenericField_PCLPointCloud2
 from pcl.visualization._handlers cimport PointCloudColorHandlerPython
@@ -232,18 +232,22 @@ cdef class VisualizerInteractorStyle:
     cpdef void loadCameraParameters(self, str file):
         self.ptr().loadCameraParameters(file.encode('ascii'))
 
-cdef int PointCloudColorHandlerCallback(object func, unsigned char* arr):
+cdef int PointCloudColorHandlerCallback(object func, PCLPointCloud2Ptr cloud_ptr, unsigned char* arr):
     cdef unsigned char [::1] arr_view
     cdef unsigned char [:] result_arr
     try:
-        result = func()
+        result = func(PointCloud.wrap(cloud_ptr))
         if isinstance(result, (list, tuple)):
             result = np.asarray(result)
         elif isinstance(result, np.ndarray):
             pass
         else:
             return 2
-        if len(result.shape) != 2 or result.shape[1] != 4:
+        if len(result.shape) != 2:
+            return -1
+        if result.shape[1] == 3:
+            result = np.hstack([result, np.full((len(result), 1), 255, dtype=np.uint8)])
+        elif result.shape[1] != 4:
             return -1
 
         arr_view = <unsigned char[:4*len(result)]>arr

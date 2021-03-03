@@ -96,13 +96,22 @@ class TestVisualizer(unittest.TestCase):
         viewer = pcl.Visualizer()
 
         cloud = pcl.PointCloud(np.random.rand(1000, 4).astype('f4'))
-        def color_handler():
-            r = (cloud.xyz[:, [0]] * 255)
-            g = (cloud.xyz[:, [1]] * 255)
-            b = (cloud.xyz[:, [2]] * 255)
+        def rgb_handler(cloud_ref):
+            r = (cloud_ref.xyz[:, [0]] * 255)
+            g = (cloud_ref.xyz[:, [1]] * 255)
+            b = (cloud_ref.xyz[:, [2]] * 255)
+            return np.hstack([r,g,b]).astype('u1')
+        viewer.addPointCloud(cloud, color_handler=rgb_handler, id="cloud1")
+
+        cloud = pcl.PointCloud(np.random.rand(1000, 4).astype('f4'))
+        def rgba_handler(cloud_ref):
+            r = (cloud_ref.xyz[:, [0]] * 255)
+            g = (cloud_ref.xyz[:, [1]] * 255)
+            b = (cloud_ref.xyz[:, [2]] * 255)
             a = np.full((len(cloud), 1), 200)
             return np.hstack([r,g,b,a]).astype('u1')
-        viewer.addPointCloud(cloud, color_handler=color_handler, id="cloud")
+        viewer.addPointCloud(cloud, color_handler=rgba_handler, id="cloud2")
+
 
         viewer.spinOnce(time=2000)
         viewer.close()
