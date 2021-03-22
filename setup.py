@@ -1,9 +1,21 @@
-import sys
+import glob
+import os
 
 try:
     from skbuild import setup
 except ImportError:
     raise ImportError('scikit-build is required for installing')
+
+def get_stubs():
+    result = []
+    result.append(('pcl', glob.glob("pcl/*.pyi")))
+    for folder in os.listdir("pcl"):
+        folder = "pcl/" + folder
+        if os.path.isdir(folder):
+            stubs = glob.glob(folder + "/*.pyi")
+            if stubs:
+                result.append((folder, stubs))
+    return result
 
 setup(
     name="pcl-py",
@@ -19,6 +31,7 @@ setup(
     install_requires=['numpy>=1.11'],
     setup_requires=['cython>=0.29', 'scikit-build'],
     extras_require={'test': ['pytest']},
+    data_files=get_stubs(),
     classifiers=[
         'Programming Language :: C++',
         'Programming Language :: Cython',

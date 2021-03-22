@@ -99,13 +99,9 @@ cdef class MouseEvent:
     property Type:
         def __get__(self):
             return MouseEvent_Type(self.ptr().getType())
-        def __set__(self, int value):
-            self.ptr().setType(<cMouseEvent_Type>value)
     property Button:
         def __get__(self):
             return MouseEvent_MouseButton(self.ptr().getButton())
-        def __set__(self, int value):
-            self.ptr().setButton(<cMouseEvent_MouseButton>value)
     property X:
         def __get__(self):
             return self.ptr().getX()
@@ -224,7 +220,7 @@ cdef class VisualizerInteractorStyle:
     property CameraFile:
         def __get__(self): 
             return self.ptr().getCameraFile().decode('ascii')
-        def __set__(self, value):
+        def __set__(self, str value):
             self.ptr().setCameraFile(value.encode('ascii'))
 
     cpdef void saveCameraParameters(self, str file):
@@ -309,14 +305,14 @@ cdef class Visualizer:
     cpdef void setBackgroundColor(self, double r, double g, double b, int viewport=0) except*:
         self.ptr().setBackgroundColor(r, g, b, viewport)
 
-    cpdef void registerKeyboardCallback(self, callback) except*:
-        self.ptr().registerKeyboardCallback(KeyboardEventCallback, <void*>callback)
-    cpdef void registerMouseCallback(self, callback) except*:
-        self.ptr().registerMouseCallback(MouseEventCallback, <void*>callback)
-    cpdef void registerPointPickingCallback(self, callback) except*:
-        self.ptr().registerPointPickingCallback(PointPickingEventCallback, <void*>callback)
-    cpdef void registerAreaPickingCallback(self, callback) except*:
-        self.ptr().registerAreaPickingCallback(AreaPickingEventCallback, <void*>callback)
+    cpdef BoostConnection registerKeyboardCallback(self, callback):
+        return BoostConnection.wrap(self.ptr().registerKeyboardCallback(KeyboardEventCallback, <void*>callback))
+    cpdef BoostConnection registerMouseCallback(self, callback):
+        return BoostConnection.wrap(self.ptr().registerMouseCallback(MouseEventCallback, <void*>callback))
+    cpdef BoostConnection registerPointPickingCallback(self, callback):
+        return BoostConnection.wrap(self.ptr().registerPointPickingCallback(PointPickingEventCallback, <void*>callback))
+    cpdef BoostConnection registerAreaPickingCallback(self, callback):
+        return BoostConnection.wrap(self.ptr().registerAreaPickingCallback(AreaPickingEventCallback, <void*>callback))
 
     cpdef void spin(self) except*:
         self.ptr().spin()

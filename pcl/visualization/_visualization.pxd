@@ -9,6 +9,7 @@ from pcl.visualization.keyboard_event cimport KeyboardEvent as cKeyboardEvent
 from pcl.visualization.mouse_event cimport MouseEvent as cMouseEvent
 from pcl.visualization.interactor_style cimport PCLVisualizerInteractorStyle
 from pcl.visualization.point_picking_event cimport PointPickingEvent as cPointPickingEvent
+from pcl.visualization._connection cimport BoostConnection
 
 cdef class KeyboardEvent:
     cdef shared_ptr[cKeyboardEvent] _ptr
@@ -61,11 +62,10 @@ cdef class Visualizer:
     cpdef void setWindowBorders(self, bool mode) except*
     cpdef void setBackgroundColor(self, double r, double g, double b, int viewport=*) except*
 
-    # TODO: return wrapped connection object
-    cpdef void registerKeyboardCallback(self, callback) except*
-    cpdef void registerMouseCallback(self, callback) except*
-    cpdef void registerPointPickingCallback(self, callback) except*
-    cpdef void registerAreaPickingCallback(self, callback) except*
+    cpdef BoostConnection registerKeyboardCallback(self, callback)
+    cpdef BoostConnection registerMouseCallback(self, callback)
+    cpdef BoostConnection registerPointPickingCallback(self, callback)
+    cpdef BoostConnection registerAreaPickingCallback(self, callback)
 
     cpdef void spin(self) except*
     cpdef void spinOnce(self, int time=*, bool force_redraw=*) except*

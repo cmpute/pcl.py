@@ -19,22 +19,24 @@ cdef class PointField:
     def __init__(self, data=None):
         if ros_exist and hasattr(data, "__slots__"):
             from_msg_field(data, self.base)
+        elif data is not None:
+            raise ValueError("Don't initialized PointField with data!")
 
     property name:
         def __get__(self): return self.base.name.decode('ascii')
-        # def __set__(self, str value): self.base.name = value.encode('ascii')
+        def __set__(self, str value): self.base.name = value.encode('ascii')
     
     property count:
         def __get__(self): return self.base.count
-        # def __set__(self, int value): self.base.count = value
+        def __set__(self, int value): self.base.count = value
 
     property offset:
         def __get__(self): return self.base.offset
-        # def __set__(self, int value): self.base.offset = value
+        def __set__(self, int value): self.base.offset = value
 
     property datatype:
         def __get__(self): return self.base.datatype
-        # def __set__(self, unsigned char value): self.base.datatype = value
+        def __set__(self, unsigned char value): self.base.datatype = value
 
     property npdesc:
         def __get__(self):

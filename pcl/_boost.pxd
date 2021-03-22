@@ -31,12 +31,12 @@ ELSE:
     cdef extern from "boost/smart_ptr/make_shared.hpp" namespace "boost" nogil:
         cdef shared_ptr[T] make_shared[T](...)
 
-cdef extern from "boost/signals2/connection.hpp" namespace "boost" nogil:
+cdef extern from "boost/signals2/connection.hpp" namespace "boost::signals2" nogil:
     cdef cppclass connection:
         connection()
         connection(const connection&)
         
-        void disconnected()
+        void disconnect()
         bool connected()
 
         bool blocked()

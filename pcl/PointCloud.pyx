@@ -451,10 +451,12 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         def __get__(self):
             return self.height > 1
     property ptype:
+        ''' Point type '''
         def __get__(self):
             return self._ptype.decode("ascii")
 
     property nptype:
+        ''' Point type represented as numpy dtype '''
         def __get__(self):
             cdef str byte_order = '>' if self.ptr().is_bigendian else '<'
             cdef dict ndtype = dict(names=[], formats=[], offsets=[])
