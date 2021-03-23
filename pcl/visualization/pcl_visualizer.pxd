@@ -4,7 +4,7 @@ from libcpp.string cimport string
 from libcpp.vector cimport vector
 from pcl._boost cimport connection, shared_ptr
 from pcl._eigen cimport Affine3f, Matrix3f, Matrix4f, Vector3f, Vector4f, Quaternionf
-from pcl._vtk cimport vtkSmartPointer
+from pcl._vtk cimport vtkSmartPointer, vtkRenderWindow
 from pcl.common.ModelCoefficients cimport ModelCoefficients
 from pcl.common.point_types cimport PointXYZ, PointXYZRGB, PointXYZRGBA, Normal, PrincipalCurvatures
 from pcl.common.point_cloud cimport PointCloud
@@ -260,7 +260,8 @@ cdef extern from "pcl/visualization/pcl_visualizer.h" namespace "pcl::visualizat
         Affine3f getViewerPose (int viewport)
         void saveScreenshot (const string &file)
 
-        # XXX: vtkSmartPointer<vtkRenderWindow> getRenderWindow ()
+        # vtkSmartPointer<vtkRenderWindow> getRenderWindow ()
+        vtkSmartPointer[vtkRenderWindow] getRenderWindow()
         # XXX: vtkSmartPointer<vtkRendererCollection> getRendererCollection ()
         # XXX: CloudActorMapPtr getCloudActorMap ()
         

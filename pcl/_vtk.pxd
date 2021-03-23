@@ -7,3 +7,9 @@ cdef extern from "vtkSmartPointer.h" nogil:
         T* Get()
         T* GetPointer()
         T& operator*()
+
+cdef extern from "vtkRenderWindow.h" nogil:
+    cdef cppclass vtkRenderWindow:
+        vtkRenderWindow()
+
+        void Render()

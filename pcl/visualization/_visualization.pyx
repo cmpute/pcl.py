@@ -442,17 +442,18 @@ cdef class Visualizer:
         cdef bytes cfield
 
         # determine default handler
-        for name,_,_,_ in pmap[cloud._ptype]:
-            if field is not None:
-                break
-            if name == b'rgb':
-                field = 'rgb'
-            # https://github.com/PointCloudLibrary/pcl/commit/84467503f4d65366ccb66f2f1e169acda465ee65
-            if PCL_VER >= 10800:
-                if name == b'rgba':
-                    field = 'rgba'
-                if name == b'label':
-                    field = 'label'
+        if <bytes>(cloud._ptype) in pmap:
+            for name,_,_,_ in pmap[cloud._ptype]:
+                if field is not None:
+                    break
+                if name == b'rgb':
+                    field = 'rgb'
+                # https://github.com/PointCloudLibrary/pcl/commit/84467503f4d65366ccb66f2f1e169acda465ee65
+                if PCL_VER >= 10800:
+                    if name == b'rgba':
+                        field = 'rgba'
+                    if name == b'label':
+                        field = 'label'
 
         # call underlying function
         if color_handler is not None: # handler should be callable
@@ -676,3 +677,6 @@ cdef class Visualizer:
         cdef VisualizerInteractorStyle result = VisualizerInteractorStyle()
         result._ptr = self.ptr().getInteractorStyle()
         return result
+
+    cpdef void render(self):
+        self.ptr().getRenderWindow().Get().Render()

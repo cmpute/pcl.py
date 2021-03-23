@@ -135,3 +135,6 @@ cdef class Visualizer:
     cpdef void setShowFPS(self, bool show_fps) except*
 
     cpdef VisualizerInteractorStyle getInteractorStyle(self)
+
+    # custom methods, XXX: directly expose vtkRenderWindow
+    cpdef void render(self)
