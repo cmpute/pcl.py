@@ -111,6 +111,9 @@ cdef class Visualizer:
     cpdef void addCircle(self, center, double radius, str id=*, int viewport=*) except*
     cpdef void addCube(self, translation, rotation, double width, double height, double depth, str id=*, int viewport=*) except*
 
+    cpdef int getColorHandlerIndex(self, str id)
+    cpdef int getGeometryHandlerIndex(self, str id)
+    cpdef void updateColorHandlerIndex(self, str id, int index) except*
     cpdef void setShapeRenderingProperties(self, property, value, str id, int viewport=*) except*
     cpdef void setPointCloudRenderingProperties(self, property, value, str id, int viewport=*) except*
     cpdef void setRepresentationToSurfaceForAllActors(self) except*

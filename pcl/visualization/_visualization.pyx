@@ -590,6 +590,12 @@ cdef class Visualizer:
         cdef Quaternionf r = Quaternionf(rotation[0], rotation[1], rotation[2], rotation[3])
         _ensure_true(self.ptr().addCube(t, r, width, height, depth, id.encode('ascii'), viewport), "addCube")
 
+    cpdef int getColorHandlerIndex(self, str id):
+        return self.ptr().getColorHandlerIndex(id.encode())
+    cpdef int getGeometryHandlerIndex(self, str id):
+        return self.ptr().getGeometryHandlerIndex(id.encode())
+    cpdef void updateColorHandlerIndex(self, str id, int index) except*:
+        _ensure_true(self.ptr().updateColorHandlerIndex(id.encode(), index), "updateColorHandlerIndex")
     cpdef void setShapeRenderingProperties(self, property, value, str id, int viewport=0) except*:
         '''
         :param property: property to be set

@@ -19,7 +19,7 @@ setup(
     install_requires=['numpy>=1.11'],
     setup_requires=['cython>=0.29', 'scikit-build'],
     extras_require={'test': ['pytest']},
-    package_data={'pcl': [p.lstrip("pcl/") for p in glob.glob("pcl/**/*.pyi", recursive=True)]},
+    package_data={'pcl': [p.lstrip("pcl/") for p in (glob.glob("pcl/*.pyi") + glob.glob("pcl/**/*.pyi"))]},
     classifiers=[
         'Programming Language :: C++',
         'Programming Language :: Cython',
