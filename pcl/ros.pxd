@@ -9,13 +9,13 @@ cdef inline object to_msg_header(const PCLHeader &src):
     
     cdef object dst = Header()
     dst.seq = src.seq
-    dst.frame_id = src.frame_id
+    dst.frame_id = src.frame_id.decode()
     dst.stamp = Time(nsecs=src.stamp*1000)
     return dst
 cdef inline void from_msg_header(object src, PCLHeader &dst) except*:
     try:
         dst.seq = src.seq
-        dst.frame_id = src.frame_id
+        dst.frame_id = src.frame_id.encode()
         dst.stamp = src.stamp.nsecs // 1000
     except AttributeError:
         raise ValueError("Input object is not valid ros Header!")
@@ -23,14 +23,14 @@ cdef inline void from_msg_header(object src, PCLHeader &dst) except*:
 cdef inline object to_msg_field(const PCLPointField &src):
     from sensor_msgs.msg import PointField
     cdef object dst = PointField()
-    dst.name = src.name
+    dst.name = src.name.decode()
     dst.offset = src.offset
     dst.datatype = src.datatype
     dst.count = src.count
     return dst
 cdef inline void from_msg_field(object src, PCLPointField &dst) except*:
     try:
-        dst.name = src.name
+        dst.name = src.name.encode()
         dst.offset = src.offset
         dst.datatype = src.datatype
         dst.count = src.count
