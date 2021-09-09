@@ -71,6 +71,14 @@ class TestPointCloud(unittest.TestCase):
         assert np.all(cloud.xyz == np.array([(1,2,3),(2,3,4)]))
 
         cloud = pcl.PointCloud([(1,2,3),(2,3,4)])
+        cloud = cloud.append_fields(f1=np.array([4,5], dtype='f4'),
+                                    f2=np.array([6,7], dtype='f4'))
+        assert 'f1' in cloud.names
+        assert 'f2' in cloud.names
+        assert len(cloud.to_ndarray()) == 2
+        assert np.all(cloud.xyz == np.array([(1,2,3),(2,3,4)]))
+
+        cloud = pcl.PointCloud([(1,2,3),(2,3,4)])
         new_fields = np.array([(4,5),(6,7)], dtype=[('f1','f4'),('f2','f8')])
         cloud = cloud.insert_fields(new_fields, [1,1])
         assert cloud.names == ['x', 'f2', 'f1', 'y', 'z']

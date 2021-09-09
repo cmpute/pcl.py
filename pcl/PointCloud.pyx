@@ -544,26 +544,44 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         copy = np.insert(self.to_ndarray(), offsets, points)
         return PointCloud(copy, self._ptype.decode('ascii'))
 
-    def append_fields(self, data):
+    def append_fields(self, data=None, **kvargs):
         '''
         Append fields at the end of fields list of the point cloud. The new data should have same shape
         with the point cloud data and should have field names predefined in record array
 
         # Parameters
-        data: PointCloud object or numpy record array for the new data
+        data: PointCloud object or numpy record array or dict of numpy array for the new data. If
+            the input data is represented by a dict, then the order of the fields is not fixed
         '''
         if isinstance(data, PointCloud):
             data = data.to_ndarray()
 
-        old_names = self.names
-        new_names = data.dtype.names
+        if kvargs:
+            if data is not None:
+                raise ValueError("New data should be spcified either as the first argument or keyword arguments!")
+            data = kvargs
+
+        if isinstance(data, dict):
+            old_names = self.names
+            new_names = data.keys()
+
+            for v in data.values():
+                if not _is_not_record_array(v):
+                    raise ValueError("The array input in the dict data should be simple array")
+            ntype = self.nptype.descr + [(k, v.dtype) for k, v in data.items()]
+        elif isinstance(data, np.ndarray):
+            old_names = self.names
+            new_names = data.dtype.names
+
+            ntype = self.nptype.descr + data.dtype.descr
+        else:
+            raise ValueError("Invalid type for the new fields!")
+
         if len(set(old_names).intersection(set(new_names))) > 0:
             raise TypeError("fields with given names already exist.")
 
         npdata = self.to_ndarray()
-        ntype = self.nptype.descr + data.dtype.descr
         ndata = np.empty(npdata.shape, dtype=ntype)
-        
         for name in old_names:
             ndata[name] = npdata[name]
         for name in new_names:
