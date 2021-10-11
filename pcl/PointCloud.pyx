@@ -45,6 +45,9 @@ cdef dict _POINT_TYPE_MAPPING = {
 }
 
 cdef str _parse_single_dtype(np.dtype dtype):
+    if dtype == np.bool_:
+        raise ValueError("Boolean field type is not supported by PCL, please convert to other data types.")
+
     # cast single numpy dtype into txt
     if dtype.subdtype is None:
         return dtype.descr[0][1][1:]
@@ -126,6 +129,8 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             - XYZHSV
             - Custom (Non-PCL point type)
 
+            These types are adapted from built-in types defined in [point_types.h](https://github.com/PointCloudLibrary/pcl/blob/master/common/include/pcl/point_types.h).
+
         # Notes
         If the point_type is recognized as built-in types, paddings will be automatically added
         """
@@ -168,7 +173,7 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                 offset += tsize * count + tpad
             ndtype['itemsize'] = offset
             data = np.array(data, dtype=ndtype)
-        if isinstance(data, np.ndarray): # TODO: check continuity
+        if isinstance(data, np.ndarray):
             self._ptr = make_shared[PCLPointCloud2]()
             # matrix order detection
             if not data.flags.c_contiguous:
@@ -293,6 +298,23 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
             initialized = True
         if data is None:
             self._ptr = make_shared[PCLPointCloud2]()
+            
+            self._ptype = (point_type or '').upper().encode('ascii')
+            if point_type is None or <bytes>(self._ptype) not in _POINT_TYPE_MAPPING:
+                raise ValueError('Point type should be specified when the PointCloud is empty!')
+
+            # fill point fields
+            self.ptr().point_step = 0
+            for name, typeid, count, tpad in _POINT_TYPE_MAPPING[self._ptype]:
+                temp_field = PCLPointField()
+                temp_field.name = name
+                temp_field.offset = self.ptr().point_step
+                temp_field.datatype = typeid
+                temp_field.count = count
+                self.ptr().fields.push_back(temp_field)
+                self.ptr().point_step += _FIELD_TYPE_MAPPING[typeid][1] * count + tpad
+            self.ptr().row_step = self.ptr().point_step * self.ptr().width
+
             initialized = True
 
         if not initialized:

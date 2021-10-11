@@ -429,6 +429,7 @@ cdef class Visualizer:
     cpdef void createViewPortCamera(self, int viewport) except*:
         self.ptr().createViewPortCamera(viewport)
 
+    # TODO: change the default color to None, then we can know that the color is specified and override the behavior of other handlers
     cpdef void addPointCloud(self, PointCloud cloud, color=[1, 1, 1], str field=None, color_handler=None, bint static_mapping=True, str id="cloud", int viewport=0) except*:
         cdef shared_ptr[PointCloudGeometryHandlerXYZ_PCLPointCloud2] xyz_handler =\
             make_shared[PointCloudGeometryHandlerXYZ_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)

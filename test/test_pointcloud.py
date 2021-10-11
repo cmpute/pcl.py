@@ -16,6 +16,19 @@ class TestPointCloud(unittest.TestCase):
         assert len(cloud.fields) == 3
         assert cloud.names == ['x', 'y', 'z']
 
+    def test_empty_init(self):
+        cloud = pcl.PointCloud()
+        assert len(cloud) == 0
+        assert cloud.ptype == 'XYZ'
+        assert len(cloud.xyz) == 0
+        assert cloud.names == ['x', 'y', 'z']
+
+        cloud = pcl.PointCloud(point_type='xyzi')
+        assert len(cloud) == 0
+        assert cloud.ptype == 'XYZI'
+        assert len(cloud.xyz) == 0
+        cloud.names == ['x', 'y', 'z', 'i']
+
     def test_list_init(self):
         cloud = pcl.PointCloud([(1,2,3),(2,3,4)], 'xyz')
         assert len(cloud) == 2
