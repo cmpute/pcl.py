@@ -429,8 +429,7 @@ cdef class Visualizer:
     cpdef void createViewPortCamera(self, int viewport) except*:
         self.ptr().createViewPortCamera(viewport)
 
-    # TODO: change the default color to None, then we can know that the color is specified and override the behavior of other handlers
-    cpdef void addPointCloud(self, PointCloud cloud, color=[1, 1, 1], str field=None, color_handler=None, bint static_mapping=True, str id="cloud", int viewport=0) except*:
+    cpdef void addPointCloud(self, PointCloud cloud, color=None, str field=None, color_handler=None, bint static_mapping=True, str id="cloud", int viewport=0) except*:
         cdef shared_ptr[PointCloudGeometryHandlerXYZ_PCLPointCloud2] xyz_handler =\
             make_shared[PointCloudGeometryHandlerXYZ_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr)
 
@@ -462,6 +461,18 @@ cdef class Visualizer:
             _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
                 <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
                 <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>python_handler,
+                cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
+                "addPointCloud")
+        elif color is not None:
+            color_array = np.array(color)
+            if np.all(color_array <= 1):
+                color_array = np.clip(color_array * 256, 0, 255)
+
+            mono_handler = make_shared[PointCloudColorHandlerCustom_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr,
+                <int>(color_array[0]), <int>(color_array[1]), <int>(color_array[2]))
+            _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
+                <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
+                <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>mono_handler,
                 cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
                 "addPointCloud")
         elif field == 'rgb':
@@ -498,15 +509,8 @@ cdef class Visualizer:
                 cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
                 "addPointCloud")
         else:
-            color_array = np.array(color)
-            if np.all(color_array <= 1):
-                color_array = np.clip(color_array * 256, 0, 255)
-
-            mono_handler = make_shared[PointCloudColorHandlerCustom_PCLPointCloud2](<PCLPointCloud2ConstPtr>cloud._ptr,
-                <int>(color_array[0]), <int>(color_array[1]), <int>(color_array[2]))
-            _ensure_true(self.ptr().addPointCloud(<PCLPointCloud2ConstPtr>cloud._ptr,
+            _ensure_true(self.ptr().addPointCloud_2(<PCLPointCloud2ConstPtr>cloud._ptr,
                 <shared_ptr[const PointCloudGeometryHandler_PCLPointCloud2]>xyz_handler,
-                <shared_ptr[const PointCloudColorHandler_PCLPointCloud2]>mono_handler,
                 cloud._origin, cloud._orientation, id.encode('ascii'), viewport),
                 "addPointCloud")
 
