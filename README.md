@@ -103,12 +103,17 @@ The final statement will show following window
   - `close(self)`: Dispose the resources of the visualizer.
 
 - Some helper functions for creating the `pcl.PointCloud` objects
-  - `pcl.create_xyz(...)`: Create a `pcl::PointXYZ` point cloud from a normal numpy array or list of values with shape N*3
-  - `pcl.create_xyzi(...)`: Create a `pcl::PointXYZL` point cloud from a normal numpy array of list of values with shape N*4
-  - `pcl.create_xyzrgb(...)`: Create a `pcl::PointXYZRGB` point cloud from a normal numpy array of list of values with shape N*6
+  - `pcl.create_xyz(data)`: Create a `pcl::PointXYZ` point cloud from a normal numpy array or list of values with shape N*3
+  - `pcl.create_xyzi(data)`: Create a `pcl::PointXYZL` point cloud from a normal numpy array of list of values with shape N*4
+  - `pcl.create_xyzrgb(data)`: Create a `pcl::PointXYZRGB` point cloud from a normal numpy array of list of values with shape N*6
 
 - Some common functions to load and save point clouds:
-  - `pcl.load_pcd()`
+  - `pcl.io.load_pcd(path)`: Load a point cloud from a PCD file with given path
+  - `pcl.io.save_pcd(path, cloud, binary=False)`: Save `cloud` to a PCD file with given path. If `binary=True`, then the PCD file will be saved in binary format
+  - `pcl.io.load_ply(path)`: Load a point cloud from a PLY file with given path
+  - `pcl.io.save_pcd(path, cloud, binary=False, use_camera=False)`: Save `cloud` to a PLY file with given path. If `binary=True`, then the PLY file will be saved in binary format
+  - `pcl.io.load_bin(path, point_type='xyz')`: Directly load the binary data saved in the given file to a PointCloud object. The point type need to be specified. This function can be helpful to load point cloud from some datasets (e.g. KITTI)
+  - `pcl.io.save_bin(path)`: Directly dump the binary data stored in the PointCloud object to a binary file
 
 ## ROS integration
 
