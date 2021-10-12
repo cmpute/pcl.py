@@ -15,18 +15,20 @@ The major classes in this library are `pcl.PointCloud`, `pcl.Visualizer`. Most m
 
 Since Cython doesn't support a template technique similar to ["covariant"](https://en.wikipedia.org/wiki/Covariance_and_contravariance_(computer_science)) in its template support, so the code which need this technique is not wrapped or header-provided as stated above.
 
+Cython files are organized in the same structure as C++ library, which means the code you write in cython can be easily transferred to C++
+
 ### Advantage over [python-pcl](https://github.com/strawlab/python-pcl/) and [pclpy](https://github.com/davidcaron/pclpy/)
 - PointCloud is stored in PCLPointCloud2 instead of PointCloud<PointT>. Thus the cloud can store various kind of point type
-- Cython files are in the same structure as C++ library, which means the code you write in cython can be easily transferred to C++
 - ROS support (convert from and to `sensor_msgs.msg.PointCloud2` type)
-- Templated algorithms are implemented with most used point type, the other fields will be reserved.
+- Cython headers are avaible through installation, you can connect your Python and PCL C++ code easily with this library!
 - Using CMake to build extension, thus this library can be compiled upon different settings of PCL
 
 ------------------------
 
 ## Compatibility
-- Written in Python 3 & Cython
-- Requirements: Python 3.5, Numpy>=1.11, Cython>=0.29, scikit-build
+- Written in Cython x CMake
+- System Requirements: Installed with PCL 1.6+
+- Python Requirements: Python 2.7/3.4+, Numpy>=1.11, Cython>=0.29, scikit-build
 - Tested on PCL 1.8.0 - 1.11.0, adding more compatibility is pending.
 
 ## Installation
@@ -98,7 +100,7 @@ The final statement will show following window
   - `createViewport(self, xmin, ymin, xmax, ymax)`: Create a subwindow (aka `viewport`) with window range (in ratio) on x and y axis of the screen and return the id of the viewport, which can be used to specify the viewport to be added to when using other methods
   - `addPointCloud(self, cloud, color=[1,1,1], field=None, color_handler=None, static_mapping=True, id="", viewport=0)`: Add a point cloud to the visualization. If color is given, then the points will be painted with the given color (color value ranges from 0 to 1). If field name is given, then the points will be painted according to the field value. If color_handler is given with a Python function (with a reference to the point cloud as input), then the returned array from the function will be used as the color values for each point. The default way to paint the point cloud depends on the fields.
   - `addLine(self, p1, p2, color=[1,1,1], id="")`: Add a 3D line segment from point `p1` to point `p2` with given color
-  - `addArrow(self, p1, p2, line_color=[1,1,1], text_color=[1,1,1], display_length=False)`: Add a double-ended arrow between the point `p1` and `p2`. The arrow will always has a 1 pixel width. If `display_length` is `True`, then the measured length of the arrow will be displayed around the center of the arrow.
+  - `addArrow(self, p1, p2, line_color=[1,1,1], text_color=[1,1,1], display_length=False, id="", viewport=0)`: Add a double-ended arrow between the point `p1` and `p2`. The arrow will always has a 1 pixel width. If `display_length` is `True`, then the measured length of the arrow will be displayed around the center of the arrow.
   - `spin(self)`: Start then rendering thread and the visualization will become interactive
   - `close(self)`: Dispose the resources of the visualizer.
 
