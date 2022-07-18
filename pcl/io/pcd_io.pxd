@@ -17,3 +17,6 @@ cdef extern from "pcl/io/pcd_io.h" namespace "pcl::io":
     # template<typename PointT> int savePCDFile (const std::string &file_name, const pcl::PointCloud<PointT> &cloud, const std::vector<int> &indices, const bool binary_mode = false)
     int savePCDFile[PointT] (string &file_name, PointCloud[PointT] &cloud, vector[int] &indices, bool binary_mode) nogil except +
     int savePCDFileBinaryCompressed[PointT] (const string &file_name, const PointCloud[PointT] &cloud)
+
+cdef extern from "io_extension.hpp":
+    int savePCDFileBinaryCompressed2 (string &file_name, PCLPointCloud2 &cloud, Vector4f &origin, Quaternionf &orientation) nogil except +

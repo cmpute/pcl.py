@@ -4,7 +4,7 @@ from libcpp cimport bool
 import numpy as np
 from pcl.PointCloud cimport PointCloud, _POINT_TYPE_MAPPING
 from pcl.common cimport _ensure_zero, _ensure_exist
-from pcl.io.pcd_io cimport loadPCDFile, savePCDFile
+from pcl.io.pcd_io cimport loadPCDFile, savePCDFile, savePCDFileBinaryCompressed2
 from pcl.io.ply_io cimport loadPLYFile, savePLYFile
 
 cpdef PointCloud load_pcd(str path):
@@ -15,9 +15,15 @@ cpdef PointCloud load_pcd(str path):
     cloud.infer_ptype()
     return cloud
 
-cpdef void save_pcd(str path, PointCloud cloud, bool binary=False):
-    _ensure_zero(savePCDFile(path.encode('ascii'), deref(cloud._ptr),
-        cloud._origin, cloud._orientation, binary), "savePCDFile")
+cpdef void save_pcd(str path, PointCloud cloud, bool binary=False, bool compressed=False):
+    cdef bool ret
+    if binary and compressed:
+        ret = savePCDFileBinaryCompressed2(path.encode('ascii'), deref(cloud._ptr),
+            cloud._origin, cloud._orientation)
+    else:
+        ret = savePCDFile(path.encode('ascii'), deref(cloud._ptr),
+            cloud._origin, cloud._orientation, binary)
+    _ensure_zero(ret, "savePCDFile")
 
 def load_ply(str path, type return_type=PointCloud): # return_type can be Polygon etc.
     cdef PointCloud cloud
