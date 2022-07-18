@@ -6,6 +6,7 @@ from cpython.object cimport Py_EQ, Py_NE
 from cython.operator cimport dereference as deref
 import sys
 import numpy as np
+from warnings import warn
 cimport numpy as np
 
 from pcl._boost cimport make_shared
@@ -747,12 +748,15 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
         '''
         cdef bool field_matched
         cdef int ptype_matched
+        self._ptype = b"CUSTOM" # default result
+
+        # in the first run, we only check if the name and count matches
         for ptype in _POINT_TYPE_MAPPING.keys():
             ptype_matched = 0
             for field in self.ptr().fields:
                 field_matched = False
                 for fdef in _POINT_TYPE_MAPPING[ptype]:
-                    if field.name == bytes(fdef[0]) and field.datatype == fdef[1] and field.count == fdef[2]:
+                    if field.name == bytes(fdef[0]) and field.count == fdef[2]:
                         field_matched = True
                         break
                 if not field_matched:
@@ -761,8 +765,17 @@ cdef public class PointCloud[object CyPointCloud, type CyPointCloud_py]:
                 ptype_matched += 1
             if ptype_matched == len(_POINT_TYPE_MAPPING[ptype]):
                 self._ptype = ptype
-                return
-        self._ptype = b"CUSTOM"
+                break
+
+        # second run: check all fields have the correct field type
+        if self._ptype != b"CUSTOM":
+            for fdef in _POINT_TYPE_MAPPING[self._ptype]:
+                for field in self.ptr().fields:
+                    if field.name == bytes(fdef[0]) and field.datatype != fdef[1]:
+                        warn("Found a similar point type with different field types."
+                            " This could cause problems in reading double-precision value.")
+                        self._ptype = b"CUSTOM"
+                        return
 
     @staticmethod
     cdef PointCloud wrap(const shared_ptr[PCLPointCloud2]& data):
