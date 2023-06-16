@@ -38,12 +38,48 @@ public:
         }
 
     virtual ~PointCloudColorHandlerPython () { Py_XDECREF(func_object_); }
-    virtual std::string getName () const { return ("PointCloudColorHandlerPython"); }
-    virtual std::string getFieldName () const { return (""); }
+    std::string getName () const override { return ("PointCloudColorHandlerPython"); }
+    std::string getFieldName () const override { return (""); }
 
     void setCapable(bool capable) { capable_ = capable; }
 
-    virtual bool getColor (vtkSmartPointer<vtkDataArray> &scalars) const
+// the API of getColor has changed in https://github.com/PointCloudLibrary/pcl/commit/a7edaea20b3817983038fece27a70039d137b766
+#if PCL_VER >= 11000
+    vtkSmartPointer<vtkDataArray> getColor () const override
+    {
+        if (!capable_ || !cloud_)
+            return nullptr;
+
+        auto scalars = vtkSmartPointer<vtkUnsignedCharArray>::New ();
+        scalars->SetNumberOfComponents (4);
+
+        vtkIdType nr_points = cloud_->width * cloud_->height;
+        unsigned char* colors = new unsigned char[nr_points * 4];
+        int ret = func_handler_(func_object_, ccast<PointCloud, const PointCloud>(cloud_), colors);
+
+        if (ret == -1)
+        {
+            PCL_ERROR("Returned color array should be n*4 shape\n");
+            return nullptr;
+        }
+        else if (ret == -2)
+        {
+            PCL_ERROR("Unrecognized color type\n");
+            return nullptr;
+        }
+        else if (ret == -3)
+        {
+            PCL_ERROR("Error occurred in function calling\n");
+            return nullptr;
+        }
+
+        scalars->SetNumberOfTuples (nr_points);
+        scalars->SetArray (colors, 4*nr_points, 0, vtkUnsignedCharArray::VTK_DATA_ARRAY_DELETE);
+        return scalars;
+    }
+
+#else
+    bool getColor (vtkSmartPointer<vtkDataArray> &scalars) const override
     {
         if (!capable_ || !cloud_)
             return false;
@@ -76,6 +112,7 @@ public:
         reinterpret_cast<vtkUnsignedCharArray*>(scalars.Get())->SetArray (colors, 4*nr_points, 0, vtkUnsignedCharArray::VTK_DATA_ARRAY_DELETE);
         return true;
     }
+#endif
 };
 
 #endif // _PCL_CYTHON_PYTHON_HANDLER
