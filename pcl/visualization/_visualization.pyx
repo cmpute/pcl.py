@@ -75,7 +75,7 @@ cdef class KeyboardEvent:
     def __repr__(self):
         return "<KeyboardEvent " + str(self) + ">"
 
-cdef void KeyboardEventCallback(const cKeyboardEvent &event, void *func):
+cdef void KeyboardEventCallback(const cKeyboardEvent &event, void *func) noexcept:
     (<object>func)(KeyboardEvent.wrap(event))
 
 class MouseEvent_Type(Enum):
@@ -149,7 +149,7 @@ cdef class MouseEvent:
     def __repr__(self):
         return "<MouseEvent " + str(self) + ">"
 
-cdef void MouseEventCallback(const cMouseEvent &event, void *func):
+cdef void MouseEventCallback(const cMouseEvent &event, void *func) noexcept:
     (<object>func)(MouseEvent.wrap(event))
 
 cdef class PointPickingEvent:
@@ -186,7 +186,7 @@ cdef class PointPickingEvent:
     def __repr__(self):
         return "<PointPickingEvent " + str(self) + ">"
 
-cdef void PointPickingEventCallback(const cPointPickingEvent &event, void *func):
+cdef void PointPickingEventCallback(const cPointPickingEvent &event, void *func) noexcept:
     (<object>func)(PointPickingEvent.wrap(event))
 
 cdef class AreaPickingEvent:
@@ -210,7 +210,7 @@ cdef class AreaPickingEvent:
     def __repr__(self):
         return "<AreaPickingEvent " + str(self) + ">"
 
-cdef void AreaPickingEventCallback(const cAreaPickingEvent &event, void *func):
+cdef void AreaPickingEventCallback(const cAreaPickingEvent &event, void *func) noexcept:
     (<object>func)(AreaPickingEvent.wrap(event))
 
 cdef class VisualizerInteractorStyle:
@@ -228,7 +228,7 @@ cdef class VisualizerInteractorStyle:
     cpdef void loadCameraParameters(self, str file):
         self.ptr().loadCameraParameters(file.encode('ascii'))
 
-cdef int PointCloudColorHandlerCallback(object func, PCLPointCloud2Ptr cloud_ptr, unsigned char* arr):
+cdef int PointCloudColorHandlerCallback(object func, PCLPointCloud2Ptr cloud_ptr, unsigned char* arr) noexcept:
     cdef unsigned char [::1] arr_view
     cdef unsigned char [:] result_arr
     try:
